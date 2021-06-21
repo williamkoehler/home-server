@@ -1,0 +1,39 @@
+{
+    "user-list": [
+        {
+            "name": "alex",
+            "id": 679953565,
+            "hash": "V6aYFdR8LE4KzmIdRN9lYpK6nIM7v/Vr03VZ8Ns9SrY=",
+            "salt": "WW4QcOzpV8EM83wtRSgKCg==",
+            "access-level": 2
+        },
+        {
+            "name": "max",
+            "id": 1349901912,
+            "hash": "FG+GYcWxh6i2gNoByd+mG2HY5epav9LjlVXF5o/1WF8=",
+            "salt": "PMPik8f33bLT3vdyOlt+rQ==",
+            "access-level": 2
+        },
+        {
+            "name": "ralf",
+            "id": 3075000177,
+            "hash": "Rgfuxp83jzuRTDHlZM248Z9OpIoU9ebHMsUt4MWjQxU=",
+            "salt": "HfdsFy+C7SAflP0vOynDfw==",
+            "access-level": 2
+        },
+        {
+            "name": "sophie",
+            "id": 1085223716,
+            "hash": "SVs4+7Id/TREU0ArZ4c0oYzoCyQO1ioys8+Kv6GDpGA=",
+            "salt": "NVaDXaFxZLfIguU25eXUKw==",
+            "access-level": 2
+        },
+        {
+            "name": "willi",
+            "id": 661022611,
+            "hash": "Ag1BIUtgpHOAoW/+9b6tCg3xpHAYdApcHnA+MBrpJiA=",
+            "salt": "eJhJ/6BRqywTXB+bW4Hsxw==",
+            "access-level": 2
+        }
+    ]
+}

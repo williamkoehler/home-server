@@ -1,0 +1,10 @@
+{
+    "script-list": [
+        {
+            "name": "test",
+            "id": 10,
+            "language": "lua",
+            "source": "test.lua"
+        }
+    ]
+}

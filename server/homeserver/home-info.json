@@ -1,0 +1,92 @@
+{
+    "action-list": [
+        {
+            "name": "Action 1",
+            "id": 200,
+            "source-id": 10
+        }
+    ],
+    "room-list": [
+        {
+            "name": "Kitchen 1",
+            "id": 1064238153,
+            "type": 1,
+            "device-list": [
+                543457660,
+                543457661
+            ],
+            "action-list": [
+                200
+            ]
+        },
+        {
+            "name": "Bedroom 1",
+            "id": 873080018,
+            "type": 1,
+            "device-list": [
+                543457660,
+                543457661,
+                543457662
+            ]
+        }
+    ],
+    "device-list": [
+        {
+            "name": "Thermometer 2",
+            "id": 543457660,
+            "script-id": 2749110672,
+            "script-data": [
+                {
+                    "id": 2,
+                    "value": 0
+                },
+                {
+                    "id": 1,
+                    "value": 0
+                },
+                {
+                    "id": 32769,
+                    "value": 65535.0
+                }
+            ]
+        },
+        {
+            "name": "Thermometer",
+            "id": 543457661,
+            "script-id": 2749110672,
+            "script-data": [
+                {
+                    "id": 2,
+                    "value": 0
+                },
+                {
+                    "id": 1,
+                    "value": 0
+                },
+                {
+                    "id": 32769,
+                    "value": 65535.0
+                }
+            ]
+        },
+        {
+            "name": "Debug",
+            "id": 543457662,
+            "script-id": 4049221837,
+            "script-data": []
+        }
+    ],
+    "device-manager-list": [
+        {
+            "name": "SfAR modbus module manager",
+            "id": 1924991387,
+            "script-id": 384858808,
+            "script-data": [
+                {
+                    "id": 1,
+                    "value": "192.168.1.135:502"
+                }
+            ]
+        }
+    ]
+}

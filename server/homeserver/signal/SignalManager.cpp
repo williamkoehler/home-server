@@ -1,9 +1,9 @@
-#include "SignalManager.h"
-#include "../Core.h"
-#include "../home/Device.h"
-#include "../home/DeviceManager.h"
-#include "../json/JsonApi.h"
-#include "../network/NetworkManager.h"
+#include "SignalManager.hpp"
+#include "../Core.hpp"
+#include "../home/Device.hpp"
+#include "../home/DeviceManager.hpp"
+#include "../json/JsonApi.hpp"
+#include "../network/NetworkManager.hpp"
 
 namespace server
 {

@@ -1,5 +1,5 @@
-#include "WebPageFiles.h"
-#include "../tools.h"
+#include "WebPageFiles.hpp"
+#include "../tools.hpp"
 
 namespace server
 {

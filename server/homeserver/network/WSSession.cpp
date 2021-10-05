@@ -1,11 +1,11 @@
-#include "WSSession.h"
-#include "../Core.h"
-#include "NetworkManager.h"
-#include "../json/JsonApi.h"
-#include "../home/Home.h"
-#include "../home/Room.h"
-#include "../home/Device.h"
-#include "../user/User.h"
+#include "WSSession.hpp"
+#include "../Core.hpp"
+#include "NetworkManager.hpp"
+#include "../json/JsonApi.hpp"
+#include "../home/Home.hpp"
+#include "../home/Room.hpp"
+#include "../home/Device.hpp"
+#include "../user/User.hpp"
 #include <streambuf>
 
 namespace server
@@ -146,15 +146,15 @@ namespace server
 				else
 					return false;
 			}
-			else if (strncmp(msg, "draft", 5) == 0)
+			else if (strncmp(msg, "script", 5) == 0)
 			{
 				msg += 5;
-				if (strncmp(msg, "?info", 5) == 0) // get-draft?info
-					JsonApi::ProcessJsonGetDraftSourceMessageWS(input, output, context);
-				else if (strncmp(msg, "?content", 4) == 0) // get-draft?content
-					JsonApi::ProcessJsonGetDraftSourceContentMessageWS(user, input, output, context); // Todo
-				else if (strncmp(msg, "s?info", 4) == 0) // get-drafts?info
-					JsonApi::ProcessJsonGetDraftSourcesMessageWS(input, output, context); // Todo
+				if (strncmp(msg, "?info", 5) == 0) // get-script?info
+					JsonApi::ProcessJsonGetScriptSourceMessageWS(input, output, context);
+				else if (strncmp(msg, "?content", 4) == 0) // get-script?content
+					JsonApi::ProcessJsonGetScriptSourceContentMessageWS(user, input, output, context); // Todo
+				else if (strncmp(msg, "s?info", 4) == 0) // get-scripts?info
+					JsonApi::ProcessJsonGetScriptSourcesMessageWS(input, output, context); // Todo
 				else
 					return false;
 			}
@@ -210,13 +210,13 @@ namespace server
 				else
 					return false;
 			}
-			else if (strncmp(msg, "draft", 5) == 0)
+			else if (strncmp(msg, "script", 5) == 0)
 			{
 				msg += 5;
-				if (strncmp(msg, "?info", 5) == 0) // set-draft?info
-					JsonApi::ProcessJsonSetDraftSourceMessageWS(input, output, context);
-				else if (strncmp(msg, "?content", 4) == 0) // set-draft?content
-					JsonApi::ProcessJsonSetDraftSourceContentMessageWS(user, input, output, context); // Todo
+				if (strncmp(msg, "?info", 5) == 0) // set-script?info
+					JsonApi::ProcessJsonSetScriptSourceMessageWS(input, output, context);
+				else if (strncmp(msg, "?content", 4) == 0) // set-script?content
+					JsonApi::ProcessJsonSetScriptSourceContentMessageWS(user, input, output, context); // Todo
 				else
 					return false;
 			}
@@ -233,7 +233,7 @@ namespace server
 			else if (strncmp(msg, "device", 6) == 0) // add-device
 			{
 				msg += 6;
-				if (strncmp(msg, "to-room", 7) == 0) // add-device-to-room
+				if (strncmp(msg, "-to-room", 8) == 0) // add-device-to-room
 					JsonApi::ProcessJsonAddDeviceToRoomMessageWS(user, input, output, context);
 				else // add-device
 					JsonApi::ProcessJsonAddDeviceMessageWS(user, input, output, context);
@@ -241,15 +241,15 @@ namespace server
 			else if (strncmp(msg, "action", 6) == 0) // add-action
 			{
 				msg += 6;
-				if (strncmp(msg, "to-room", 7) == 0) // add-action-to-room
+				if (strncmp(msg, "-to-room", 8) == 0) // add-action-to-room
 					JsonApi::ProcessJsonAddDeviceToRoomMessageWS(user, input, output, context); // Todo
 				else // add-action
 					JsonApi::ProcessJsonAddActionMessageWS(user, input, output, context);
 			}
 			else if (strncmp(msg, "room", 4) == 0) // add-room
 				JsonApi::ProcessJsonAddRoomMessageWS(user, input, output, context);
-			else if (strncmp(msg, "draft", 5) == 0) // add-draft
-				JsonApi::ProcessJsonAddDraftSourceMessageWS(user, input, output, context);
+			else if (strncmp(msg, "script", 6) == 0) // add-script
+				JsonApi::ProcessJsonAddScriptSourceMessageWS(user, input, output, context);
 			else
 				return false;
 		}
@@ -261,7 +261,7 @@ namespace server
 			else if (strncmp(msg, "device", 6) == 0) // rem-device
 			{
 				msg += 6;
-				if (strncmp(msg, "from-room", 9) == 0) // rem-device-to-room
+				if (strncmp(msg, "-from-room", 10) == 0) // rem-device-to-room
 					JsonApi::ProcessJsonRemoveDeviceFromRoomMessageWS(user, input, output, context);
 				else // rem-device
 					JsonApi::ProcessJsonRemoveDeviceMessageWS(user, input, output, context);
@@ -269,15 +269,15 @@ namespace server
 			else if (strncmp(msg, "action", 6) == 0) // rem-action
 			{
 				msg += 6;
-				if (strncmp(msg, "from-room", 9) == 0) // rem-action-to-room
+				if (strncmp(msg, "-from-room", 10) == 0) // rem-action-to-room
 					JsonApi::ProcessJsonRemoveDeviceFromRoomMessageWS(user, input, output, context); // Todo
 				else // rem-action
 					JsonApi::ProcessJsonRemoveDeviceMessageWS(user, input, output, context);
 			}
 			else if (strncmp(msg, "room", 4) == 0) // rem-room
 				JsonApi::ProcessJsonRemoveRoomMessageWS(user, input, output, context);
-			else if (strncmp(msg, "draft", 5) == 0) // rem-draft
-				JsonApi::ProcessJsonRemoveDraftSourceMessageWS(user, input, output, context);
+			else if (strncmp(msg, "script", 5) == 0) // rem-script
+				JsonApi::ProcessJsonRemoveScriptSourceMessageWS(user, input, output, context);
 			else
 				return false;
 		}

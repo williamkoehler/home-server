@@ -1,67 +1,52 @@
-#include "Action.h"
-#include "../scripting/DraftManager.h"
-#include "../scripting/Draft.h"
+#include "Action.hpp"
+#include "../scripting/ScriptManager.hpp"
+#include "../scripting/Script.hpp"
 
 namespace server
 {
-	Action::Action(std::string name, uint32_t actionID, Ref<scripting::Draft> draft)
-		: roomCount(0), name(std::move(name)), actionID(actionID), draft(std::move(draft))
+	Action::Action(std::string name, uint32_t actionID, Ref<scripting::Script> script)
+		: roomCount(0), name(std::move(name)), actionID(actionID), script(std::move(script))
 	{ }
 	Action::~Action()
 	{ }
-	Ref<Action> Action::Create(std::string name, uint32_t actionID, uint32_t draftSourceID)
+	Ref<Action> Action::Create(std::string name, uint32_t actionID, uint32_t scriptSourceID)
 	{
 		assert(actionID != 0);
-		assert(draftSourceID != 0);
+		assert(scriptSourceID != 0);
 
-		Ref<scripting::DraftManager> draftManager = scripting::DraftManager::GetInstance();
-		assert(draftManager != nullptr);
-
-		Ref<scripting::DraftSource> draftSource = draftManager->GetSource(draftSourceID);
-		if (draftSource == nullptr)
+		Ref<scripting::Script> script = scripting::Script::Create(scriptSourceID);
+		if (script == nullptr)
 		{
-			LOG_ERROR("Find draft source '{0}'", draftSourceID);
+			LOG_ERROR("Create script from source '{0}'", scriptSourceID);
 			return nullptr;
 		}
 
-		Ref<scripting::Draft> draft = scripting::Draft::Create(draftSource);
-		if (draft == nullptr)
-		{
-			LOG_ERROR("Create draft from source '{0}'", draftSourceID);
-			return nullptr;
-		}
-
-		draft->MakeReady();
-
-		//script->Execute();
-
-		Ref<Action> action = boost::make_shared<Action>(name, actionID, draft);
+		// Create new actiom
+		Ref<Action> action = boost::make_shared<Action>(name, actionID, std::move(script));
 		if (action == nullptr)
 			return nullptr;
 
 		return action;
 	}
 
-	scripting::ExecutionResult Action::Reset()
+	bool Action::Run()
 	{
-		draft->Reset();
+		boost::shared_lock_guard lock(mutex);
 
-		// Make script ready
-		return draft->MakeReady();
-	}
-	scripting::ExecutionResult Action::Execute()
-	{
-		// Check for state
-		if (draft->GetState() != scripting::DraftStates::kInitialized)
+		if (script != nullptr)
 		{
-			scripting::ExecutionResult result = draft->MakeReady();
+			// Check for state
+			if (!script->IsReady())
+			{
+				if (!script->Compile())
+					return false;
+			}
 
-			if (!result.IsSuccess())
-				return result;
+			// Run script
+			return script->Run();
 		}
-
-		// Execute script
-		return draft->Execute();
+		else
+			return false;
 	}
 
 	void Action::Load(rapidjson::Value& json)
@@ -78,6 +63,6 @@ namespace server
 
 		json.AddMember("name", rapidjson::Value(name.c_str(), name.size(), allocator), allocator);
 		json.AddMember("id", rapidjson::Value(actionID), allocator);
-		json.AddMember("draft-source-id", rapidjson::Value(draft->GetSourceID()), allocator);
+		json.AddMember("script-source-id", rapidjson::Value(script->GetSource()->GetSourceID()), allocator);
 	}
 }

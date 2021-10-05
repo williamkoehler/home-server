@@ -1,10 +1,10 @@
 #include <vector>
-#include "Log.h"
+#include "Log.hpp"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/msvc_sink.h>
 
-HOME_EXPORT Log instance = Log();
+Log instance = Log();
 
 Log::Log()
 {

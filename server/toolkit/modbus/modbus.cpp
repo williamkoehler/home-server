@@ -1,4 +1,4 @@
-#include "modbus.h"
+#include "modbus.hpp"
 #include <cassert>
 #ifdef _WIN32
 #define _WINSOCK_DEPRECATED_NO_WARNINGS

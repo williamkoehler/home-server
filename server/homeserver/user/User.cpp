@@ -1,8 +1,8 @@
-#include "User.h"
-#include "UserManager.h"
-#include "../Core.h"
-#include "../tools.h"
-#include "../io/DynamicResources.h"
+#include "User.hpp"
+#include "UserManager.hpp"
+#include "../Core.hpp"
+#include "../tools.hpp"
+#include "../io/DynamicResources.hpp"
 
 namespace server
 {

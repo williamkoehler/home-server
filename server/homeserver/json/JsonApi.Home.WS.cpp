@@ -1,14 +1,14 @@
-#include "JsonApi.h"
-#include "../Core.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
 
-#include "../home/Home.h"
-#include "../home/DeviceManager.h"
-#include "../home/Room.h"
-#include "../home/Device.h"
-#include "../home/Action.h"
+#include "../home/Home.hpp"
+#include "../home/DeviceManager.hpp"
+#include "../home/Room.hpp"
+#include "../home/Device.hpp"
+#include "../home/Action.hpp"
 
-#include "../user/UserManager.h"
-#include "../user/User.h"
+#include "../user/UserManager.hpp"
+#include "../user/User.hpp"
 
 namespace server
 {
@@ -330,12 +330,15 @@ namespace server
 		assert(home != nullptr);
 
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
-		if (home->AddDeviceManager(nameIt->value.GetString(), 0, scriptIDIt->value.GetUint(), json) == nullptr)
+		Ref<DeviceManager> deviceManager = home->AddDeviceManager(nameIt->value.GetString(), 0, scriptIDIt->value.GetUint(), json);
+		if (deviceManager == nullptr)
 		{
 			context.Error("Add device manager");
 			BuildJsonNAckMessageWS(output);
 			return;
 		}
+
+		BuildJsonDeviceManager(deviceManager, output, allocator);
 
 		BuildJsonAckMessageWS(output);
 	}
@@ -578,12 +581,15 @@ namespace server
 		assert(home != nullptr);
 
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
-		if (home->AddDevice(nameIt->value.GetString(), 0, scriptIDIt->value.GetUint(), json) == nullptr)
+		Ref<Device> device = home->AddDevice(nameIt->value.GetString(), 0, scriptIDIt->value.GetUint(), json);
+		if (device == nullptr)
 		{
 			context.Error("Add device");
 			BuildJsonNAckMessageWS(output);
 			return;
 		}
+
+		BuildJsonDevice(device, output, allocator);
 
 		BuildJsonAckMessageWS(output);
 	}
@@ -679,7 +685,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		Ref<Home> home = Home::GetInstance();
-
 		assert(home != nullptr);
 
 		// Get device
@@ -748,7 +753,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		Ref<Home> home = Home::GetInstance();
-
 		assert(home != nullptr);
 
 		// Get device
@@ -776,7 +780,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		Ref<Home> home = Home::GetInstance();
-
 		assert(home != nullptr);
 
 		boost::shared_lock_guard lock(home->mutex);
@@ -898,7 +901,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		Ref<Home> home = Home::GetInstance();
-
 		assert(home != nullptr);
 
 		// Get device
@@ -932,7 +934,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		Ref<Home> home = Home::GetInstance();
-
 		assert(home != nullptr);
 
 		// Get device
@@ -1049,14 +1050,20 @@ namespace server
 			return;
 		}
 
-		scripting::ExecutionResult result = action->Execute();
-
-		// Handle errors
-		if (result.IsSuccess())
-			BuildJsonAckMessageWS(output);
+		if (action->GetScript() != nullptr)
+		{
+			// Run action and handle errors
+			if (action->Run())
+				BuildJsonAckMessageWS(output);
+			else
+			{
+				context.Error("Action execution : %s", action->GetScript()->GetLastResult().GetError().c_str());
+				BuildJsonNAckMessageWS(output);
+			}
+		}
 		else
 		{
-			context.Error("Action execution : %s", result.GetError().c_str());
+			context.Error("Empty action");
 			BuildJsonNAckMessageWS(output);
 		}
 	}

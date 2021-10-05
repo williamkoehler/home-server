@@ -1,12 +1,12 @@
-#include "JsonApi.h"
-#include "../Core.h"
-#include "JsonField.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
+#include "JsonField.hpp"
 
-#include "../home/Home.h"
-#include "../home/DeviceManager.h"
-#include "../home/Room.h"
-#include "../home/Device.h"
-#include "../home/Action.h"
+#include "../home/Home.hpp"
+#include "../home/DeviceManager.hpp"
+#include "../home/Room.hpp"
+#include "../home/Device.hpp"
+#include "../home/Action.hpp"
 
 namespace server
 {
@@ -460,9 +460,9 @@ namespace server
 
 		output.AddMember("name", rapidjson::Value(action->name.c_str(), action->name.size()), allocator);
 		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
-		output.AddMember("sourceid", rapidjson::Value(action->GetDraftSourceID()), allocator);
+		output.AddMember("sourceid", rapidjson::Value(action->GetScriptSourceID()), allocator);
 
-		BuildJsonDraft(action->draft, output, allocator);
+		BuildJsonScript(action->script, output, allocator);
 	}
 	void JsonApi::DecodeJsonAction(const Ref<Action>& action, rapidjson::Value& input)
 	{
@@ -487,16 +487,16 @@ namespace server
 		boost::shared_lock_guard lock(action->mutex);
 
 		// Check device manager script
-		Ref<scripting::Draft> draft = action->draft;
-		if (draft == nullptr)
+		Ref<scripting::Script> script = action->script;
+		if (script == nullptr)
 		{
-			LOG_ERROR("Invalid action draft");
+			LOG_ERROR("Invalid action script");
 			return;
 		}
 
 		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
 
-		BuildJsonDraftState(draft, output, allocator);
+		BuildJsonScriptState(script, output, allocator);
 	}
 	void JsonApi::DecodeJsonActionState(const Ref<Action>& action, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
 	{
@@ -507,13 +507,13 @@ namespace server
 		boost::lock_guard lock(action->mutex);
 
 		// Check device manager script
-		Ref<scripting::Draft> draft = action->draft;
-		if (draft == nullptr)
+		Ref<scripting::Script> script = action->script;
+		if (script == nullptr)
 		{
-			LOG_ERROR("Invalid action draft");
+			LOG_ERROR("Invalid action script");
 			return;
 		}
 
-		DecodeJsonDraftState(draft, input);
+		DecodeJsonScriptState(script, input);
 	}
 }

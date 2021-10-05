@@ -1,7 +1,7 @@
-#include "JsonApi.h"
-#include "../Core.h"
-#include "JsonField.h"
-#include "../tools/EMail.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
+#include "JsonField.hpp"
+#include "../tools/EMail.hpp"
 
 namespace server
 {

@@ -1,4 +1,4 @@
-#include "EMail.h"
+#include "EMail.hpp"
 #include <libquickmail/quickmail.h>
 
 namespace server

@@ -1,10 +1,10 @@
-#include "Room.h"
-#include "../Core.h"
-#include "Home.h"
-#include "Device.h"
-#include "DeviceManager.h"
-#include "Action.h"
-#include "../plugin/PluginManager.h"
+#include "Room.hpp"
+#include "../Core.hpp"
+#include "Home.hpp"
+#include "Device.hpp"
+#include "DeviceManager.hpp"
+#include "Action.hpp"
+#include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
 
 namespace server

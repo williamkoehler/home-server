@@ -1,5 +1,5 @@
-#include "DynamicResources.h"
-#include "../tools.h"
+#include "DynamicResources.hpp"
+#include "../tools.hpp"
 
 namespace server
 {

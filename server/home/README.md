@@ -3,15 +3,15 @@
 ## How to define a Plugin
 
 ``` c++
-//Include "Plugin.h" to have access to all the plugin features
-#include <Plugin.h>
-#include "MyDevice.h>
+//Include "Plugin.hpp" to have access to all the plugin features
+#include <Plugin.hpp>
+#include "MyDevice.hpp"
 
 extern "C"
 {
     // Define a "void RegisterPlugin(Ref<home::Plugin> plugin)" function 
     // that will be called when the plugin is loaded.
-	void PLUGIN_EXPORT RegisterPlugin(Ref<home::Plugin> plugin)
+	void RegisterPlugin(Ref<home::Plugin> plugin)
 	{
         // To add device script plugin call
         // "plugin->RegisterDeviceScript<DEVSCRIPTNAME>()
@@ -34,12 +34,12 @@ The "**DEVICESCRIPT_CLASS**" macro has a few arguments:
 - The **device state**. This constains every device state.
 
 ```c++
-// MyDevice.h
+// MyDevice.hpp
 #pragma once
-#include <home/Home.h>
-#include <home/DeviceScript.h>
+#include <home/Home.hpp>
+#include <home/DeviceScript.hpp>
 
-class PLUGIN_EXPORT MyDeviceScript : public home::DeviceScript
+class MyDeviceScript : public home::DeviceScript
 {
 	struct MyState
 	{
@@ -48,7 +48,7 @@ class PLUGIN_EXPORT MyDeviceScript : public home::DeviceScript
 	DEVICESCRIPT_CLASS(
 	MyDeviceScript,
 	"Device name",
-	home::DeviceTypes::kLightDeviceType,
+	home::DeviceType::kLightDeviceType,
 	MyState);
 
 private:
@@ -73,7 +73,7 @@ public:
 Now, all these methods need to be implemented
 
 ```c++
-#include "DebugVisuals.h"
+#include "DebugVisuals.hpp"
 
 void DebugVisuals::OnRegister(home::DeviceScriptDescription* description)
 {

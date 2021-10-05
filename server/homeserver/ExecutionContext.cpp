@@ -1,4 +1,4 @@
-#include "ExecutionContext.h"
+#include "ExecutionContext.hpp"
 
 namespace server
 {
@@ -17,11 +17,7 @@ namespace server
 
 		va_list lst;
 		va_start(lst, format);
-		#ifdef OS_WINDOWS
-		const size_t len = sprintf_s(buf + 7, 50, format, lst);
-		#else
 		const size_t len = snprintf(buf + 7, 50, format, lst);
-		#endif
 		va_end(lst);
 
 		json.PushBack(rapidjson::Value(buf, len + 7, allocator), allocator);
@@ -33,11 +29,7 @@ namespace server
 
 		va_list lst;
 		va_start(lst, format);
-		#ifdef OS_WINDOWS
-		const size_t len = sprintf_s(buf + 10, 50, format, lst);
-		#else
 		const size_t len = snprintf(buf + 10, 50, format, lst);
-		#endif
 		va_end(lst);
 
 		json.PushBack(rapidjson::Value(buf, len + 10, allocator), allocator);
@@ -49,11 +41,7 @@ namespace server
 
 		va_list lst;
 		va_start(lst, format);
-		#ifdef OS_WINDOWS
-		const size_t len = sprintf_s(buf + 8, 50, format, lst);
-		#else
 		const size_t len = snprintf(buf + 8, 50, format, lst);
-		#endif
 		va_end(lst);
 
 		json.PushBack(rapidjson::Value(buf, len + 8, allocator), allocator);

@@ -1,5 +1,5 @@
-#include "BeaconListener.h"
-#include "../Core.h"
+#include "BeaconListener.hpp"
+#include "../Core.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 
 namespace server

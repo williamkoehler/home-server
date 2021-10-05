@@ -1,12 +1,9 @@
-#include "common.h"
-#include "plugin/PluginManager.h"
-#include "Core.h"
-#ifdef _WIN32
-#include <WinSock2.h>
-#endif
+#include "common.hpp"
+#include "plugin/PluginManager.hpp"
+#include "Core.hpp"
 #include <openssl/ssl.h>
 #include <openssl/opensslv.h>
-#include "Version.h"
+#include "Version.hpp"
 
 #include <libquickmail/quickmail.h>
 
@@ -40,6 +37,7 @@ int main(int argc, char** argv)
 				"\t|       - jwt-cpp                    |\n"
 				"\t|       - xxHash                     |\n"
 				"\t|       - cppcodec                   |\n"
+				"\t|       - duktape                    |\n"
 				"\t|       - libquickmail               |\n"
 				"\t|____________________________________|\n", line);
 		}
@@ -75,11 +73,7 @@ int main(int argc, char** argv)
 		if (pluginManager == nullptr)
 			throw std::runtime_error("Fatal error");
 
-		//Load plugins
-		pluginManager->Load();
-
 		Ref<Core> core = Core::Create();
-
 		if (core == nullptr)
 			throw std::runtime_error("Fatal error");
 

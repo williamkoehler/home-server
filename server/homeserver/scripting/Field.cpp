@@ -1,4 +1,4 @@
-#include "Field.h"
+#include "Field.hpp"
 
 namespace scripting
 {
@@ -7,13 +7,13 @@ namespace scripting
 	{ }
 	Field::~Field()
 	{ }
-	Ref<Field> Field::CreateBoolean(identifier_t id, std::string text, home::VisualUnits unit)
+	Ref<Field> Field::CreateBoolean(identifier_t id, std::string text, home::VisualUnit unit)
 	{
 		class BooleanField : public Field
 		{
 		public:
 			bool value;
-			BooleanField(identifier_t id, std::string text, home::VisualUnits unit)
+			BooleanField(identifier_t id, std::string text, home::VisualUnit unit)
 				: Field(home::Visuals::CreateBooleanModifier(id, text, unit))
 			{ };
 			virtual bool GetBoolean() override { return value; }
@@ -35,13 +35,13 @@ namespace scripting
 		};
 		return boost::make_shared<BooleanField>(id, text, unit);
 	}
-	Ref<Field> Field::CreateInteger(identifier_t id, std::string text, home::VisualUnits unit, int64_t min, int64_t max)
+	Ref<Field> Field::CreateInteger(identifier_t id, std::string text, home::VisualUnit unit, int64_t min, int64_t max)
 	{
 		class IntegerField : public Field
 		{
 		public:
 			int64_t value;
-			IntegerField(identifier_t id, std::string text, home::VisualUnits unit, int64_t min, int64_t max)
+			IntegerField(identifier_t id, std::string text, home::VisualUnit unit, int64_t min, int64_t max)
 				: Field(home::Visuals::CreateIntegerModifier(id, text, unit, min, max))
 			{ };
 			virtual int64_t GetInteger() override { return value; }
@@ -63,13 +63,13 @@ namespace scripting
 		};
 		return boost::make_shared<IntegerField>(id, text, unit, min, max);
 	}
-	Ref<Field> Field::CreateNumber(identifier_t id, std::string text, home::VisualUnits unit, double_t min, double_t max)
+	Ref<Field> Field::CreateNumber(identifier_t id, std::string text, home::VisualUnit unit, double_t min, double_t max)
 	{
 		class NumberField : public Field
 		{
 		public:
 			double_t value;
-			NumberField(identifier_t id, std::string text, home::VisualUnits unit, double_t min, double_t max)
+			NumberField(identifier_t id, std::string text, home::VisualUnit unit, double_t min, double_t max)
 				: Field(home::Visuals::CreateNumberModifier(id, text, unit, min, max))
 			{ };
 			virtual double_t GetNumber() override { return value; }
@@ -91,13 +91,13 @@ namespace scripting
 		};
 		return boost::make_shared<NumberField>(id, text, unit, min, max);
 	}
-	Ref<Field> Field::CreateString(identifier_t id, std::string text, home::VisualUnits unit)
+	Ref<Field> Field::CreateString(identifier_t id, std::string text, home::VisualUnit unit)
 	{
 		class TextField : public Field
 		{
 		public:
 			std::string value;
-			TextField(identifier_t id, std::string text, home::VisualUnits unit)
+			TextField(identifier_t id, std::string text, home::VisualUnit unit)
 				: Field(home::Visuals::CreateStringModifier(id, text, unit))
 			{ };
 			virtual std::string GetString() override { return value; }

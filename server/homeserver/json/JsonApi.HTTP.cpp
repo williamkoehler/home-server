@@ -1,14 +1,14 @@
-#include "JsonApi.h"
-#include "../home/Home.h"
-#include "../home/DeviceManager.h"
-#include "../home/Room.h"
-#include "../home/Device.h"
-#include "../user/UserManager.h"
-#include "../user/User.h"
-#include <Script.h>
-#include "../io/DynamicResources.h"
+#include "JsonApi.hpp"
+#include "../home/Home.hpp"
+#include "../home/DeviceManager.hpp"
+#include "../home/Room.hpp"
+#include "../home/Device.hpp"
+#include "../user/UserManager.hpp"
+#include "../user/User.hpp"
+#include <Script.hpp>
+#include "../io/DynamicResources.hpp"
 
-#include "../dependencies/stbi.h"
+#include "../dependencies/stbi.hpp"
 
 namespace server
 {

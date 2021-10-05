@@ -1,6 +1,6 @@
-#include "UserManager.h"
-#include "User.h"
-#include "../Core.h"
+#include "UserManager.hpp"
+#include "User.hpp"
+#include "../Core.hpp"
 #include <openssl/rand.h>
 #include <cppcodec/base64_rfc4648.hpp>
 

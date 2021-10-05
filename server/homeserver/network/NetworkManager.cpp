@@ -1,8 +1,8 @@
-#include "NetworkManager.h"
-#include "../io/WebPageFiles.h"
-#include "BeaconListener.h"
-#include "HTTPSession.h"
-#include "WSSession.h"
+#include "NetworkManager.hpp"
+#include "../io/WebPageFiles.hpp"
+#include "BeaconListener.hpp"
+#include "HTTPSession.hpp"
+#include "WSSession.hpp"
 
 namespace server
 {
@@ -36,14 +36,14 @@ namespace server
 		networkManager->context->use_certificate_file("ssl-cert.pem", boost::asio::ssl::context::file_format::pem, ec);
 		if (ec)
 		{
-			LOG_ERROR("Load certificate from 'ssl-cert.pem'");
+			LOG_ERROR("Load certificate from 'ssl-cert.pem' -> '{0}'", ec.message());
 			return nullptr;
 		}
 
 		networkManager->context->use_private_key_file("ssl-key.pem", boost::asio::ssl::context::file_format::pem, ec);
 		if (ec)
 		{
-			LOG_ERROR("Load private key from 'ssl-key.pem'");
+			LOG_ERROR("Load private key from 'ssl-key.pem' -> '{0}'", ec.message());
 			return nullptr;
 		}
 
@@ -52,7 +52,7 @@ namespace server
 		boost::asio::ip::address addr = boost::asio::ip::make_address(address, ec);
 		if (ec)
 		{
-			LOG_ERROR("Invalid address '{0}'", address);
+			LOG_ERROR("Invalid address '{0}' -> '{1}'", address, ec.message());
 			return nullptr;
 		}
 
@@ -61,28 +61,28 @@ namespace server
 		networkManager->server->open(endpoint.protocol(), ec);
 		if (ec)
 		{
-			LOG_ERROR("Open web server");
+			LOG_ERROR("Open web server -> '{0}'", ec.message());
 			return nullptr;
 		}
 
 		networkManager->server->set_option(boost::asio::ip::tcp::socket::reuse_address(true), ec);
 		if (ec)
 		{
-			LOG_ERROR("Set web server options");
+			LOG_ERROR("Set web server options -> '{0}'", ec.message());
 			return nullptr;
 		}
 
 		networkManager->server->bind(endpoint, ec);
 		if (ec)
 		{
-			LOG_ERROR("Bind web server");
+			LOG_ERROR("Bind web server -> '{0}'", ec.message());
 			return nullptr;
 		}
 
 		networkManager->server->listen(boost::asio::ip::tcp::socket::max_listen_connections, ec);
 		if (ec)
 		{
-			LOG_ERROR("Make web server listen on port {0}", port);
+			LOG_ERROR("Make web server listen on port {0} -> '{1}'", port, ec.message());
 			return nullptr;
 		}
 

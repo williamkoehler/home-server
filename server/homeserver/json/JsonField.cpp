@@ -1,4 +1,4 @@
-#include "JsonField.h"
+#include "JsonField.hpp"
 
 namespace server
 {
@@ -7,7 +7,7 @@ namespace server
 	{
 	}
 	JsonWriteableField::JsonWriteableField(identifier_t id, rapidjson::Value& value, rapidjson::Document::AllocatorType& allocator)
-		: id(id), value(value), type(home::FieldTypes::kUnknownFieldType), allocator(allocator)
+		: id(id), value(value), type(home::FieldType::kUnknownFieldType), allocator(allocator)
 	{
 	}
 
@@ -23,7 +23,7 @@ namespace server
 	}
 	void JsonWriteableField::SetBool(bool v)
 	{
-		type = home::FieldTypes::kBooleanFieldType;
+		type = home::FieldType::kBooleanFieldType;
 		value.SetBool(v);
 	}
 
@@ -39,7 +39,7 @@ namespace server
 	}
 	void JsonWriteableField::SetInt8(int8_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 	bool JsonReadableField::GetUInt8(uint8_t& v)
@@ -54,7 +54,7 @@ namespace server
 	}
 	void JsonWriteableField::SetUInt8(uint8_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 
@@ -70,7 +70,7 @@ namespace server
 	}
 	void JsonWriteableField::SetInt16(int16_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 	bool JsonReadableField::GetUInt16(uint16_t& v)
@@ -85,7 +85,7 @@ namespace server
 	}
 	void JsonWriteableField::SetUInt16(uint16_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 
@@ -101,7 +101,7 @@ namespace server
 	}
 	void JsonWriteableField::SetInt32(int32_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 	bool JsonReadableField::GetUInt32(uint32_t& v)
@@ -116,7 +116,7 @@ namespace server
 	}
 	void JsonWriteableField::SetUInt32(uint32_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 
@@ -132,7 +132,7 @@ namespace server
 	}
 	void JsonWriteableField::SetInt64(int64_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(v);
 	}
 	bool JsonReadableField::GetUInt64(uint64_t& v)
@@ -147,7 +147,7 @@ namespace server
 	}
 	void JsonWriteableField::SetUInt64(uint64_t v)
 	{
-		type = home::FieldTypes::kIntegerFieldType;
+		type = home::FieldType::kIntegerFieldType;
 		value.SetInt64(static_cast<int64_t>(v));
 	}
 
@@ -163,7 +163,7 @@ namespace server
 	}
 	void JsonWriteableField::SetFloat(float_t v)
 	{
-		type = home::FieldTypes::kNumberFieldType;
+		type = home::FieldType::kNumberFieldType;
 
 		value.SetFloat(v);
 	}
@@ -180,7 +180,7 @@ namespace server
 	}
 	void JsonWriteableField::SetDouble(double_t v)
 	{
-		type = home::FieldTypes::kNumberFieldType;
+		type = home::FieldType::kNumberFieldType;
 		value.SetDouble(v);
 	}
 
@@ -196,7 +196,7 @@ namespace server
 	}
 	void JsonWriteableField::SetString(std::string v)
 	{
-		type = home::FieldTypes::kStringFieldType;
+		type = home::FieldType::kStringFieldType;
 		value.SetString(v.c_str(), v.size(), allocator);
 	}
 
@@ -220,7 +220,7 @@ namespace server
 	}
 	void JsonWriteableField::SetEndpoint(home::Endpoint endpoint)
 	{
-		type = home::FieldTypes::kEndpointFieldType;
+		type = home::FieldType::kEndpointFieldType;
 
 		std::string v = endpoint.host;
 		v += ":";
@@ -229,7 +229,7 @@ namespace server
 	}
 	void JsonWriteableField::SetEndpoint(std::string host, uint16_t port)
 	{
-		type = home::FieldTypes::kEndpointFieldType;
+		type = home::FieldType::kEndpointFieldType;
 
 		std::string v = host;
 		v += ":";
@@ -258,7 +258,7 @@ namespace server
 	}
 	void JsonWriteableField::SetColor(home::Color color)
 	{
-		type = home::FieldTypes::kColorFieldType;
+		type = home::FieldType::kColorFieldType;
 
 		std::string v;
 		v += std::to_string(color.red);
@@ -271,7 +271,7 @@ namespace server
 	}
 	void JsonWriteableField::SetColor(uint8_t red, uint8_t green, uint8_t blue)
 	{
-		type = home::FieldTypes::kColorFieldType;
+		type = home::FieldType::kColorFieldType;
 
 		std::string v;
 		v += std::to_string(red);
@@ -284,7 +284,7 @@ namespace server
 	}
 	void JsonWriteableField::SetColor(float_t red, float_t green, float_t blue)
 	{
-		type = home::FieldTypes::kColorFieldType;
+		type = home::FieldType::kColorFieldType;
 
 		std::string v;
 		v += std::to_string(static_cast<uint8_t>(red * 255.0f));

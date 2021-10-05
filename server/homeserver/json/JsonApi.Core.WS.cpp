@@ -1,13 +1,13 @@
-#include "JsonApi.h"
-#include "../Core.h"
-#include "JsonField.h"
-#include "../tools/EMail.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
+#include "JsonField.hpp"
+#include "../tools/EMail.hpp"
 
-#include "../plugin/PluginManager.h"
-#include "../scripting/DraftManager.h"
-#include "../home/Home.h"
-#include "../user/UserManager.h"
-#include "../user/User.h"
+#include "../plugin/PluginManager.hpp"
+#include "../scripting/ScriptManager.hpp"
+#include "../home/Home.hpp"
+#include "../user/UserManager.hpp"
+#include "../user/User.hpp"
 
 namespace server
 {
@@ -34,8 +34,8 @@ namespace server
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
 		assert(pluginManager != nullptr);
 
-		Ref<scripting::DraftManager> draftManager = scripting::DraftManager::GetInstance();
-		assert(draftManager != nullptr);
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+		assert(scriptManager != nullptr);
 
 		Ref<Home> home = Home::GetInstance();
 		assert(home != nullptr);
@@ -44,7 +44,7 @@ namespace server
 		assert(userManager != nullptr);
 
 		output.AddMember("plugins", rapidjson::Value(pluginManager->timestamp), allocator);
-		output.AddMember("drafts", rapidjson::Value(draftManager->timestamp), allocator);
+		output.AddMember("scripts", rapidjson::Value(scriptManager->timestamp), allocator);
 		output.AddMember("home", rapidjson::Value(home->timestamp), allocator);
 		output.AddMember("users", rapidjson::Value(userManager->timestamp), allocator);
 

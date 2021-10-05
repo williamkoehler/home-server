@@ -1,28 +1,28 @@
-#include "JsonApi.h"
-#include "../Core.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
 
-#include "../scripting/DraftManager.h"
-#include "../scripting/DraftSource.h"
-#include "../scripting/Draft.h"
+#include "../scripting/ScriptManager.hpp"
+#include "../scripting/ScriptSource.hpp"
+#include "../scripting/Script.hpp"
 
-#include "../user/UserManager.h"
-#include "../user/User.h"
+#include "../user/UserManager.hpp"
+#include "../user/User.hpp"
 
 namespace server
 {
-	void JsonApi::ProcessJsonGetDraftSourcesMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonGetScriptSourcesMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(input.IsObject() && output.IsObject());
 
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		BuildJsonDraftSources(output, allocator);
+		BuildJsonScriptSources(output, allocator);
 
 		BuildJsonAckMessageWS(output);
 	}
 
-	void JsonApi::ProcessJsonAddDraftSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonAddScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
@@ -45,10 +45,10 @@ namespace server
 			return;
 		}
 
-		scripting::DraftLanguages language = scripting::DraftLanguageFromString(std::string(langIt->value.GetString(), langIt->value.GetStringLength()));
-		if (language == scripting::DraftLanguages::kUnknownDraftLanguage)
+		scripting::ScriptLanguage language = scripting::ScriptLanguageFromString(std::string(langIt->value.GetString(), langIt->value.GetStringLength()));
+		if (language == scripting::ScriptLanguage::kUnknownScriptLanguage)
 		{
-			context.Error("Invalid draft language");
+			context.Error("Invalid script language");
 			BuildJsonNAckMessageWS(output);
 			return;
 		}
@@ -56,11 +56,11 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> draftManager = scripting::DraftManager::GetInstance();
-		assert(draftManager != nullptr);
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+		assert(scriptManager != nullptr);
 
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
-		Ref<scripting::DraftSource> source = draftManager->AddSource(nameIt->value.GetString(), 0, language, nullptr, 0);
+		Ref<scripting::ScriptSource> source = scriptManager->AddSource(nameIt->value.GetString(), 0, language, nullptr, 0);
 		if (source == nullptr)
 		{
 			context.Error("Add source");
@@ -68,11 +68,11 @@ namespace server
 			return;
 		}
 
-		BuildJsonDraftSource(source, output, allocator);
+		BuildJsonScriptSource(source, output, allocator);
 
 		BuildJsonAckMessageWS(output);
 	}
-	void JsonApi::ProcessJsonRemoveDraftSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonRemoveScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
@@ -96,12 +96,12 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> draftManager = scripting::DraftManager::GetInstance();
-		assert(draftManager != nullptr);
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+		assert(scriptManager != nullptr);
 
 		try
 		{
-			draftManager->RemoveSource(sourceIDIt->value.GetUint());
+			scriptManager->RemoveSource(sourceIDIt->value.GetUint());
 		}
 		catch (std::exception)
 		{
@@ -113,7 +113,7 @@ namespace server
 		BuildJsonAckMessageWS(output);
 	}
 
-	void JsonApi::ProcessJsonGetDraftSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonGetScriptSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(input.IsObject() && output.IsObject());
 
@@ -129,10 +129,10 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> scriptManager = scripting::DraftManager::GetInstance();
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
 		assert(scriptManager != nullptr);
 
-		Ref<scripting::DraftSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
+		Ref<scripting::ScriptSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
 		if (source == nullptr)
 		{
 			context.Error("Invalid id");
@@ -141,11 +141,11 @@ namespace server
 		}
 
 		// Build script source
-		BuildJsonDraftSource(source, output, allocator);
+		BuildJsonScriptSource(source, output, allocator);
 		
 		BuildJsonAckMessageWS(output);
 	}
-	void JsonApi::ProcessJsonSetDraftSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonSetScriptSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(input.IsObject() && output.IsObject());
 
@@ -161,10 +161,10 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> scriptManager = scripting::DraftManager::GetInstance();
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
 		assert(scriptManager != nullptr);
 
-		Ref<scripting::DraftSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
+		Ref<scripting::ScriptSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
 		if (source == nullptr)
 		{
 			context.Error("Invalid id");
@@ -173,12 +173,12 @@ namespace server
 		}
 
 		// Decode script source
-		DecodeJsonDraftSource(source, input);
+		DecodeJsonScriptSource(source, input);
 
 		BuildJsonAckMessageWS(output);
 	}
 
-	void JsonApi::ProcessJsonGetDraftSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonGetScriptSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
@@ -202,10 +202,10 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> scriptManager = scripting::DraftManager::GetInstance();
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
 		assert(scriptManager != nullptr);
 
-		Ref<scripting::DraftSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
+		Ref<scripting::ScriptSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
 		if (source == nullptr)
 		{
 			context.Error("Invalid id");
@@ -214,11 +214,11 @@ namespace server
 		}
 
 		// Build script source
-		BuildJsonDraftSourceContent(source, output, allocator);
+		BuildJsonScriptSourceContent(source, output, allocator);
 
 		BuildJsonAckMessageWS(output);
 	}
-	void JsonApi::ProcessJsonSetDraftSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
+	void JsonApi::ProcessJsonSetScriptSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ExecutionContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
@@ -242,10 +242,10 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		Ref<scripting::DraftManager> scriptManager = scripting::DraftManager::GetInstance();
+		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
 		assert(scriptManager != nullptr);
 
-		Ref<scripting::DraftSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
+		Ref<scripting::ScriptSource> source = scriptManager->GetSource(sourceIDIt->value.GetUint());
 		if (source == nullptr)
 		{
 			context.Error("Invalid id");
@@ -254,7 +254,7 @@ namespace server
 		}
 
 		// Decode script source
-		DecodeJsonDraftSourceContent(source, input);
+		DecodeJsonScriptSourceContent(source, input);
 
 		BuildJsonAckMessageWS(output);
 	}

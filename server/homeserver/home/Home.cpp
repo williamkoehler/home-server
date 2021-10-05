@@ -1,14 +1,14 @@
-#include "Home.h"
-#include "../Core.h"
-#include "Room.h"
-#include "Device.h"
-#include "DeviceManager.h"
-#include "Action.h"
-#include "../signal/SignalManager.h"
-#include "../plugin/PluginManager.h"
+#include "Home.hpp"
+#include "../Core.hpp"
+#include "Room.hpp"
+#include "Device.hpp"
+#include "DeviceManager.hpp"
+#include "Action.hpp"
+#include "../signal/SignalManager.hpp"
+#include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
-#include "../network/NetworkManager.h"
-#include "../json/JsonApi.h"
+#include "../network/NetworkManager.hpp"
+#include "../json/JsonApi.hpp"
 
 namespace server
 {
@@ -52,14 +52,14 @@ namespace server
 		return Ref<Home>(instanceHome);
 	}
 
-	//Timestamp
+	//! Timestamp
 	void Home::UpdateTimestamp()
 	{
 		const time_t ts = time(nullptr);
 		timestamp = ts;
 	}
 
-	//Room
+	//! Room
 	Ref<Room> Home::AddRoom(std::string name, uint32_t roomID, uint16_t type, rapidjson::Value& json)
 	{
 		uint32_t genID = roomID ? roomID : XXH32(name.c_str(), name.size(), 0x524F4F4D);
@@ -207,7 +207,7 @@ namespace server
 		deviceUpdateList.push_back(device);
 	}
 
-	//DeviceManager
+	//! DeviceManager
 	Ref<DeviceManager> Home::AddDeviceManager(std::string name, uint32_t managerID, uint32_t scriptID, rapidjson::Value& json)
 	{
 		uint32_t genID = managerID ? managerID : XXH32(name.c_str(), name.size(), 0x444D414E);
@@ -282,7 +282,7 @@ namespace server
 		deviceManagerUpdateList.push_back(deviceManager);
 	}
 
-	//Action
+	//! Action
 	Ref<Action> Home::AddAction(std::string name, uint32_t actionID, uint32_t sourceID, rapidjson::Value& json)
 	{
 		uint32_t genID = actionID ? actionID : XXH32(name.c_str(), name.size(), 0x41435449);
@@ -414,7 +414,7 @@ namespace server
 		}
 	}
 
-	//IO
+	//! IO
 	void Home::Load()
 	{
 		LOG_INFO("Loading home information from 'home-info.json'");

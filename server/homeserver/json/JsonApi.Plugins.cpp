@@ -1,11 +1,11 @@
-#include "JsonApi.h"
-#include "../Core.h"
+#include "JsonApi.hpp"
+#include "../Core.hpp"
 
-#include "../plugin/PluginManager.h"
-#include <Plugin.h>
-#include <Script.h>
-#include <home/DeviceScript.h>
-#include <home/DeviceManagerScript.h>
+#include "../plugin/PluginManager.hpp"
+#include <Plugin.hpp>
+#include <Script.hpp>
+#include <home/DeviceScript.hpp>
+#include <home/DeviceManagerScript.hpp>
 
 namespace server
 {

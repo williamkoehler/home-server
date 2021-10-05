@@ -1,9 +1,9 @@
-#include "Device.h"
-#include "../plugin/PluginManager.h"
+#include "Device.hpp"
+#include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
-#include "DeviceManager.h"
-#include "../signal/SignalManager.h"
-#include "../json/JsonField.h"
+#include "DeviceManager.hpp"
+#include "../signal/SignalManager.hpp"
+#include "../json/JsonField.hpp"
 
 namespace server
 {

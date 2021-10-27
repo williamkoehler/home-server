@@ -1,8 +1,6 @@
 #pragma once
 #include "../common.hpp"
 
-typedef size_t identifier_t;
-
 namespace home
 {
 	struct Endpoint

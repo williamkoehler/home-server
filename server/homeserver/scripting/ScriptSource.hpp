@@ -1,14 +1,23 @@
 #pragma once
 #include "../common.hpp"
-#include "ScriptManager.hpp"
 
 namespace server
 {
 	class JsonApi;
-}
 
-namespace scripting
-{
+	enum class ScriptUsage
+	{
+		KUnknownUsage,
+		kForActionUsage,
+	};
+
+	enum class ScriptLanguage
+	{
+		kUnknownScriptLanguage,
+		kNativeScriptLanguage,
+		kJSScriptLanguage
+	};
+
 	class ScriptSource : public boost::enable_shared_from_this<ScriptSource>
 	{
 	private:
@@ -17,41 +26,43 @@ namespace scripting
 		boost::shared_mutex mutex;
 
 		std::string name;
-		const uint32_t sourceID;
-		const ScriptLanguage language;
+		const identifier_t sourceID;
 
-		uint8_t* data;
-		size_t length;
+		const ScriptUsage usage;
+		const ScriptLanguage language;
+		std::string data;
 
 	public:
-		ScriptSource(std::string name, uint32_t sourceID, ScriptLanguage language);
+		ScriptSource(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language);
 		~ScriptSource();
-		static Ref<ScriptSource> Create(std::string name, uint32_t sourceID, ScriptLanguage language);
+		static Ref<ScriptSource> Create(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language);
 
-		void Lock() { mutex.lock_shared(); }
-		void Unlock() { mutex.unlock_shared(); }
-
-		std::string GetName()
+		inline std::string GetName()
 		{
 			boost::shared_lock_guard lock(mutex);
 			return name;
 		}
-		void SetName(std::string v)
+		inline void SetName(const std::string& v)
 		{
 			boost::lock_guard lock(mutex);
-			name = std::move(v);
+			name = v;
 		}
 
-		uint32_t GetSourceID() { return sourceID; }
+		inline identifier_t GetSourceID() { return sourceID; }
 
-		ScriptLanguage GetLanguage() { return language; }
+		inline ScriptUsage GetUsage() { return usage; }
 
-		uint8_t* GetData() { return data; }
-		size_t GetLength() { return length; }
+		inline ScriptLanguage GetLanguage() { return language; };
 
-		void Update(uint8_t* data, size_t length);
-
-		//IO
-		void Save(rapidjson::Value& json, rapidjson::Document::AllocatorType& allocator);
+		inline std::string GetData()
+		{
+			boost::shared_lock_guard lock(mutex);
+			return data;
+		}
+		inline void SetData(const std::string& v)
+		{
+			boost::lock_guard lock(mutex);
+			data = v;
+		}
 	};
 }

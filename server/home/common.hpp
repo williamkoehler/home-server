@@ -3,6 +3,8 @@
 #include <string>
 #include <ostream>
 
+typedef int64_t identifier_t;
+
 #include "Log.hpp"
 
 //Dependencies
@@ -17,6 +19,13 @@
 #define RAPIDJSON_BUFFER_SIZE_SMALL 1000
 #define RAPIDJSON_BUFFER_SIZE_MEDIUM 50000
 #define RAPIDJSON_BUFFER_SIZE_LARGE 100000
+
+// C runtime extension
+namespace rapidjson
+{
+	typedef GenericDocument<UTF8<>, CrtAllocator> CrtDocument;
+	typedef GenericValue<UTF8<>, CrtAllocator> CrtValue;
+}
 
 //HASH
 #include <xxHash/xxhash.h>

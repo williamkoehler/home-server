@@ -22,7 +22,7 @@ namespace server
 
 		void OnRead(boost::system::error_code error, size_t receivedBytes);
 
-		bool ProcessJsonApi(size_t id, const char* msg, rapidjson::Document& input, rapidjson::Document& output);
+		bool ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input, rapidjson::Document& output);
 
 		void OnWrite(boost::system::error_code error, size_t sentBytes, Ref<rapidjson::StringBuffer> message);
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "../common.hpp"
 #include "../home/Home.hpp"
-#include "../home/DeviceManager.hpp"
+#include "../home/DeviceController.hpp"
 #include "../home/Device.hpp"
 
 namespace home
@@ -11,18 +11,18 @@ namespace home
 	public:
 		//Script
 		template<class T>
-		static bool FindDeviceManager(const Ref<Home>& home, uint32_t managerID, Ref<DeviceManager>& manager, Ref<T>& script);
+		static bool FindDeviceController(const Ref<Home>& home, identifier_t managerID, Ref<DeviceController>& manager, Ref<T>& script);
 		template<class T>
-		static bool FindDevice(const Ref<Home>& home, uint32_t deviceID, Ref<Device>& device, Ref<T>& script);
+		static bool FindDevice(const Ref<Home>& home, identifier_t deviceID, Ref<Device>& device, Ref<T>& script);
 	};
 
 	template<class T>
-	inline bool Helper::FindDeviceManager(const Ref<Home>& home, uint32_t managerID, Ref<DeviceManager>& manager, Ref<T>& script)
+	inline bool Helper::FindDeviceController(const Ref<Home>& home, identifier_t managerID, Ref<DeviceController>& manager, Ref<T>& script)
 	{
 		manager = nullptr;
 		script = nullptr;
 
-		Ref<DeviceManager> m = home->GetDeviceManager(managerID);
+		Ref<DeviceController> m = home->GetDeviceController(managerID);
 		if (m == nullptr)
 			return false;
 
@@ -40,7 +40,7 @@ namespace home
 		return true;
 	}
 	template<class T>
-	inline bool Helper::FindDevice(const Ref<Home>& home, uint32_t deviceID, Ref<Device>& device, Ref<T>& script)
+	inline bool Helper::FindDevice(const Ref<Home>& home, identifier_t deviceID, Ref<Device>& device, Ref<T>& script)
 	{
 		device = nullptr;
 		script = nullptr;

@@ -16,6 +16,7 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lockfree/queue.hpp>
+#include <boost/circular_buffer.hpp>
 
 //Threading
 #include <boost/atomic.hpp>

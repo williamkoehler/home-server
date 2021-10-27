@@ -1,56 +1,19 @@
 #pragma once
 #include "../common.hpp"
-#include <home/Home.hpp>
+#include "ScriptSource.hpp"
 
 namespace server
 {
 	class JsonApi;
-}
 
-namespace scripting
-{
-	class ScriptSource;
-
-	// namespace lua
-	// {
-	// 	class LuaEngine;
-	// }
-
-	enum class ScriptLanguage
-	{
-		kUnknownScriptLanguage = 0,
-		kJSScriptLanguage,
-	};
-
-	// Get script language enum from name
-	// lua -> scriptLanguages::kLuascriptLanguage
-	ScriptLanguage ScriptLanguageFromString(std::string lang);
-
-	// Get name from script language enum
-	// scriptLanguages::kLuascriptLanguage -> lua
-	std::string ScriptLanguageToString(ScriptLanguage language);
-
-	std::string ScriptExtFromScriptLanguage(ScriptLanguage language);
-
-	// Script manager for actions etc...
-	// Does not manage plugin scripts
-	// > Very important
-	class ScriptManager : public boost::enable_shared_from_this<ScriptManager>
+	class ScriptManager
 	{
 	private:
-		friend class server::JsonApi;
+		friend class JsonApi;
 
 		boost::shared_mutex mutex;
 
-		boost::atomic<time_t> timestamp = 0;
-
-		// Ref<script::lua::LuaEngine> luaEngine;
-
-		// Unordered map containing all loaded/unloaded scripts
-		boost::unordered::unordered_map<uint32_t, Ref<ScriptSource>> scriptSourceList;
-
-		// IO
-		void Load();
+		boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>> scriptSourceList;
 
 	public:
 		ScriptManager();
@@ -58,26 +21,30 @@ namespace scripting
 		static Ref<ScriptManager> Create();
 		static Ref<ScriptManager> GetInstance();
 
-		//Timestamp
-		void UpdateTimestamp();
-		inline time_t GetLastTimestamp()
-		{
-			return timestamp;
-		}
+		//! Script Source
 
-		// Script source
-		Ref<ScriptSource> AddSource(std::string name, uint32_t sourceID, ScriptLanguage language, uint8_t* data, size_t length);
+		/// @brief Add script source
+		/// @param name Script source name
+		/// @param sourceID Script source id
+		/// @param json JSON
+		/// @return 
+		Ref<ScriptSource> AddScriptSource(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language);
 
-		virtual inline size_t GetSourceCount()
+		/// @brief Get script source count
+		/// @return Script source count
+		inline size_t GetScriptSourceCount()
 		{
 			boost::shared_lock_guard lock(mutex);
 			return scriptSourceList.size();
 		}
-		virtual Ref<ScriptSource> GetSource(uint32_t sourceID);
 
-		void RemoveSource(uint32_t sourceID);
+		/// @brief Get device using device id
+		/// @param deviceID Device id
+		/// @return Device or nullptr
+		Ref<ScriptSource> GetScriptSource(identifier_t sourceID);
 
-		//IO
-		void Save();
+		/// @brief Remove script source using source id
+		/// @param sourceID Script source id
+		bool RemoveScriptSource(identifier_t sourceID);
 	};
 }

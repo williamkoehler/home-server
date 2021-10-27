@@ -1,7 +1,7 @@
 #include "WSSession.hpp"
 #include "../Core.hpp"
 #include "NetworkManager.hpp"
-#include "../json/JsonApi.hpp"
+#include "json/JsonApi.hpp"
 #include "../home/Home.hpp"
 #include "../home/Room.hpp"
 #include "../home/Device.hpp"
@@ -22,9 +22,9 @@ namespace server
 		socket->set_option(
 			boost::beast::websocket::stream_base::decorator(
 				[](boost::beast::websocket::response_type& response) -> void
-				{
-					response.set(boost::beast::http::field::server, Core::GetInstance()->GetName());
-				}
+		{
+			response.set(boost::beast::http::field::server, Core::GetInstance()->GetName());
+		}
 			)
 		);
 		socket->async_accept(request, boost::asio::bind_executor(strand, boost::bind(&WSSession::OnAccept, shared_from_this(), boost::placeholders::_1)));
@@ -91,204 +91,75 @@ namespace server
 
 		rapidjson::Document responseDocument = rapidjson::Document(rapidjson::kObjectType);
 
-		if (ProcessJsonApi(messageIDIt->value.GetUint64(), messageIt->value.GetString(), requestDocument, responseDocument))
+		if (ProcessJsonApi(messageIDIt->value.GetUint64(), std::string(messageIt->value.GetString(), messageIt->value.GetStringLength()), requestDocument, responseDocument))
 			Send(responseDocument);
 
 		//Wait for data
 		socket->async_read(buffer, boost::asio::bind_executor(strand, boost::bind(&WSSession::OnRead, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2)));
 	}
 
-	bool WSSession::ProcessJsonApi(size_t id, const char* msg, rapidjson::Document& input, rapidjson::Document& output)
+	typedef void(WSMethod)(const Ref<User>&, rapidjson::Document&, rapidjson::Document&, ApiContext&);
+	static const boost::unordered::unordered_map<std::string, WSMethod*> methodList = {
+		// Settings
+		{ "get-settings", JsonApi::ProcessJsonGetSettingsMessageWS },
+		{ "set-settings", JsonApi::ProcessJsonSetSettingsMessageWS },
+
+		// Misc
+		{ "get-changes", JsonApi::ProcessJsonGetTimestampsMessageWS },
+
+		// User
+		{ "get-users", JsonApi::ProcessJsonGetUsersMessageWS },
+
+		// Home
+		{ "get-home", JsonApi::ProcessJsonGetHomeMessageWS },
+		{ "set-home", JsonApi::ProcessJsonSetHomeMessageWS },
+
+		// Room
+		{ "add-room", JsonApi::ProcessJsonAddRoomMessageWS },
+
+		{ "get-room", JsonApi::ProcessJsonGetRoomMessageWS },
+		{ "set-room", JsonApi::ProcessJsonSetRoomMessageWS },
+
+		{ "rem-room", JsonApi::ProcessJsonRemoveRoomMessageWS },
+
+		// Device
+		{ "add-device", JsonApi::ProcessJsonAddDeviceMessageWS },
+
+		{ "get-device", JsonApi::ProcessJsonGetDeviceMessageWS },
+		{ "get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS },
+		{ "get-devices?state", JsonApi::ProcessJsonGetDeviceStatesMessageWS },
+
+		{ "set-device", JsonApi::ProcessJsonSetDeviceMessageWS },
+		{ "set-device?state", JsonApi::ProcessJsonSetDeviceStateMessageWS },
+
+		{ "rem-device", JsonApi::ProcessJsonRemoveDeviceMessageWS },
+
+		// DeviceController
+		{ "add-devicecontroller", JsonApi::ProcessJsonAddDeviceControllerMessageWS },
+
+		{ "get-devicecontroller", JsonApi::ProcessJsonGetDeviceControllerMessageWS },
+		{ "get-devicecontroller?state", JsonApi::ProcessJsonGetDeviceControllerStateMessageWS },
+		{ "get-devicecontrollers?state", JsonApi::ProcessJsonGetDeviceControllerStatesMessageWS },
+
+		{ "set-devicecontroller", JsonApi::ProcessJsonSetDeviceControllerMessageWS },
+		{ "set-devicecontroller?state", JsonApi::ProcessJsonSetDeviceControllerStateMessageWS },
+
+		{ "rem-devicecontroller", JsonApi::ProcessJsonRemoveDeviceControllerMessageWS },
+	};
+
+	bool WSSession::ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input, rapidjson::Document& output)
 	{
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		rapidjson::Value errorsJson;
 		errorsJson.SetArray();
 
-		ExecutionContext context(errorsJson, allocator);
+		ApiContext context(errorsJson, allocator);
 
-		if (strncmp(msg, "get-", 4) == 0)
-		{
-			msg += 4;
-			if (strncmp(msg, "device", 6) == 0)
-			{
-				msg += 6;
-				if (strncmp(msg, "?state", 6) == 0) // get-device?state
-					JsonApi::ProcessJsonGetDeviceStateMessageWS(input, output, context);
-				else if (strncmp(msg, "s?state", 7) == 0) // get-devices?state
-					JsonApi::ProcessJsonGetDeviceStatesMessageWS(input, output, context);
-				else if (strncmp(msg, "?info", 5) == 0) // get-device?info
-					JsonApi::ProcessJsonGetDeviceMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "devicemanager", 13) == 0)
-			{
-				msg += 13;
-				if (strncmp(msg, "?state", 6) == 0) // get-devicemanager?state
-					JsonApi::ProcessJsonGetDeviceManagerStateMessageWS(input, output, context);
-				else if (strncmp(msg, "s?state", 7) == 0) // get-devicemanagers?state
-					JsonApi::ProcessJsonGetDeviceManagerStatesMessageWS(input, output, context);
-				else if (strncmp(msg, "?info", 5) == 0) // get-devicemanager?info
-					JsonApi::ProcessJsonGetDeviceManagerMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "action", 6) == 0)
-			{
-				msg += 6;
-				if (strncmp(msg, "?state", 6) == 0) // get-action?state
-					JsonApi::ProcessJsonGetActionStateMessageWS(input, output, context);
-				else if (strncmp(msg, "s?state", 7) == 0) // get-actions?state
-					JsonApi::ProcessJsonGetDeviceStatesMessageWS(input, output, context); // Todo
-				else if (strncmp(msg, "?info", 5) == 0) // get-action?info
-					JsonApi::ProcessJsonGetActionMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "script", 5) == 0)
-			{
-				msg += 5;
-				if (strncmp(msg, "?info", 5) == 0) // get-script?info
-					JsonApi::ProcessJsonGetScriptSourceMessageWS(input, output, context);
-				else if (strncmp(msg, "?content", 4) == 0) // get-script?content
-					JsonApi::ProcessJsonGetScriptSourceContentMessageWS(user, input, output, context); // Todo
-				else if (strncmp(msg, "s?info", 4) == 0) // get-scripts?info
-					JsonApi::ProcessJsonGetScriptSourcesMessageWS(input, output, context); // Todo
-				else
-					return false;
-			}
-			else if (strncmp(msg, "home?info", 9) == 0) // get-home?info
-				JsonApi::ProcessJsonGetHomeMessageWS(input, output, context);
-			else if (strncmp(msg, "room?info", 9) == 0) // get-room?info
-				JsonApi::ProcessJsonGetRoomMessageWS(input, output, context);
-			else if (strncmp(msg, "users?info", 10) == 0) // get-users?info
-				JsonApi::ProcessJsonGetUsersMessageWS(input, output, context);
-			else if (strncmp(msg, "plugins?info", 12) == 0) // get-plugins?info
-				JsonApi::ProcessJsonGetPluginsMessageWS(input, output, context);
-			else if (strncmp(msg, "settings?info", 13) == 0) // get-settings?info
-				JsonApi::ProcessJsonGetSettingsMessageWS(user, input, output, context);
-			else if (strncmp(msg, "changes?info", 12) == 0) // get-changes?info
-				JsonApi::ProcessJsonGetTimestampsMessageWS(input, output, context);
-			else
-				return false;
-		}
-		else if (strncmp(msg, "set-", 4) == 0)
-		{
-			msg += 4;
-			if (strncmp(msg, "home?info", 9) == 0) // set-home?info
-				JsonApi::ProcessJsonSetHomeMessageWS(input, output, context);
-			else if (strncmp(msg, "room?info", 9) == 0) // set-room?info
-				JsonApi::ProcessJsonSetRoomMessageWS(input, output, context);
-			else if (strncmp(msg, "device", 6) == 0)
-			{
-				msg += 6;
-				if (strncmp(msg, "?state", 6) == 0) // set-device?state
-					JsonApi::ProcessJsonSetDeviceStateMessageWS(input, output, context);
-				else if (strncmp(msg, "?info", 5) == 0) // get-device?info
-					JsonApi::ProcessJsonSetDeviceMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "devicemanager", 13) == 0)
-			{
-				msg += 13;
-				if (strncmp(msg, "?state", 6) == 0) // set-devicemanager?state
-					JsonApi::ProcessJsonSetDeviceManagerStateMessageWS(input, output, context);
-				else if (strncmp(msg, "?info", 5) == 0) // get-devicemanager?info
-					JsonApi::ProcessJsonSetDeviceManagerMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "action", 6) == 0)
-			{
-				msg += 6;
-				if (strncmp(msg, "?state", 6) == 0) // set-action?state
-					JsonApi::ProcessJsonSetActionStateMessageWS(input, output, context);
-				else if (strncmp(msg, "?info", 5) == 0) // get-action?info
-					JsonApi::ProcessJsonSetActionMessageWS(input, output, context);
-				else
-					return false;
-			}
-			else if (strncmp(msg, "script", 5) == 0)
-			{
-				msg += 5;
-				if (strncmp(msg, "?info", 5) == 0) // set-script?info
-					JsonApi::ProcessJsonSetScriptSourceMessageWS(input, output, context);
-				else if (strncmp(msg, "?content", 4) == 0) // set-script?content
-					JsonApi::ProcessJsonSetScriptSourceContentMessageWS(user, input, output, context); // Todo
-				else
-					return false;
-			}
-			else if (strncmp(msg, "settings?info", 13) == 0) // set-settings?info
-				JsonApi::ProcessJsonSetSettingsMessageWS(user, input, output, context);
-			else
-				return false;
-		}
-		else if (strncmp(msg, "add-", 4) == 0)
-		{
-			msg += 4;
-			if (strncmp(msg, "devicemanager", 13) == 0) // add-devicemanager
-				JsonApi::ProcessJsonAddDeviceManagerMessageWS(user, input, output, context);
-			else if (strncmp(msg, "device", 6) == 0) // add-device
-			{
-				msg += 6;
-				if (strncmp(msg, "-to-room", 8) == 0) // add-device-to-room
-					JsonApi::ProcessJsonAddDeviceToRoomMessageWS(user, input, output, context);
-				else // add-device
-					JsonApi::ProcessJsonAddDeviceMessageWS(user, input, output, context);
-			}
-			else if (strncmp(msg, "action", 6) == 0) // add-action
-			{
-				msg += 6;
-				if (strncmp(msg, "-to-room", 8) == 0) // add-action-to-room
-					JsonApi::ProcessJsonAddDeviceToRoomMessageWS(user, input, output, context); // Todo
-				else // add-action
-					JsonApi::ProcessJsonAddActionMessageWS(user, input, output, context);
-			}
-			else if (strncmp(msg, "room", 4) == 0) // add-room
-				JsonApi::ProcessJsonAddRoomMessageWS(user, input, output, context);
-			else if (strncmp(msg, "script", 6) == 0) // add-script
-				JsonApi::ProcessJsonAddScriptSourceMessageWS(user, input, output, context);
-			else
-				return false;
-		}
-		else if (strncmp(msg, "rem-", 4) == 0)
-		{
-			msg += 4;
-			if (strncmp(msg, "devicemanager", 13) == 0) // rem-devicemanager
-				JsonApi::ProcessJsonRemoveDeviceManagerMessageWS(user, input, output, context);
-			else if (strncmp(msg, "device", 6) == 0) // rem-device
-			{
-				msg += 6;
-				if (strncmp(msg, "-from-room", 10) == 0) // rem-device-to-room
-					JsonApi::ProcessJsonRemoveDeviceFromRoomMessageWS(user, input, output, context);
-				else // rem-device
-					JsonApi::ProcessJsonRemoveDeviceMessageWS(user, input, output, context);
-			}
-			else if (strncmp(msg, "action", 6) == 0) // rem-action
-			{
-				msg += 6;
-				if (strncmp(msg, "-from-room", 10) == 0) // rem-action-to-room
-					JsonApi::ProcessJsonRemoveDeviceFromRoomMessageWS(user, input, output, context); // Todo
-				else // rem-action
-					JsonApi::ProcessJsonRemoveDeviceMessageWS(user, input, output, context);
-			}
-			else if (strncmp(msg, "room", 4) == 0) // rem-room
-				JsonApi::ProcessJsonRemoveRoomMessageWS(user, input, output, context);
-			else if (strncmp(msg, "script", 5) == 0) // rem-script
-				JsonApi::ProcessJsonRemoveScriptSourceMessageWS(user, input, output, context);
-			else
-				return false;
-		}
-		else if (strncmp(msg, "exe-", 4) == 0)
-		{
-			msg += 4;
-			if (strncmp(msg, "action", 6) == 0) // exe-action
-				JsonApi::ProcessJsonExecuteActionMessageWS(input, output, context);
-			else
-				return false;
-		}
+		// Call websocket message
+		boost::unordered::unordered_map<std::string, WSMethod*>::const_iterator it = methodList.find(msg);
+		if (it != methodList.end())
+			it->second(user, input, output, context);
 		else
 			return false;
 

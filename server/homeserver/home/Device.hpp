@@ -2,78 +2,92 @@
 #include "../common.hpp"
 #include "Home.hpp"
 #include "Room.hpp"
-#include <home/Home.hpp>
-#include <home/Room.hpp>
-#include <home/Device.hpp>
-#include <home/DeviceScript.hpp>
-
-namespace lua
-{
-	class LuaDevice;
-}
+#include <DevicePlugin.hpp>
 
 namespace server
 {
-	class SignalManager;
+	class Database;
 
-	class Device : public home::Device, public boost::enable_shared_from_this<Device>
+	class JsonApi;
+
+	class Device : public boost::enable_shared_from_this<Device>
 	{
 	private:
 		friend class Home;
 		friend class Room;
+		friend class Database;
 		friend class JsonApi;
-		friend class lua::LuaDevice;
 
 		boost::shared_mutex mutex;
 
-		size_t roomCount;
-
 		std::string name;
-		const uint32_t deviceID;
-		
-		boost::mutex scriptMutex;
-		boost::atomic<time_t> timestamp;
-		const Ref<home::DeviceScript> script;
+		const identifier_t deviceID;
+		Ref<DeviceController> controller;
+		Ref<Room> room;
+
+		rapidjson::Document snapshot;
+
+		boost::mutex pluginMutex;
+		const Ref<home::DevicePlugin> plugin;
 
 	public:
-		Device(std::string name, uint32_t deviceID, Ref<home::DeviceScript> script);
+		Device(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room);
 		~Device();
-		static Ref<Device> Create(std::string name, uint32_t deviceID, uint32_t scriptID, rapidjson::Value& json);
-		
-		virtual inline Ref<home::Home> GetHome() override 
+
+		/// @brief Get device name
+		/// @return Device name
+		inline std::string GetName()
 		{
-			boost::shared_lock_guard lock(mutex);
-			return Home::GetInstance(); 
-		}
-		
-		virtual std::string GetName() override
-		{
-			boost::shared_lock_guard lock(mutex);
+			boost::lock_guard lock(mutex);
 			return name;
 		}
-		virtual void SetName(std::string v) override
+
+		/// @brief Set device name
+		/// @param v New device name
+		inline void SetName(const std::string& v)
 		{
 			boost::lock_guard lock(mutex);
 			Home::GetInstance()->UpdateTimestamp();
-			name = std::move(v);
+			name = v;
 		}
 
-		virtual inline uint32_t GetDeviceID() override { return deviceID; }
+		inline identifier_t GetDeviceID() { return deviceID; }
 
-		/// @brief Add device to update list
-		virtual void AddUpdatable() override;
+		/// @brief Get room
+		/// @return Room (can be null)
+		inline Ref<Room> GetRoom()
+		{
+			boost::shared_lock_guard lock(mutex);
+			return room;
+		}
 
-		virtual inline Ref<home::DeviceScript> GetScript() override { return script; }
-		virtual inline uint32_t GetScriptID() override { return script->GetScriptID(); }
+		/// @brief Set room
+		/// @param v Room (can be null)
+		inline void SetRoom(Ref<Room> v)
+		{
+			boost::lock_guard lock(mutex);
+			if (room != nullptr)
+				room->RemoveDevice(shared_from_this());
+
+			room = v;
+
+			if (room != nullptr)
+				room->AddDevice(shared_from_this());
+		}
+
+		/// @brief Get device plugin
+		/// @return Device plugin
+		inline Ref<home::DevicePlugin> GetPlugin() { return plugin; }
+		/// @brief Get device plugin id
+		/// @return Device plugin id
+		inline identifier_t GetPluginID() { return plugin->GetPluginID(); }
+		/// @brief Get plugin mutex
+		/// @return Plugin mutex
+		inline boost::mutex& GetPluginMutex() { return pluginMutex; }
 
 		/// @brief Update device plugin
 		/// @param signalManager SignalManager
 		/// @param cycle Current singal cycle
-		void Update(Ref<SignalManager> signalManager, size_t cycle);
-
-		/// @brief Save device to JSON
-		/// @param json JSON
-		/// @param allocator JSON allocator 
-		void Save(rapidjson::Value& json, rapidjson::Document::AllocatorType& allocator);
+		void Update(size_t cycle);
 	};
 }

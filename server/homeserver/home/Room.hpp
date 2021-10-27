@@ -1,44 +1,34 @@
 #pragma once
 #include "../common.hpp"
 #include "Home.hpp"
-#include <home/Home.hpp>
-#include <home/Room.hpp>
-#include <home/Device.hpp>
 
 namespace server
 {
-	class Core;
 	class Device;
-	class Action;
+
+	class Database;
 
 	class JsonApi;
-	class SSHSession;
 
-	class Room : public home::Room, public boost::enable_shared_from_this<Room>
+	class Room : public boost::enable_shared_from_this<Room>
 	{
 	private:
-		friend class Core;
 		friend class Home;
+		friend class Database;
 		friend class JsonApi;
-		friend class SSHSession;
 
 		boost::shared_mutex mutex;
 
 		std::string name;
-		const uint32_t roomID;
-		uint32_t type;
+		const identifier_t roomID;
+		std::string type;
 
-		boost::container::set<WeakRef<Device>> deviceList;
-		boost::container::set<WeakRef<Action>> actionList;
-		
+		boost::container::set<identifier_t> deviceList;
+		boost::container::set<identifier_t> deviceControllerList;
+
 	public:
-		Room(std::string name, uint32_t roomID, uint32_t type);
+		Room(const std::string& name, identifier_t roomID, const std::string& type);
 		~Room();
-		static Ref<Room> Create(std::string name, uint32_t roomID, uint32_t type);
-		
-		boost::shared_mutex& GetMutex() { return mutex; }
-
-		virtual inline Ref<home::Home> GetHome() override { return Home::GetInstance(); }
 
 		inline std::string GetName()
 		{
@@ -54,12 +44,12 @@ namespace server
 
 		inline uint32_t GetRoomID() { return roomID; }
 
-		inline uint32_t GetType()
+		inline std::string GetType()
 		{
 			boost::shared_lock_guard lock(mutex);
 			return type;
 		}
-		inline void SetType(uint32_t v)
+		inline void SetType(std::string v)
 		{
 			boost::lock_guard lock(mutex);
 			Home::GetInstance()->UpdateTimestamp();
@@ -70,11 +60,11 @@ namespace server
 
 		/// @brief Add device to room
 		/// @param device Device
-		void AddDevice(Ref<Device> device);
+		bool AddDevice(Ref<Device> device);
 
 		/// @brief Get device count
 		/// @return Device count
-		virtual inline size_t GetDeviceCount() override
+		inline size_t GetDeviceCount()
 		{
 			boost::shared_lock_guard lock(mutex);
 			return deviceList.size();
@@ -82,33 +72,24 @@ namespace server
 
 		/// @brief Remove device from room
 		/// @param device Device
-		void RemoveDevice(Ref<Device> device);
+		bool RemoveDevice(Ref<Device> device);
 
-		//! Action
+		//! DeviceController
 
-		/// @brief Add action to room
-		/// @param action Action
-		void AddAction(Ref<Action> action);
+		/// @brief Add device to room
+		/// @param controller Device controller
+		bool AddDeviceController(Ref<DeviceController> controller);
 
-		/// @brief Get action count
-		/// @return Action count
-		virtual inline size_t GetActionCount() override
+		/// @brief Get device controller count
+		/// @return Device controller count
+		inline size_t GetDeviceControllerCount()
 		{
 			boost::shared_lock_guard lock(mutex);
-			return actionList.size();
+			return deviceControllerList.size();
 		}
 
-		/// @brief Remove action from room
-		/// @param action Action to be removed
-		void RemoveAction(Ref<Action> action);
-
-		/// @brief Load room from JSON
-		/// @param json JSON
-		void Load(rapidjson::Value& json);
-
-		/// @brief Save room to JSON
-		/// @param json JSON
-		/// @param allocator JSON allocator 
-		void Save(rapidjson::Value& json, rapidjson::Document::AllocatorType& allocator);
+		/// @brief Remove device controller from room
+		/// @param controller Device controller
+		bool RemoveDeviceController(Ref<DeviceController> controller);
 	};
 }

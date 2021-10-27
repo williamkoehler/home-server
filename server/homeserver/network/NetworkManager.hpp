@@ -4,12 +4,8 @@
 namespace server
 {
 	class BeaconListener;
+	class DynamicResources;
 	class WSSession;
-
-	class DeviceManager;
-	class Device;
-
-	class BroadcastContainer;
 
 	class NetworkManager : public std::enable_shared_from_this<NetworkManager>
 	{
@@ -20,9 +16,12 @@ namespace server
 
 		Ref<boost::asio::io_service> service;
 
+		Ref<DynamicResources> dynamicResources = nullptr;
+
 		Ref<boost::asio::ssl::context> context = nullptr;
 		Ref<boost::asio::ip::tcp::acceptor> server = nullptr;
 		Ref<ssl_socket_t> socket = nullptr;
+
 		Ref<BeaconListener> beaconListener = nullptr;
 
 		void OnAccept(boost::system::error_code error);

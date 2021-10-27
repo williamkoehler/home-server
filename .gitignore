@@ -4,3 +4,4 @@ test/
 .vs/
 **/lib
 *.json
+/dependencies/libgit2

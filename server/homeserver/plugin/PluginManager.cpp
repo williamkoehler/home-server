@@ -9,9 +9,10 @@ namespace server
 	}
 	PluginManager::~PluginManager()
 	{
-		deviceManagerScriptList.clear();
-		deviceScriptList.clear();
+		// Clear plugin list
+		devicePluginList.clear();
 
+		// Clear loaded libraries
 		libraryList.clear();
 	}
 	Ref<PluginManager> PluginManager::Create()
@@ -40,6 +41,13 @@ namespace server
 		return Ref<PluginManager>(instancePluginManager);
 	}
 
+	//! Timestamp
+	void PluginManager::UpdateTimestamp()
+	{
+		const time_t ts = time(nullptr);
+		timestamp = ts;
+	}
+
 	void PluginManager::LoadPlugin(std::string name)
 	{
 		boost::filesystem::path filePath = boost::filesystem::weakly_canonical(boost::filesystem::path("./plugins/" + name));
@@ -55,83 +63,88 @@ namespace server
 			throw std::runtime_error("Load plugin");
 		}
 
-		if (library->has("RegisterPlugin"))
+		if (library->has("RegisterPlugins"))
 		{
 			try
 			{
 				LOG_INFO("Registering plugin '{0}'", name);
-				library->get<home::RegisterPluginFunction>("RegisterPlugin")(shared_from_this());
+				library->get<home::RegisterPluginsFunction>("RegisterPlugins")(shared_from_this());
 
 				boost::lock_guard lock(mutex);
-				libraryList[filePath] = library;
+				libraryList.push_back(library);
 			}
 			catch (std::exception)
 			{
-				LOG_ERROR("Call function 'RegisterPlugin' in plugin library '{0}'", name);
+				LOG_ERROR("Call function 'RegisterPlugins' in plugin library '{0}'", name);
 				throw std::runtime_error("Initialize plugin");
 			}
 		}
 		else
 		{
-			LOG_ERROR("Missing 'CreatePlugin' function in plugin library '{0}'", name);
+			LOG_ERROR("Missing 'RegisterPlugins' function in plugin library '{0}'", name);
 			throw std::runtime_error("Initialize plugin");
 		}
 	}
 
-	Ref<home::DeviceScript> PluginManager::CreateDeviceScript(uint32_t scriptID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		boost::unordered::unordered_map<uint32_t, home::DeviceScriptDescription>::iterator it = deviceScriptList.find(scriptID);
-		if (it == deviceScriptList.end())
-			return nullptr;
-
-		home::DeviceScriptDescription &desc = (*it).second;
-
-		if (desc.createFunction == nullptr)
-			return nullptr;
-
-		return desc.createFunction();
-	}
-	void PluginManager::RegisterDeviceScript(uint32_t scriptID, home::DeviceScriptDescription &scriptDescription)
+	bool PluginManager::RegisterDevicePlugin(const std::string& name, identifier_t pluginID, home::CreateDevicePluginFunction* createFunction)
 	{
 		boost::lock_guard lock(mutex);
 
-		if (deviceScriptList.count(scriptID))
-			LOG_FATAL("Device script ID already exists");
+		if (devicePluginList.count(pluginID))
+		{
+			LOG_ERROR("Device plugin already exists");
+			return false;
+		}
 
-		deviceScriptList[scriptID] = scriptDescription;
+		devicePluginList[pluginID] = {
+			name,
+			pluginID,
+			createFunction,
+		};
+
+		LOG_INFO("Successfully registered device plugin {0}:{1}", name, pluginID);
+		return true;
 	}
-
-	Ref<home::DeviceManagerScript> PluginManager::CreateDeviceManagerScript(uint32_t scriptID)
+	Ref<home::DevicePlugin> PluginManager::CreateDevicePlugin(identifier_t pluginID)
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		boost::unordered::unordered_map<uint32_t, home::DeviceManagerScriptDescription>::iterator it = deviceManagerScriptList.find(scriptID);
-		if (it == deviceManagerScriptList.end())
-			return nullptr;
+		// Find plugin
+		boost::unordered::unordered_map<uint32_t, DevicePluginReference>::const_iterator it = devicePluginList.find(pluginID);
+		if (it != devicePluginList.end())
+			return it->second.createFunction();
 
-		home::DeviceManagerScriptDescription &desc = (*it).second;
-
-		if (desc.createFunction == nullptr)
-			return nullptr;
-
-		return desc.createFunction();
+		return nullptr;
 	}
-	void PluginManager::RegisterDeviceManagerScript(uint32_t scriptID, home::DeviceManagerScriptDescription &scriptDescription)
+
+	bool PluginManager::RegisterDeviceControllerPlugin(const std::string& name, identifier_t pluginID, home::CreateDeviceControllerPluginFunction* createFunction)
 	{
 		boost::lock_guard lock(mutex);
 
-		if (deviceManagerScriptList.count(scriptID))
-			LOG_FATAL("Device manager script ID already exists");
+		if (deviceControllerPluginList.count(pluginID))
+		{
+			LOG_ERROR("Device controller plugin already exists");
+			return false;
+		}
 
-		deviceManagerScriptList[scriptID] = scriptDescription;
+		deviceControllerPluginList[pluginID] = {
+			name,
+			pluginID,
+			createFunction,
+		};
+
+		LOG_INFO("Successfully registered device controller plugin {0}:{1}", name, pluginID);
+		return true;
 	}
-
-	// Timestamp
-	void PluginManager::UpdateTimestamp()
+	Ref<home::DeviceControllerPlugin> PluginManager::CreateDeviceControllerPlugin(identifier_t pluginID)
 	{
-		time_t ts = time(nullptr);
-		timestamp = ts;
+		boost::shared_lock_guard lock(mutex);
+
+		// Find plugin
+		boost::unordered::unordered_map<uint32_t, DeviceControllerPluginReference>::const_iterator it = deviceControllerPluginList.find(pluginID);
+		if (it != deviceControllerPluginList.end())
+			return it->second.createFunction();
+
+		return nullptr;
 	}
 }

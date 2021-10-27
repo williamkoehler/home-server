@@ -12,6 +12,7 @@ target_include_directories(HOMESERVER
     "${PROJECT_SOURCE_DIR}/dependencies"
     ${OPENSSL_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
+    ${SQLite3_INCLUDE_DIRS}
 )
 target_link_libraries(HOMESERVER
     HOME

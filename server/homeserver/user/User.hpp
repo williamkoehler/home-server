@@ -22,12 +22,11 @@ namespace server
 	private:
 		friend class UserManager;
 		friend class JsonApi;
-		friend class SSHSession;
 
 		boost::shared_mutex mutex;
 
 		std::string name;
-		const uint32_t userID;
+		const identifier_t userID;
 		uint8_t hash[SHA256_DIGEST_LENGTH] = "";
 		uint8_t salt[SALT_LENGTH] = "";
 
@@ -36,9 +35,9 @@ namespace server
 		// Settings
 
 	public:
-		User(std::string& name, uint32_t& id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels& accessLevel);
+		User(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels& accessLevel);
 		~User();
-		static Ref<User> Create(std::string name, uint32_t userID, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels accessLevel);
+		static Ref<User> Create(const std::string& name, identifier_t userID, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels accessLevel);
 
 		inline std::string GetName()
 		{

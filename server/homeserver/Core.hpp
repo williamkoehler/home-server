@@ -1,16 +1,11 @@
 #pragma once
 #include "common.hpp"
 
-namespace scripting
-{
-	class ScriptManager;
-}
-
 namespace server
 {
-	class SignalManager;
+	class Database;
 	class UserManager;
-	class PluginManager;
+	class ScriptManager;
 	class Home;
 	class NetworkManager;
 	class DynamicResources;
@@ -32,30 +27,17 @@ namespace server
 		std::string name = "error-no-name";
 		uint16_t port = 443;
 		std::string address = "0.0.0.0";
-		size_t additionalThreadCount = 1;
-		Ref<SignalManager> signalManager = nullptr;
+		size_t threadCount = 1;
+		Ref<Database> database = nullptr;
 		Ref<UserManager> userManager = nullptr;
-		Ref<scripting::ScriptManager> scriptManager = nullptr;
+		Ref<ScriptManager> scriptManager = nullptr;
 		Ref<Home> home = nullptr;
 		Ref<NetworkManager> networkManager = nullptr;
-		Ref<DynamicResources> dynamicResources = nullptr;
 
-		struct
-		{
-			Ref<boost::asio::io_service> main = nullptr;
-			Ref<boost::asio::io_service> worker = nullptr;
-		} services;
+		Ref<boost::asio::io_service> service = nullptr;
 		boost::thread_group threads;
 
 		void Worker();
-
-		Ref<boost::asio::deadline_timer> maintenanceTimer = nullptr;
-		void OnMaintenance(boost::system::error_code error);
-
-		// Workload
-		Ref<boost::asio::deadline_timer> updateTimer = nullptr;
-		std::atomic_size_t yieldTime = 2000;
-		void OnUpdate(boost::system::error_code error);
 
 		// IO
 		void Load();
@@ -75,14 +57,9 @@ namespace server
 			return name;
 		}
 
-		inline Ref<boost::asio::io_service> GetService() const { return services.main; }
-		inline Ref<boost::asio::io_service> GetWorkerService() const { return services.worker; }
+		inline Ref<boost::asio::io_service> GetService() const { return service; }
 
 		void Run();
-
-		// Duty cycle
-		void IncreaseDutyCycles();
-		void DecreaseDutyCycles();
 
 		// Shutdown
 		void Shutdown();

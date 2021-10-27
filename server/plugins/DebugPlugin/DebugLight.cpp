@@ -1,65 +1,29 @@
 #include "DebugLight.hpp"
 
-const id_t STATE = home::DefaultFields::Light::STATE;
-const id_t DIMMABLE = home::DefaultFields::Light::DIMMABLE;
+const id_t STATE = 1;
+const id_t DIMMABLE = 2;
 
-void DebugLight::OnRegister(home::DeviceScriptDescription* description)
+bool DebugLight::Initialize()
 {
-    description->AddProperty(home::Visuals::CreateIntegerReader(STATE, "Boolean", home::VisualUnit::kNoUnit));
-    description->AddProperty(home::Visuals::CreateIntegerModifier(STATE, "Boolean", home::VisualUnit::kNoUnit));
+	cache.SetAttribute("visuals",
+							 R"([)"
+							 R"(    {)"
+							 R"(        "name": "State",)"
+							 R"(        "type": "light-switch",)"
+							 R"(        "value": {)"
+							 R"(            "type": "bool",)"
+							 R"(		    "id": 1)"
+							 R"(        })"
+							 R"(    })"
+							 R"(])");
 }
 
-bool DebugLight::OnInitialize()
+bool DebugLight::Update(Ref<DevicePlugin> controller, size_t cycle)
 {
-    return true;
+	return false;
 }
 
-bool DebugLight::HasError()
+bool DebugLight::Terminate()
 {
-    return false;
-}
-std::string DebugLight::GetError()
-{
-    return "";
-}
-
-void DebugLight::OnUpdate(Ref<home::SignalManager> signalManager, size_t cycle)
-{
-}
-
-
-
-void DebugLight::GetFields(home::WriteableFieldCollection& collection)
-{
-    collection.AddBool(STATE, fields.state);
-}
-
-bool DebugLight::GetField(home::WriteableField& field)
-{
-    switch (field.GetID()) 
-    {
-    case STATE:
-        field.SetBool(fields.state);
-        break;
-    default:
-        return false;
-    }
-
-    return true;
-}
-
-bool DebugLight::SetField(home::ReadableField& field)
-{
-    switch (field.GetID())
-    {
-    case STATE:
-        return field.GetBool(fields.state);
-    default:
-        return false;
-    }
-}
-
-bool DebugLight::OnTerminate()
-{
-    return true;
+	return false;
 }

@@ -46,20 +46,20 @@ namespace server
 		}
 
 		//User
-		Ref<User> AddUser(std::string name, uint32_t userID, std::string passwd, UserAccessLevels accessLevel);
-		Ref<User> AddUser(std::string name, uint32_t userID, uint8_t *hash, uint8_t *salt, UserAccessLevels accessLevel);
+		Ref<User> AddUser(std::string name, identifier_t userID, std::string passwd, UserAccessLevels accessLevel);
+		Ref<User> AddUser(std::string name, identifier_t userID, uint8_t *hash, uint8_t *salt, UserAccessLevels accessLevel);
 
 		size_t GetUserCount()
 		{
 			boost::shared_lock_guard lock(mutex);
 			return userList.size();
 		}
-		Ref<User> GetUser(uint32_t userID);
+		Ref<User> GetUser(identifier_t userID);
 		Ref<User> GetUserByName(std::string_view name);
-		bool SetUserPassword(uint32_t userID, std::string_view passwd, std::string_view newPasswd);
+		bool SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd);
 		bool SetUserPassword(const Ref<User>& user, std::string_view passwd, std::string_view newPasswd);
 
-		void RemoveUser(uint32_t userID);
+		void RemoveUser(identifier_t userID);
 
 		//JWT
 		std::string GenerateToken(std::string_view name, std::string_view passwd);

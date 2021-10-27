@@ -1,13 +1,12 @@
 #include "HTTPSession.hpp"
 #include "../Core.hpp"
-#include "../io/WebPageFiles.hpp"
+#include "io/WebPageFiles.hpp"
 #include "../user/UserManager.hpp"
 #include "../home/Home.hpp"
 #include "../home/Room.hpp"
 #include "../home/Device.hpp"
-#include "../home/DeviceManager.hpp"
 #include "../plugin/PluginManager.hpp"
-#include "../json/JsonApi.hpp"
+#include "json/JsonApi.hpp"
 #include "WSSession.hpp"
 
 #define ERROR404 \
@@ -125,7 +124,7 @@ namespace server
 					{
 						jwt::decoded_jwt decodedToken = jwt::decode(token);
 
-						uint32_t userID = UserManager::GetInstance()->VerifyToken(decodedToken);
+						identifier_t userID = UserManager::GetInstance()->VerifyToken(decodedToken);
 					#ifndef _DEBUG
 						/*if (jwt::date::clock::now() + std::chrono::hours(120) > decodedToken.get_expires_at())
 							token = UserManager::GetInstance()->GenerateToken(userID);*/
@@ -267,7 +266,7 @@ namespace server
 					if (file == nullptr)
 					{
 						boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>> response = boost::make_shared<boost::beast::http::response<boost::beast::http::string_body>>();
-						response->result(boost::beast::http::status::bad_request);
+						response->result(boost::beast::http::status::not_found);
 						response->version(request.version());
 						response->keep_alive(false);
 						response->set(boost::beast::http::field::server, "HomeAutomation Server");
@@ -311,7 +310,7 @@ namespace server
 		}
 		catch (std::exception e)
 		{
-			LOG_EXCEPTION("In HTTPSession::OnRead : {0}", e.what());
+			LOG_ERROR("Ups : {0}", e.what());
 
 			buffer.clear();
 
@@ -336,7 +335,7 @@ namespace server
 
 		authorization.remove_prefix(7);
 
-		uint32_t userID = 0;
+		identifier_t userID = 0;
 		try
 		{
 			jwt::decoded_jwt decodedToken = jwt::decode(authorization.to_string());

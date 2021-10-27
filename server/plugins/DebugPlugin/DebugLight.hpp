@@ -1,32 +1,17 @@
 #pragma once
-#include <home/Home.hpp>
-#include <home/DeviceScript.hpp>
+#include <DevicePlugin.hpp>
 
-class DebugLight : public home::DeviceScript
+class DebugLight : public home::DevicePlugin
 {
-	struct Fields
-	{
-		bool state = false;
-	};
+public:
+	DEVICEPLUGIN_DESCRIPTION(DebugLight, "Debug Light");
 
-	DEVICESCRIPT_CLASS(
-		DebugLight, 
-		"Debug Light",
-		home::DeviceType::kLightDeviceType, 
-		Fields);
+	bool state = false;
 
-	static void OnRegister(home::DeviceScriptDescription* description);
+	virtual bool Initialize() override;
 
-	virtual bool OnInitialize() override;
-	virtual bool OnTerminate() override;
+	virtual bool Update(Ref<DevicePlugin> controller, size_t cycle) override;
 
-	virtual bool HasError() override;
-	virtual std::string GetError() override;
-
-	virtual void OnUpdate(Ref<home::SignalManager> signalManager, size_t cycle) override;
-
-	virtual void GetFields(home::WriteableFieldCollection& collection) override;
-	virtual bool GetField(home::WriteableField& field) override;
-	virtual bool SetField(home::ReadableField& field) override;
+	virtual bool Terminate() override;
 };
 

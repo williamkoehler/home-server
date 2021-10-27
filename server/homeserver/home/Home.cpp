@@ -1,14 +1,10 @@
 #include "Home.hpp"
-#include "../Core.hpp"
+#include "../database/Database.hpp"
 #include "Room.hpp"
 #include "Device.hpp"
-#include "DeviceManager.hpp"
-#include "Action.hpp"
-#include "../signal/SignalManager.hpp"
+#include "DeviceController.hpp"
 #include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
-#include "../network/NetworkManager.hpp"
-#include "../json/JsonApi.hpp"
 
 namespace server
 {
@@ -19,8 +15,9 @@ namespace server
 	}
 	Home::~Home()
 	{
+		deviceList.clear();
+		deviceControllerList.clear();
 		roomList.clear();
-		deviceManagerList.clear();
 	}
 	Ref<Home> Home::Create()
 	{
@@ -35,8 +32,34 @@ namespace server
 
 		try
 		{
-			// Load
-			home->Load();
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
+
+			// Load rooms
+			database->LoadRooms(
+				boost::bind(&Home::LoadRoom, home, 
+							boost::placeholders::_1, 
+							boost::placeholders::_2, 
+							boost::placeholders::_3));
+
+			// Load device controllers
+			database->LoadDeviceControllers(
+				boost::bind(&Home::LoadDeviceController, home, 
+							boost::placeholders::_1, 
+							boost::placeholders::_2, 
+							boost::placeholders::_3,
+							boost::placeholders::_4,
+							boost::placeholders::_5));
+
+			// Load devices
+			database->LoadDevices(
+				boost::bind(&Home::LoadDevice, home,
+							boost::placeholders::_1,
+							boost::placeholders::_2,
+							boost::placeholders::_3,
+							boost::placeholders::_4,
+							boost::placeholders::_5,
+							boost::placeholders::_6));
 		}
 		catch (std::exception)
 		{
@@ -60,689 +83,281 @@ namespace server
 	}
 
 	//! Room
-	Ref<Room> Home::AddRoom(std::string name, uint32_t roomID, uint16_t type, rapidjson::Value& json)
+	bool Home::LoadRoom(identifier_t roomID, const std::string& name, const std::string& type)
 	{
-		uint32_t genID = roomID ? roomID : XXH32(name.c_str(), name.size(), 0x524F4F4D);
+		Ref<Room> room = boost::make_shared<Room>(name, roomID, type);
 
-		// Check for duplicate
+		if (room != nullptr)
 		{
-			boost::shared_lock_guard lock(mutex);
+			roomList[roomID] = room;
 
-			size_t pass = 10;
-			while (roomList.count(genID))
-			{
-				genID++;
-
-				//Only allow 10 passes
-				if (!(pass--))
-				{
-					LOG_ERROR("Generate unique id for room '{0}'", name);
-					return nullptr;
-				}
-			}
+			return true;
 		}
+		else
+			return false;
+	}
+	Ref<Room> Home::AddRoom(const std::string& name, const std::string& type, rapidjson::Value& json)
+	{
+		boost::lock_guard lock(mutex);
 
-		Ref<Room> room = Room::Create(name, genID, type);
+		Ref<Database> database = Database::GetInstance();
+		assert(database != nullptr);
+
+		// Reserve room in database
+		identifier_t roomID = database->ReserveRoom();
+		if (roomID == 0)
+			return nullptr;
+
+		// Create new device
+		Ref<Room> room = boost::make_shared<Room>(name, roomID, type);
 		if (room == nullptr)
 			return nullptr;
 
-		room->Load(json);
+		if (room != nullptr)
+		{
+			if (!database->UpdateRoom(room))
+				return nullptr;
 
-		boost::lock_guard lock(mutex);
-		roomList[genID] = room;
+			roomList[room->GetRoomID()] = room;
+		}
 
 		UpdateTimestamp();
 
 		return room;
 	}
-
-	Ref<home::Room> Home::GetRoom(uint32_t roomID)
+	Ref<Room> Home::GetRoom(identifier_t roomID)
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
+		const boost::unordered::unordered_map<identifier_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
 		if (it == roomList.end())
 			return nullptr;
 
 		return (*it).second;
 	}
-	Ref<Room> Home::GetRoom_(uint32_t roomID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
-		if (it == roomList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-
-	void Home::RemoveRoom(uint32_t roomID)
+	bool Home::RemoveRoom(identifier_t roomID)
 	{
 		boost::lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
-		if (it == roomList.end())
-			throw std::runtime_error("Room ID does not exist");
+		if(roomList.erase(roomID))
+		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
 
-		roomList.erase(it);
+			database->RemoveRoom(roomID);
 
-		UpdateTimestamp();
+			return true;
+		}
+		else
+		return false;
 	}
 
-	Ref<Device> Home::AddDevice(std::string name, uint32_t deviceID, uint32_t scriptID, rapidjson::Value& json)
+	//! Device
+	bool Home::LoadDevice(identifier_t deviceID, const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string& data)
 	{
-		uint32_t genID = deviceID ? deviceID : XXH32(name.c_str(), name.size(), 0x44455649);
 
-		// Check for duplicate
+		// Get device plugin
+		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
+		assert(pluginManager != nullptr);
+
+		Ref<home::DevicePlugin> plugin = pluginManager->CreateDevicePlugin(pluginID);
+		if (plugin == nullptr)
 		{
-			boost::shared_lock_guard lock(mutex);
-
-			size_t pass = 10;
-			while (deviceList.count(genID))
-			{
-				genID++;
-
-				//Only allow 10 passes
-				if (!(pass--))
-				{
-					LOG_ERROR("Failing to generate unique id for device '{0}'", name);
-					return nullptr;
-				}
-			}
+			LOG_ERROR("Create device plugin '{0}'", pluginID);
+			return false;
 		}
 
-		Ref<Device> device = Device::Create(name, genID, scriptID, json);
-		if (!device)
+		// Get controller and room
+		//! We don't care if no room nor controller is found, since it is allowed to be null
+		Ref<DeviceController> controller = GetDeviceController(controllerID);
+		Ref<Room> room = GetRoom(roomID);
+
+		// Create new device
+		Ref<Device> device = boost::make_shared<Device>(name, deviceID, plugin, controller, room);
+
+		if (device != nullptr)
+		{
+			deviceList[deviceID] = device;
+
+			return true;
+		}
+		else
+			return false;
+	}
+	Ref<Device> Home::AddDevice(const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, rapidjson::Value& json)
+	{
+		boost::lock_guard lock(mutex);
+
+		Ref<Database> database = Database::GetInstance();
+		assert(database != nullptr);
+
+		// Reserve room in database
+		identifier_t deviceID = database->ReserveDevice();
+		if (deviceID == 0)
 			return nullptr;
 
-		boost::lock_guard lock(mutex);
-		deviceList[genID] = device;
+		// Get device plugin
+		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
+		assert(pluginManager != nullptr);
 
-		UpdateTimestamp();
+		Ref<home::DevicePlugin> plugin = pluginManager->CreateDevicePlugin(pluginID);
+		if (plugin == nullptr)
+		{
+			LOG_ERROR("Create device plugin '{0}'", pluginID);
+			return nullptr;
+		}
+
+		// Get controller and room
+		//! We don't care if no room nor controller is found, since it is allowed to be null
+		Ref<DeviceController> controller = GetDeviceController(controllerID);
+		Ref<Room> room = GetRoom(roomID);
+
+		// Create new device
+		Ref<Device> device = boost::make_shared<Device>(name, deviceID, plugin, controller, room);
+		if (device == nullptr)
+			return nullptr;
+
+		if (device != nullptr)
+		{
+			//device->Load(json);
+
+			if (!database->UpdateDevice(device))
+				return nullptr;
+
+			deviceList[device->GetDeviceID()] = device;
+		}
 
 		return device;
 	}
-
-	Ref<home::Device> Home::GetDevice(uint32_t deviceID)
+	Ref<Device> Home::GetDevice(identifier_t deviceID)
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
+		const boost::unordered::unordered_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
 		if (it == deviceList.end())
 			return nullptr;
 
 		return (*it).second;
 	}
-	Ref<Device> Home::GetDevice_(uint32_t deviceID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
-		if (it == deviceList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-
-	void Home::RemoveDevice(uint32_t deviceID)
+	bool Home::RemoveDevice(identifier_t deviceID)
 	{
 		boost::lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
-		if (it == deviceList.end())
-			throw std::runtime_error("Device ID does not exist");
-
-		for (std::pair<uint32_t, Ref<Room>> pair : roomList)
-			pair.second->RemoveDevice(it->second);
-
-		deviceList.erase(it);
-
-		UpdateTimestamp();
-	}
-
-	void Home::AddDeviceToUpdatables(Ref<Device> device)
-	{
-		boost::lock_guard lock(mutex);
-		deviceUpdateList.push_back(device);
-	}
-
-	//! DeviceManager
-	Ref<DeviceManager> Home::AddDeviceManager(std::string name, uint32_t managerID, uint32_t scriptID, rapidjson::Value& json)
-	{
-		uint32_t genID = managerID ? managerID : XXH32(name.c_str(), name.size(), 0x444D414E);
-
-		// Check for duplicate
+		if (deviceList.erase(deviceID))
 		{
-			boost::shared_lock_guard lock(mutex);
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
 
-			size_t pass = 10;
-			while (deviceManagerList.count(genID))
-			{
-				genID++;
+			database->RemoveDevice(deviceID);
 
-				//Only allow 10 passes
-				if (!(pass--))
-				{
-					LOG_ERROR("Failing to generate unique id for device manager '{0}'", name);
-					return nullptr;
-				}
-			}
+			return true;
+		}
+		else
+			return false;
+	}
+
+	//! DeviceController
+	bool Home::LoadDeviceController(identifier_t controllerID, const std::string& name, identifier_t pluginID, identifier_t roomID, const std::string& data)
+	{
+		// Get device plugin
+		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
+		assert(pluginManager != nullptr);
+
+		Ref<home::DeviceControllerPlugin> plugin = pluginManager->CreateDeviceControllerPlugin(pluginID);
+		if (plugin == nullptr)
+		{
+			LOG_ERROR("Create device controller plugin '{0}'", pluginID);
+			return false;
 		}
 
-		Ref<DeviceManager> deviceManager = DeviceManager::Create(name, genID, scriptID, json);
-		if (!deviceManager)
-			return nullptr;
+		// Get room
+		//! We don't care if no controller is found, since it is allowed to be null
+		Ref<Room> room = GetRoom(roomID);
 
-		boost::lock_guard lock(mutex);
-		deviceManagerList[genID] = deviceManager;
+		// Create new device controller
+		Ref<DeviceController> controller = boost::make_shared<DeviceController>(name, controllerID, plugin, room);
 
-		UpdateTimestamp();
-
-		return deviceManager;
-	}
-
-	Ref<home::DeviceManager> Home::GetDeviceManager(uint32_t managerID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<DeviceManager>>::const_iterator it = deviceManagerList.find(managerID);
-		if (it == deviceManagerList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-	Ref<DeviceManager> Home::GetDeviceManager_(uint32_t managerID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<DeviceManager>>::const_iterator it = deviceManagerList.find(managerID);
-		if (it == deviceManagerList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-
-	void Home::RemoveDeviceManager(uint32_t managerID)
-	{
-		boost::lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<DeviceManager>>::const_iterator it = deviceManagerList.find(managerID);
-		if (it == deviceManagerList.end())
-			throw std::runtime_error("DeviceManager ID does not exist");
-
-		deviceManagerList.erase(it);
-
-		UpdateTimestamp();
-	}
-
-	void Home::AddDeviceManagerToUpdatables(Ref<DeviceManager> deviceManager)
-	{
-		boost::lock_guard lock(mutex);
-		deviceManagerUpdateList.push_back(deviceManager);
-	}
-
-	//! Action
-	Ref<Action> Home::AddAction(std::string name, uint32_t actionID, uint32_t sourceID, rapidjson::Value& json)
-	{
-		uint32_t genID = actionID ? actionID : XXH32(name.c_str(), name.size(), 0x41435449);
-
+		if (controller != nullptr)
 		{
-			boost::shared_lock_guard lock(mutex);
+			deviceControllerList[controllerID] = controller;
 
-			size_t pass = 10;
-			while (actionList.count(genID))
-			{
-				genID++;
+			return true;
+		}
+		else
+			return false;
+	}
+	Ref<DeviceController> Home::AddDeviceController(const std::string& name, identifier_t pluginID, identifier_t roomID, rapidjson::Value& json)
+	{
+		boost::lock_guard lock(mutex);
 
-				//Only allow 10 passes
-				if (!(pass--))
-				{
-					LOG_ERROR("Failing to generate unique id for action '{0}'", name);
-					return nullptr;
-				}
-			}
+		Ref<Database> database = Database::GetInstance();
+		assert(database != nullptr);
+
+		// Reserve room in database
+		identifier_t controllerID = database->ReserveDeviceController();
+		if (controllerID == 0)
+			return nullptr;
+
+		// Get device plugin
+		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
+		assert(pluginManager != nullptr);
+
+		Ref<home::DeviceControllerPlugin> plugin = pluginManager->CreateDeviceControllerPlugin(pluginID);
+		if (plugin == nullptr)
+		{
+			LOG_ERROR("Create device controller plugin '{0}'", pluginID);
+			return nullptr;
 		}
 
-		Ref<Action> action = Action::Create(name, genID, sourceID);
-		if (!action)
-			return nullptr;
+		// Get room
+		//! We don't care if no controller is found, since it is allowed to be null
+		Ref<Room> room = GetRoom(roomID);
 
-		boost::lock_guard lock(mutex);
-		actionList[genID] = action;
+		// Create new device controller
+		Ref<DeviceController> controller = boost::make_shared<DeviceController>(name, controllerID, plugin, room);
 
-		UpdateTimestamp();
-
-		return action;
-	}
-
-	Ref<home::Action> Home::GetAction(uint32_t actionID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<Action>>::const_iterator it = actionList.find(actionID);
-		if (it == actionList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-	Ref<Action> Home::GetAction_(uint32_t actionID)
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<Action>>::const_iterator it = actionList.find(actionID);
-		if (it == actionList.end())
-			return nullptr;
-
-		return (*it).second;
-	}
-
-	void Home::RemoveAction(uint32_t actionID)
-	{
-		boost::lock_guard lock(mutex);
-
-		const boost::unordered::unordered_map<uint32_t, Ref<Action>>::const_iterator it = actionList.find(actionID);
-		if (it == actionList.end())
-			throw std::runtime_error("Action ID does not exist");
-
-		actionList.erase(it);
-
-		UpdateTimestamp();
-	}
-
-	void Home::Update()
-	{
-		// Wait 500ms for older worker threads to finish
-		if (workerMutex.try_lock())
+		if (controller != nullptr)
 		{
-			if (cycleCount < SIZE_MAX)
-				cycleCount++;
-			else
-				cycleCount = 0;
+			//controller->Load(json);
 
-			Ref<boost::asio::io_service> service = Core::GetInstance()->GetWorkerService();
+			if (!database->UpdateDeviceController(controller))
+				return nullptr;
 
-			boost::asio::post(service->get_executor(), boost::bind(&Home::Worker, shared_from_this()));
-
-			workerMutex.unlock();
+			deviceControllerList[controllerID] = controller;
 		}
+
+		return controller;
+	}
+	Ref<DeviceController> Home::GetDeviceController(identifier_t controllerID)
+	{
+		boost::shared_lock_guard lock(mutex);
+
+		const boost::unordered::unordered_map<identifier_t, Ref<DeviceController>>::const_iterator it = deviceControllerList.find(controllerID);
+		if (it == deviceControllerList.end())
+			return nullptr;
+
+		return (*it).second;
+	}
+	bool Home::RemoveDeviceController(identifier_t controllerID)
+	{
+		boost::lock_guard lock(mutex);
+
+		if (deviceControllerList.erase(controllerID))
+		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
+
+			database->RemoveDeviceController(controllerID);
+
+			return true;
+		}
+		else
+			return false;
 	}
 
+	//! Worker
 	void Home::Worker()
 	{
-		boost::lock_guard lock(workerMutex);
-
-		rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
-
-		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-
-		Ref<SignalManager> signalManager = SignalManager::GetInstance();
-
-		// Update signal manager and warn user when busy
-		signalManager->Update();
-
-		//Update device managers
-		for (size_t i = 0; i < deviceManagerUpdateList.size(); i++)
-		{
-			WeakRef<DeviceManager>& ptr = deviceManagerUpdateList[i];
-
-			if (Ref<DeviceManager> deviceManager = ptr.lock())
-				deviceManager->Update(signalManager, cycleCount);
-			else
-			{
-				// Remove item from list
-				deviceManagerUpdateList.erase(deviceManagerUpdateList.begin() + i);
-				i--;
-			}
-		}
-
-		rapidjson::Value deviceListJson = rapidjson::Value(rapidjson::kArrayType);
-
-		//Update devices
-		for (size_t i = 0; i < deviceUpdateList.size(); i++)
-		{
-			WeakRef<Device>& ptr = deviceUpdateList[i];
-
-			if (Ref<Device> device = ptr.lock())
-				device->Update(signalManager, cycleCount);
-			else
-			{
-				// Remove item from list
-				deviceUpdateList.erase(deviceUpdateList.begin() + i);
-				i--;
-			}
-		}
-	}
-
-	//! IO
-	void Home::Load()
-	{
-		LOG_INFO("Loading home information from 'home-info.json'");
-
-		FILE* file = fopen("home-info.json", "r");
-		if (file == nullptr)
-		{
-			LOG_ERROR("Open/find 'home-info.json'");
-			throw std::runtime_error("Open/find file 'home-info.json'");
-		}
-
-		char buffer[RAPIDJSON_BUFFER_SIZE_SMALL];
-		rapidjson::FileReadStream stream(file, buffer, sizeof(buffer));
-
-		rapidjson::Document document;
-		if (document.ParseStream(stream).HasParseError() || !document.IsObject())
-		{
-			LOG_ERROR("Read 'home-info.json'");
-			throw std::runtime_error("Read file 'home-info.json'");
-		}
-
-		// Read device manager list
-		{
-			rapidjson::Value::MemberIterator deviceManagerListIt = document.FindMember("device-manager-list");
-			if (deviceManagerListIt != document.MemberEnd() && deviceManagerListIt->value.IsArray())
-			{
-				rapidjson::Value& deviceManagerListJson = deviceManagerListIt->value;
-				for (rapidjson::Value::ValueIterator deviceManagerIt = deviceManagerListJson.Begin(); deviceManagerIt != deviceManagerListJson.End(); deviceManagerIt++)
-				{
-					if (!deviceManagerIt->IsObject())
-					{
-						LOG_ERROR("Missing device manager in 'device-manager-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read name
-					rapidjson::Value::MemberIterator nameIt = deviceManagerIt->FindMember("name");
-					if (nameIt == deviceManagerIt->MemberEnd() || !nameIt->value.IsString())
-					{
-						LOG_ERROR("Missing 'name' in device manager in 'device-manager-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read id
-					rapidjson::Value::MemberIterator idIt = deviceManagerIt->FindMember("id");
-					if (idIt == deviceManagerIt->MemberEnd() || !idIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'id' in device manager in 'device-manager-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read type
-					rapidjson::Value::MemberIterator scriptIDIt = deviceManagerIt->FindMember("script-id");
-					if (scriptIDIt == deviceManagerIt->MemberEnd() || !scriptIDIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'script-id' in device manager in 'device-manager-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					std::string name = std::string(nameIt->value.GetString(), nameIt->value.GetStringLength());
-
-					Ref<DeviceManager> deviceManager = AddDeviceManager(
-						name,
-						idIt->value.GetUint(),
-						scriptIDIt->value.GetUint(),
-						*deviceManagerIt);
-					if (deviceManager == nullptr)
-					{
-						LOG_ERROR("Add device manager '{0}'", name);
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-				}
-			}
-		}
-
-		//Read device list
-		{
-			rapidjson::Value::MemberIterator deviceListIt = document.FindMember("device-list");
-			if (deviceListIt != document.MemberEnd() && deviceListIt->value.IsArray())
-			{
-				rapidjson::Value& deviceListJson = deviceListIt->value;
-				for (rapidjson::Value::ValueIterator deviceIt = deviceListJson.Begin(); deviceIt != deviceListJson.End(); deviceIt++)
-				{
-					if (!deviceIt->IsObject())
-					{
-						LOG_ERROR("Missing device in 'device-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read name
-					rapidjson::Value::MemberIterator nameIt = deviceIt->FindMember("name");
-					if (nameIt == deviceIt->MemberEnd() || !nameIt->value.IsString())
-					{
-						LOG_ERROR("Missing 'name' in device in 'device-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read id
-					rapidjson::Value::MemberIterator idIt = deviceIt->FindMember("id");
-					if (idIt == deviceIt->MemberEnd() || !idIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'id' in device in 'device-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read script-id
-					rapidjson::Value::MemberIterator scriptIDIt = deviceIt->FindMember("script-id");
-					if (scriptIDIt == deviceIt->MemberEnd() || !scriptIDIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'script-id' in device in 'device-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					std::string name = std::string(nameIt->value.GetString(), nameIt->value.GetStringLength());
-
-					Ref<Device> device = AddDevice(
-						name,
-						idIt->value.GetUint(),
-						scriptIDIt->value.GetUint(),
-						*deviceIt);
-					if (device == nullptr)
-					{
-						LOG_ERROR("Add device '{0}'", name);
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-				}
-			}
-		}
-
-		// Read action list
-		{
-			rapidjson::Value::MemberIterator actionListIt = document.FindMember("action-list");
-			if (actionListIt != document.MemberEnd() && actionListIt->value.IsArray())
-			{
-				rapidjson::Value& actionListJson = actionListIt->value;
-				for (rapidjson::Value::ValueIterator actionIt = actionListJson.Begin(); actionIt != actionListJson.End(); actionIt++)
-				{
-					if (!actionIt->IsObject())
-					{
-						LOG_ERROR("Missing action in 'action-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read name
-					rapidjson::Value::MemberIterator nameIt = actionIt->FindMember("name");
-					if (nameIt == actionIt->MemberEnd() || !nameIt->value.IsString())
-					{
-						LOG_ERROR("Missing 'name' in action in 'action-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read id
-					rapidjson::Value::MemberIterator idIt = actionIt->FindMember("id");
-					if (idIt == actionIt->MemberEnd() || !idIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'id' in action in 'action-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read source-id
-					rapidjson::Value::MemberIterator sourceIDIt = actionIt->FindMember("source-id");
-					if (sourceIDIt == actionIt->MemberEnd() || !sourceIDIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'source-id' in action in 'action-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					std::string name = std::string(nameIt->value.GetString(), nameIt->value.GetStringLength());
-
-					Ref<Action> action = AddAction(
-						name,
-						idIt->value.GetUint(),
-						sourceIDIt->value.GetUint(),
-						*actionIt);
-					if (action == nullptr)
-					{
-						LOG_ERROR("Add action '{0}'", name);
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-				}
-			}
-		}
-
-		// Read room list
-		{
-			rapidjson::Value::MemberIterator roomListIt = document.FindMember("room-list");
-			if (roomListIt != document.MemberEnd() && roomListIt->value.IsArray())
-			{
-				rapidjson::Value& roomListJson = roomListIt->value;
-				for (rapidjson::Value::ValueIterator roomIt = roomListJson.Begin(); roomIt != roomListJson.End(); roomIt++)
-				{
-					if (!roomIt->IsObject())
-					{
-						LOG_ERROR("Missing room in 'room-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read name
-					rapidjson::Value::MemberIterator nameIt = roomIt->FindMember("name");
-					if (nameIt == roomIt->MemberEnd() || !nameIt->value.IsString())
-					{
-						LOG_ERROR("Missing 'name' in room in 'room-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read id
-					rapidjson::Value::MemberIterator idIt = roomIt->FindMember("id");
-					if (idIt == roomIt->MemberEnd() || !idIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'id' in room in 'room-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					//Read type
-					rapidjson::Value::MemberIterator typeIt = roomIt->FindMember("type");
-					if (typeIt == roomIt->MemberEnd() || !typeIt->value.IsUint())
-					{
-						LOG_ERROR("Missing 'type' in room in 'room-list' in 'home-info.json'");
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-
-					std::string name = std::string(nameIt->value.GetString(), nameIt->value.GetStringLength());
-
-					Ref<Room> room = AddRoom(
-						name,
-						idIt->value.GetUint(),
-						typeIt->value.GetUint(),
-						*roomIt);
-					if (room == nullptr)
-					{
-						LOG_ERROR("Add room '{0}'", name);
-						throw std::runtime_error("Invalid file 'home-info.json'");
-					}
-				}
-			}
-		}
-
-		fclose(file);
-	}
-	void Home::Save()
-	{
-		boost::shared_lock_guard lock(mutex);
-
-		LOG_INFO("Saving home information to 'home-info.json'");
-
-		// Create json
-		rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
-
-		rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-
-		// Create action list
-		{
-			rapidjson::Value actionListJson = rapidjson::Value(rapidjson::kArrayType);
-
-			for (std::pair<uint32_t, Ref<Action>> pair : actionList)
-			{
-				rapidjson::Value actionJson = rapidjson::Value(rapidjson::kObjectType);
-
-				pair.second->Save(actionJson, allocator);
-
-				actionListJson.PushBack(actionJson, allocator);
-			}
-
-			document.AddMember("action-list", actionListJson, allocator);
-		}
-
-		// Create room list
-		{
-			rapidjson::Value roomListJson = rapidjson::Value(rapidjson::kArrayType);
-
-			for (std::pair<uint32_t, Ref<Room>> pair : roomList)
-			{
-				rapidjson::Value roomJson = rapidjson::Value(rapidjson::kObjectType);
-
-				pair.second->Save(roomJson, allocator);
-
-				roomListJson.PushBack(roomJson, allocator);
-			}
-
-			document.AddMember("room-list", roomListJson, allocator);
-		}
-
-		// Create device list
-		{
-			rapidjson::Value deviceListJson = rapidjson::Value(rapidjson::kArrayType);
-
-			for (std::pair<uint32_t, Ref<Device>> pair : deviceList)
-			{
-				rapidjson::Value deviceJson = rapidjson::Value(rapidjson::kObjectType);
-
-				pair.second->Save(deviceJson, allocator);
-
-				deviceListJson.PushBack(deviceJson, allocator);
-			}
-
-			document.AddMember("device-list", deviceListJson, allocator);
-		}
-
-		// Create device manager list
-		{
-			rapidjson::Value deviceManagerListJson = rapidjson::Value(rapidjson::kArrayType);
-
-			for (std::pair<uint32_t, Ref<DeviceManager>> pair : deviceManagerList)
-			{
-				rapidjson::Value deviceJson = rapidjson::Value(rapidjson::kObjectType);
-
-				pair.second->Save(deviceJson, allocator);
-
-				deviceManagerListJson.PushBack(deviceJson, allocator);
-			}
-
-			document.AddMember("device-manager-list", deviceManagerListJson, allocator);
-		}
-
-		//Save to file
-		FILE* file = fopen("home-info.json", "w");
-		if (file == nullptr)
-		{
-			LOG_ERROR("Open/find 'home-info.json'");
-			throw std::runtime_error("Open/find file 'home-info.json'");
-		}
-
-		char buffer[RAPIDJSON_BUFFER_SIZE_SMALL];
-		rapidjson::FileWriteStream stream(file, buffer, sizeof(buffer));
-
-		rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer = rapidjson::PrettyWriter<rapidjson::FileWriteStream>(stream);
-		document.Accept(writer);
-
-		fclose(file);
+		//TODO Work
 	}
 }

@@ -64,19 +64,19 @@ namespace server
         //Load thread counts
         rapidjson::Value::MemberIterator additionalThreadCountIt = document.FindMember("additional-thread-count");
         if (additionalThreadCountIt != document.MemberEnd() && additionalThreadCountIt->value.IsUint())
-            additionalThreadCount = additionalThreadCountIt->value.GetUint();
+            threadCount = std::max(additionalThreadCountIt->value.GetUint() + 1, 1u);
         else
         {
-            additionalThreadCount = boost::thread::hardware_concurrency() - 1;
+            threadCount = boost::thread::hardware_concurrency() - 1;
             LOG_WARNING("Missing 'main-thread-count' in 'core-info.json'. Default value will be used.");
         }
 
-        if (additionalThreadCount == 0)
+        if (threadCount == 1)
         {
-            LOG_WARNING("No additional worker thread is used. This can cause some slowdowns");
+            LOG_WARNING("No additional worker thread is used. This can cause some slowdowns.");
         }
 
-        LOG_INFO("Using {0} additional thread(s)", additionalThreadCount);
+        LOG_INFO("Using {0} main thread(s).", threadCount);
 
         //Load EMail
         rapidjson::Value::MemberIterator emailIt = document.FindMember("email-service");

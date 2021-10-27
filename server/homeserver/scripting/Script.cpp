@@ -1,45 +1,31 @@
 #include "Script.hpp"
-#include "ScriptSource.hpp"
-#include "js/JSScript.hpp"
+#include "ScriptManager.hpp"
+#include "javascript/Script.hpp"
 
-namespace scripting
+namespace server
 {
-	Script::Script(Ref<ScriptSource> source)
-		: source(std::move(source)), lastResult(ScriptResult::Failure("Nothing happened yet."))
-	{ }
-	Script::~Script()
-	{ }
-	Ref<Script> Script::Create(uint32_t scriptSourceID)
+	Script::Script(const std::string& name, identifier_t scriptID, const Ref<ScriptSource>& source)
+		: name(name), scriptID(scriptID), source(source)
 	{
-		// Get script manager
-		Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+	}
+	Script::~Script()
+	{
+	}
+	Ref<Script> Script::Create(const std::string& name, identifier_t scriptID, identifier_t sourceID)
+	{
+		Ref<ScriptManager> scriptManager = ScriptManager::GetInstance();
 		assert(scriptManager != nullptr);
 
-		// Get script source
-		Ref<scripting::ScriptSource> source = scriptManager->GetSource(scriptSourceID);
-		if (source == nullptr)
+		Ref<ScriptSource> source = scriptManager->GetScriptSource(sourceID);
+		if (source != nullptr)
 		{
-			LOG_ERROR("Find script source '{0}'", scriptSourceID);
-			return nullptr;
+			switch (source->GetLanguage())
+			{
+				case ScriptLanguage::kJSScriptLanguage:
+					return javascript::Script::Create(name, scriptID, source);
+			}
 		}
 
-		Ref<Script> script = nullptr;
-
-		switch (source->GetLanguage())
-		{
-			case ScriptLanguage::kJSScriptLanguage:
-				script = boost::make_shared<JSScript>(std::move(source));
-			default:
-				LOG_ERROR("Invalid script language");
-				return nullptr;
-		}
-
-		if (script != nullptr)
-		{
-			// Try compiling
-			script->Compile();
-		}
-
-		return script;
+		return nullptr;
 	}
 }

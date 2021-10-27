@@ -1,5 +1,6 @@
 #include "NetworkManager.hpp"
-#include "../io/WebPageFiles.hpp"
+#include "io/WebPageFiles.hpp"
+#include "io/DynamicResources.hpp"
 #include "BeaconListener.hpp"
 #include "HTTPSession.hpp"
 #include "WSSession.hpp"
@@ -29,9 +30,15 @@ namespace server
 		instanceNetworkManager = networkManager;
 
 		WebPageFiles::LoadWebPage("www");
+		
+		// Initialize dynamic resources
+		networkManager->dynamicResources = DynamicResources::Create();
+		if (networkManager->dynamicResources == nullptr)
+			return nullptr;
 
 		boost::system::error_code ec;
 
+		// Initialize ssl/tls context
 		networkManager->context = boost::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tls_server);
 		networkManager->context->use_certificate_file("ssl-cert.pem", boost::asio::ssl::context::file_format::pem, ec);
 		if (ec)
@@ -47,6 +54,7 @@ namespace server
 			return nullptr;
 		}
 
+		// Initialize tcp socket
 		networkManager->server = boost::make_shared<boost::asio::ip::tcp::acceptor>(*networkManager->service);
 
 		boost::asio::ip::address addr = boost::asio::ip::make_address(address, ec);
@@ -72,6 +80,7 @@ namespace server
 			return nullptr;
 		}
 
+		// Bind tcp socker
 		networkManager->server->bind(endpoint, ec);
 		if (ec)
 		{
@@ -79,6 +88,7 @@ namespace server
 			return nullptr;
 		}
 
+		// Let tcp socket listen
 		networkManager->server->listen(boost::asio::ip::tcp::socket::max_listen_connections, ec);
 		if (ec)
 		{
@@ -91,7 +101,7 @@ namespace server
 		networkManager->socket = boost::make_shared<ssl_socket_t>(*networkManager->service, *networkManager->context);
 		networkManager->server->async_accept(networkManager->socket->next_layer().socket(), boost::bind(&NetworkManager::OnAccept, networkManager, boost::placeholders::_1));
 
-		//Start beacon listener
+		// Initialize beacon listener
 		networkManager->beaconListener = BeaconListener::Create(port);
 		if (networkManager->beaconListener == nullptr)
 		{

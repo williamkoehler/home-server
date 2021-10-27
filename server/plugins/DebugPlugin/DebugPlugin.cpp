@@ -1,12 +1,12 @@
-#include <Plugin.hpp>
+#include <PluginManager.hpp>
 #include "DebugLight.hpp"
-#include "DebugVisuals.hpp"
+//#include "DebugVisuals.hpp"
 
 extern "C"
 {
-	void RegisterPlugin(Ref<home::Plugin> plugin)
+	void RegisterPlugins(Ref<home::PluginManager> plugin)
 	{
-		plugin->RegisterDeviceScript<DebugVisuals>();
-		plugin->RegisterDeviceScript<DebugLight>();
+		//plugin->RegisterDeviceScript<DebugVisuals>();
+		plugin->RegisterDevicePlugin<DebugLight>();
 	}
 }

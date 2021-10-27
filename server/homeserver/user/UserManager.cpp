@@ -92,7 +92,7 @@ namespace server
 		timestamp = ts;
 	}
 
-	Ref<User> UserManager::AddUser(std::string name, uint32_t userID, std::string passwd, UserAccessLevels accessLevel)
+	Ref<User> UserManager::AddUser(std::string name, identifier_t userID, std::string passwd, UserAccessLevels accessLevel)
 	{
 		uint8_t salt[SALT_LENGTH];
 		if (!RAND_bytes(salt, SALT_LENGTH))
@@ -106,11 +106,11 @@ namespace server
 
 		return AddUser(name, userID, digest, salt, accessLevel);
 	}
-	Ref<User> UserManager::AddUser(std::string name, uint32_t userID, uint8_t* hash, uint8_t* salt, UserAccessLevels accessLevel)
+	Ref<User> UserManager::AddUser(std::string name, identifier_t userID, uint8_t* hash, uint8_t* salt, UserAccessLevels accessLevel)
 	{
 		boost::lock_guard lock(mutex);
 
-		uint32_t genID = userID ? userID : XXH32(name.c_str(), name.size(), 0x55534552);
+		identifier_t genID = userID ? userID : XXH32(name.c_str(), name.size(), 0x55534552);
 
 		if (userList.count(genID))
 		{
@@ -133,7 +133,7 @@ namespace server
 		return user;
 	}
 
-	Ref<User> UserManager::GetUser(uint32_t userID)
+	Ref<User> UserManager::GetUser(identifier_t userID)
 	{
 		boost::shared_lock_guard lock(mutex);
 
@@ -155,7 +155,7 @@ namespace server
 		return (*it).second;
 	}
 
-	bool UserManager::SetUserPassword(uint32_t userID, std::string_view passwd, std::string_view newPasswd)
+	bool UserManager::SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd)
 	{
 		boost::shared_lock_guard lock(mutex);
 
@@ -186,7 +186,7 @@ namespace server
 		return true;
 	}
 
-	void UserManager::RemoveUser(uint32_t userID)
+	void UserManager::RemoveUser(identifier_t userID)
 	{
 		boost::lock_guard lock(mutex);
 

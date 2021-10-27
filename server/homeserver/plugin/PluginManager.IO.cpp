@@ -43,8 +43,6 @@ namespace server
         }
 
         fclose(file);
-
-        UpdateTimestamp();
     }
 
     void PluginManager::SaveDefault()

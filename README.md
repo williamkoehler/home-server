@@ -14,8 +14,11 @@ Some dependencies are needed beforehand:
 - **OpenSSL** version 1.1.1f
 - **pthread**
 - **curl**
+- **sqlite3**
 
 Download the repository using: `git clone ...`
+
+Boostrap: `./bootstrap-debian.sh` for Debian/Ubuntu
 
 Create build directory inside repository using `mkdir build && cd build`
 

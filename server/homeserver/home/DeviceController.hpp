@@ -35,44 +35,21 @@ namespace server
 
 		/// @brief Get device controller name
 		/// @return Device name
-		inline std::string GetName()
-		{
-			boost::lock_guard lock(mutex);
-			return name;
-		}
+		std::string GetName();
 
 		/// @brief Set device controller name
 		/// @param v New device name
-		inline void SetName(std::string v)
-		{
-			boost::lock_guard lock(mutex);
-			Home::GetInstance()->UpdateTimestamp();
-			name = std::move(v);
-		}
+		bool SetName(const std::string& v);
 
 		inline identifier_t GetDeviceControllerID() { return controllerID; }
 
 		/// @brief Get room
 		/// @return Room (can be null)
-		inline Ref<Room> GetRoom()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return room;
-		}
+		Ref<Room> GetRoom();
 
 		/// @brief Set room
 		/// @param v Room (can be null)
-		inline void SetRoom(Ref<Room> v)
-		{
-			boost::lock_guard lock(mutex);
-			if (room != nullptr)
-				room->RemoveDeviceController(shared_from_this());
-
-			room = v;
-
-			if (room != nullptr)
-				room->AddDeviceController(shared_from_this());
-		}
+		bool SetRoom(Ref<Room> v);
 
 		/// @brief Get device controller plugin
 		/// @return Device controller plugin

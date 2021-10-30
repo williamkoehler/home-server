@@ -9,9 +9,9 @@ namespace home
 	class PluginManager
 	{
 	public:
-		virtual bool RegisterDevicePlugin(const std::string& name, identifier_t pluginID, CreateDevicePluginFunction* createCallback) = 0;
-		virtual bool RegisterDeviceControllerPlugin(const std::string& name, identifier_t pluginID, CreateDeviceControllerPluginFunction* createCallback) = 0;
-		
+		virtual bool RegisterDevicePlugin(DevicePluginDescription description, CreateDevicePluginFunction* createCallback) = 0;
+		virtual bool RegisterDeviceControllerPlugin(DeviceControllerPluginDescription description, CreateDeviceControllerPluginFunction* createCallback) = 0;
+
 		template<typename T>
 		bool RegisterDevicePlugin();
 		template<typename T>
@@ -21,13 +21,13 @@ namespace home
 	template<typename T>
 	bool PluginManager::RegisterDevicePlugin()
 	{
-		return RegisterDevicePlugin(T::GetPluginName_(), T::GetPluginID_(), T::Create);
+		return RegisterDevicePlugin(DevicePluginDescription{ T::GetPluginName_(), T::GetPluginID_(), T::GetPluginDescription_() }, T::Create);
 	}
 
 	template<typename T>
 	bool PluginManager::RegisterDeviceControllerPlugin()
 	{
-		return RegisterDeviceControllerPlugin(T::GetPluginName_(), T::GetPluginID_(), T::Create);
+		return RegisterDeviceControllerPlugin(DeviceControllerPluginDescription{ T::GetPluginName_(), T::GetPluginID_(), T::GetPluginDescription_() }, T::Create);
 	}
 
 	typedef void (RegisterPluginsFunction)(Ref<PluginManager> pluginManager);

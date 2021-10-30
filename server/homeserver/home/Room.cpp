@@ -4,6 +4,7 @@
 #include "DeviceController.hpp"
 #include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
+#include "../database/Database.hpp"
 
 namespace server
 {
@@ -14,6 +15,40 @@ namespace server
 	{
 		deviceList.clear();
 		deviceControllerList.clear();
+	}
+
+	std::string Room::GetName()
+	{
+		boost::shared_lock_guard lock(mutex);
+		return name;
+	}
+	bool Room::SetName(const std::string& v)
+	{
+		boost::lock_guard lock(mutex);
+		if (Database::GetInstance()->UpdateRoomPropName(shared_from_this(), name, v))
+		{
+			name = v;
+			return true;
+		}
+		else
+			return false;
+	}
+
+	std::string Room::GetType()
+	{
+		boost::shared_lock_guard lock(mutex);
+		return type;
+	}
+	bool Room::SetType(const std::string& v)
+	{
+		boost::lock_guard lock(mutex);
+		if (Database::GetInstance()->UpdateRoomPropType(shared_from_this(), type, v))
+		{
+			type = v;
+			return true;
+		}
+		else
+			return false;
 	}
 
 	bool Room::AddDevice(Ref<Device> device)

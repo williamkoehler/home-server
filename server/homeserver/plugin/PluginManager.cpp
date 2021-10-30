@@ -26,6 +26,12 @@ namespace server
 		try
 		{
 			pluginManager->Load();
+
+			// Update snapshot
+			pluginManager->TakeSnapshot();
+
+			// Update timestamp
+			pluginManager->UpdateTimestamp();
 		}
 		catch (std::exception e)
 		{
@@ -48,6 +54,56 @@ namespace server
 		timestamp = ts;
 	}
 
+	void PluginManager::TakeSnapshot()
+	{
+		boost::shared_lock_guard lock(mutex);
+
+		rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
+
+		// Clear memory
+		snapshot.SetNull();
+		allocator.Clear();
+
+		// Fill document
+		snapshot.SetObject();
+
+		// Update device plugins
+		rapidjson::Value devicePluginListJson = rapidjson::Value(rapidjson::kArrayType);
+
+		for (const std::pair<const identifier_t, DevicePluginReference>& devicePlugin : devicePluginList)
+		{
+			rapidjson::Value devicePluginJson = rapidjson::Value(rapidjson::kObjectType);
+
+			home::DevicePluginDescription description = devicePlugin.second.description;
+
+			devicePluginJson.AddMember("name", rapidjson::Value(description.name.c_str(), description.name.size(), allocator), allocator);
+			devicePluginJson.AddMember("pluginid", rapidjson::Value(description.pluginID), allocator);
+			devicePluginJson.AddMember("description", rapidjson::Value(description.description.data(), description.description.size(), allocator), allocator);
+
+			devicePluginListJson.PushBack(devicePluginJson, allocator);
+		}
+
+		snapshot.AddMember("devices", devicePluginListJson, allocator);
+
+		// Update device controller plugins
+		rapidjson::Value deviceControllerPluginListJson = rapidjson::Value(rapidjson::kArrayType);
+
+		for (const std::pair<const identifier_t, DeviceControllerPluginReference>& deviceControllerPlugin : deviceControllerPluginList)
+		{
+			rapidjson::Value devicePluginJson = rapidjson::Value(rapidjson::kObjectType);
+
+			home::DeviceControllerPluginDescription description = deviceControllerPlugin.second.description;
+
+			devicePluginJson.AddMember("name", rapidjson::Value(description.name.c_str(), description.name.size(), allocator), allocator);
+			devicePluginJson.AddMember("pluginid", rapidjson::Value(description.pluginID), allocator);
+			devicePluginJson.AddMember("description", rapidjson::Value(description.description.data(), description.description.size(), allocator), allocator);
+
+			deviceControllerPluginListJson.PushBack(devicePluginJson, allocator);
+		}
+
+		snapshot.AddMember("devicecontrollers", deviceControllerPluginListJson, allocator);
+	}
+
 	void PluginManager::LoadPlugin(std::string name)
 	{
 		boost::filesystem::path filePath = boost::filesystem::weakly_canonical(boost::filesystem::path("./plugins/" + name));
@@ -68,7 +124,7 @@ namespace server
 			try
 			{
 				LOG_INFO("Registering plugin '{0}'", name);
-				library->get<home::RegisterPluginsFunction>("RegisterPlugins")(shared_from_this());
+				library->get<home::RegisterPluginsFunction>("RegisterPlugins")(boost::static_pointer_cast<home::PluginManager>(shared_from_this()));
 
 				boost::lock_guard lock(mutex);
 				libraryList.push_back(library);
@@ -86,23 +142,28 @@ namespace server
 		}
 	}
 
-	bool PluginManager::RegisterDevicePlugin(const std::string& name, identifier_t pluginID, home::CreateDevicePluginFunction* createFunction)
+	bool PluginManager::RegisterDevicePlugin(home::DevicePluginDescription description, home::CreateDevicePluginFunction* createFunction)
 	{
 		boost::lock_guard lock(mutex);
 
-		if (devicePluginList.count(pluginID))
+		if (description.pluginID == 0)
+		{
+			LOG_ERROR("Device plugin has invalid description");
+			return false;
+		}
+
+		if (devicePluginList.count(description.pluginID))
 		{
 			LOG_ERROR("Device plugin already exists");
 			return false;
 		}
 
-		devicePluginList[pluginID] = {
-			name,
-			pluginID,
+		devicePluginList[description.pluginID] = {
+			description,
 			createFunction,
 		};
 
-		LOG_INFO("Successfully registered device plugin {0}:{1}", name, pluginID);
+		LOG_INFO("Successfully registered device plugin {0}:{1}", description.name, description.pluginID);
 		return true;
 	}
 	Ref<home::DevicePlugin> PluginManager::CreateDevicePlugin(identifier_t pluginID)
@@ -110,30 +171,35 @@ namespace server
 		boost::shared_lock_guard lock(mutex);
 
 		// Find plugin
-		boost::unordered::unordered_map<uint32_t, DevicePluginReference>::const_iterator it = devicePluginList.find(pluginID);
+		boost::unordered::unordered_map<identifier_t, DevicePluginReference>::const_iterator it = devicePluginList.find(pluginID);
 		if (it != devicePluginList.end())
 			return it->second.createFunction();
 
 		return nullptr;
 	}
 
-	bool PluginManager::RegisterDeviceControllerPlugin(const std::string& name, identifier_t pluginID, home::CreateDeviceControllerPluginFunction* createFunction)
+	bool PluginManager::RegisterDeviceControllerPlugin(home::DeviceControllerPluginDescription description, home::CreateDeviceControllerPluginFunction* createFunction)
 	{
 		boost::lock_guard lock(mutex);
 
-		if (deviceControllerPluginList.count(pluginID))
+		if (description.pluginID == 0)
+		{
+			LOG_ERROR("Device controller has invalid description");
+			return false;
+		}
+
+		if (deviceControllerPluginList.count(description.pluginID))
 		{
 			LOG_ERROR("Device controller plugin already exists");
 			return false;
 		}
 
-		deviceControllerPluginList[pluginID] = {
-			name,
-			pluginID,
+		deviceControllerPluginList[description.pluginID] = {
+			description,
 			createFunction,
 		};
 
-		LOG_INFO("Successfully registered device controller plugin {0}:{1}", name, pluginID);
+		LOG_INFO("Successfully registered device controller plugin {0}:{1}", description.name, description.pluginID);
 		return true;
 	}
 	Ref<home::DeviceControllerPlugin> PluginManager::CreateDeviceControllerPlugin(identifier_t pluginID)
@@ -141,7 +207,7 @@ namespace server
 		boost::shared_lock_guard lock(mutex);
 
 		// Find plugin
-		boost::unordered::unordered_map<uint32_t, DeviceControllerPluginReference>::const_iterator it = deviceControllerPluginList.find(pluginID);
+		boost::unordered::unordered_map<identifier_t, DeviceControllerPluginReference>::const_iterator it = deviceControllerPluginList.find(pluginID);
 		if (it != deviceControllerPluginList.end())
 			return it->second.createFunction();
 

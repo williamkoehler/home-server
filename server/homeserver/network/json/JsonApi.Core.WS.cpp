@@ -43,7 +43,7 @@ namespace server
 		assert(userManager != nullptr);
 
 		output.AddMember("plugins", rapidjson::Value(pluginManager->timestamp), allocator);
-		//output.AddMember("scripts", rapidjson::Value(scriptManager->timestamp), allocator);
+		output.AddMember("scripts", rapidjson::Value(/*scriptManager->timestamp*/0xff), allocator);
 		output.AddMember("home", rapidjson::Value(home->timestamp), allocator);
 		output.AddMember("users", rapidjson::Value(userManager->timestamp), allocator);
 
@@ -67,7 +67,7 @@ namespace server
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevels::kAdministratorUserAccessLevel)
+		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
 		{
 			context.Error("Invalid access level. User needs to be administrator.");
 			BuildJsonNAckMessageWS(output);

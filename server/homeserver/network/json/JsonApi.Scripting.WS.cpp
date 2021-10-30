@@ -27,7 +27,7 @@
 //		assert(user != nullptr);
 //		assert(input.IsObject() && output.IsObject());
 //
-//		if (user->accessLevel != UserAccessLevels::kAdministratorUserAccessLevel)
+//		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
 //		{
 //			context.Error("Invalid access level. User needs to be administrator.");
 //			BuildJsonNAckMessageWS(output);
@@ -77,7 +77,7 @@
 //		assert(user != nullptr);
 //		assert(input.IsObject() && output.IsObject());
 //
-//		if (user->accessLevel != UserAccessLevels::kAdministratorUserAccessLevel)
+//		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
 //		{
 //			context.Error("Invalid access level. User needs to be administrator.");
 //			BuildJsonNAckMessageWS(output);
@@ -183,7 +183,7 @@
 //		assert(user != nullptr);
 //		assert(input.IsObject() && output.IsObject());
 //
-//		if (user->accessLevel != UserAccessLevels::kAdministratorUserAccessLevel)
+//		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
 //		{
 //			context.Error("Invalid access level. User needs to be administrator.");
 //			BuildJsonNAckMessageWS(output);
@@ -223,7 +223,7 @@
 //		assert(user != nullptr);
 //		assert(input.IsObject() && output.IsObject());
 //
-//		if (user->accessLevel != UserAccessLevels::kAdministratorUserAccessLevel)
+//		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
 //		{
 //			context.Error("Invalid access level. User needs to be administrator.");
 //			BuildJsonNAckMessageWS(output);

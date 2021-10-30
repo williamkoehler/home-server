@@ -4,7 +4,7 @@
 class DebugLight : public home::DevicePlugin
 {
 public:
-	DEVICEPLUGIN_DESCRIPTION(DebugLight, "Debug Light");
+	DEVICEPLUGIN_DESCRIPTION(DebugLight, "Debug Light", "Debug light that does not control anything.");
 
 	bool state = false;
 

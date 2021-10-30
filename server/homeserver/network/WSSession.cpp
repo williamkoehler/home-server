@@ -110,6 +110,9 @@ namespace server
 		// User
 		{ "get-users", JsonApi::ProcessJsonGetUsersMessageWS },
 
+		// Plugins
+		{ "get-plugins", JsonApi::ProcessJsonGetPluginsMessageWS },
+
 		// Home
 		{ "get-home", JsonApi::ProcessJsonGetHomeMessageWS },
 		{ "set-home", JsonApi::ProcessJsonSetHomeMessageWS },

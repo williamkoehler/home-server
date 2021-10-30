@@ -1,16 +1,15 @@
 #pragma once
 #include "../common.hpp"
 
-#define SALT_LENGTH 16
-
 namespace server
 {
 	class UserManager;
 
-	class JsonApi;
-	class SSHSession;
+	class Database;
 
-	enum class UserAccessLevels
+	class JsonApi;
+
+	enum class UserAccessLevel
 	{
 		kRestrictedUserAccessLevel,
 		kNormalUserAccessLevel,
@@ -21,6 +20,7 @@ namespace server
 	{
 	private:
 		friend class UserManager;
+		friend class Database;
 		friend class JsonApi;
 
 		boost::shared_mutex mutex;
@@ -30,62 +30,27 @@ namespace server
 		uint8_t hash[SHA256_DIGEST_LENGTH] = "";
 		uint8_t salt[SALT_LENGTH] = "";
 
-		UserAccessLevels accessLevel;
+		UserAccessLevel accessLevel;
 
 		// Settings
 
 	public:
-		User(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels& accessLevel);
+		User(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel& accessLevel);
 		~User();
-		static Ref<User> Create(const std::string& name, identifier_t userID, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevels accessLevel);
 
-		inline std::string GetName()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return name;
-		}
-		inline void SetName(std::string v)
-		{
-			boost::lock_guard lock(mutex);
-			name = v;
-		}
+		std::string GetName();
+		bool SetName(const std::string& v);
 
 		inline uint32_t GetUserID() const { return userID; }
 
-		inline void GetHash(uint8_t* h)
-		{
-			assert(h != nullptr);
-			boost::shared_lock_guard lock(mutex);
-			memcpy(h, hash, SHA256_DIGEST_LENGTH);
-		}
-		inline bool CompaireHash(uint8_t h[SHA256_DIGEST_LENGTH])
-		{
-			boost::shared_lock_guard lock(mutex);
-			return memcmp(hash, h, SHA256_DIGEST_LENGTH) == 0;
-		}
-		inline void SetHash(uint8_t h[SHA256_DIGEST_LENGTH])
-		{
-			boost::lock_guard lock(mutex);
-			memcpy(hash, h, SHA256_DIGEST_LENGTH);
-		}
+		void GetHash(uint8_t* h);
+		bool CompaireHash(uint8_t h[SHA256_DIGEST_LENGTH]);
+		bool SetHash(uint8_t h[SHA256_DIGEST_LENGTH]);
 
-		inline void GetSalt(uint8_t* s)
-		{
-			assert(s != nullptr);
-			boost::shared_lock_guard lock(mutex);
-			memcpy(s, salt, SALT_LENGTH);
-		}
+		void GetSalt(uint8_t* s);
 
-		inline UserAccessLevels GetAccessLevel()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return accessLevel;
-		}
-		inline void SetAccessLevel(UserAccessLevels v)
-		{
-			boost::lock_guard lock(mutex);
-			accessLevel = v;
-		}
+		UserAccessLevel GetAccessLevel();
+		bool SetAccessLevel(UserAccessLevel v);
 	};
 }
 

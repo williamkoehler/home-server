@@ -36,44 +36,21 @@ namespace server
 
 		/// @brief Get device name
 		/// @return Device name
-		inline std::string GetName()
-		{
-			boost::lock_guard lock(mutex);
-			return name;
-		}
+		std::string GetName();
 
 		/// @brief Set device name
 		/// @param v New device name
-		inline void SetName(const std::string& v)
-		{
-			boost::lock_guard lock(mutex);
-			Home::GetInstance()->UpdateTimestamp();
-			name = v;
-		}
+		bool SetName(const std::string& v);
 
 		inline identifier_t GetDeviceID() { return deviceID; }
 
 		/// @brief Get room
 		/// @return Room (can be null)
-		inline Ref<Room> GetRoom()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return room;
-		}
+		Ref<Room> GetRoom();
 
 		/// @brief Set room
 		/// @param v Room (can be null)
-		inline void SetRoom(Ref<Room> v)
-		{
-			boost::lock_guard lock(mutex);
-			if (room != nullptr)
-				room->RemoveDevice(shared_from_this());
-
-			room = v;
-
-			if (room != nullptr)
-				room->AddDevice(shared_from_this());
-		}
+		bool SetRoom(Ref<Room> v);
 
 		/// @brief Get device plugin
 		/// @return Device plugin

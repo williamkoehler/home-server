@@ -119,12 +119,6 @@ namespace server
 
 		threads.join_all();
 
-		try
-		{
-			userManager->Save();
-		}
-		catch (std::exception) { }
-
 		LOG_FLUSH();
 	}
 

@@ -18,6 +18,15 @@ namespace server
 		// Core
 		static void BuildJsonSettings(const Ref<User>& user, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
+		// User
+		static void BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp = 0);
+		static void DecodeJsonUsers(rapidjson::Value& input);
+		static void BuildJsonUser(const Ref<User>& user, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		static void DecodeJsonUser(const Ref<User>& user, rapidjson::Value& input);
+
+		// Plugins
+		static void BuildJsonPlugins(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+
 		// Home
 		static void BuildJsonHome(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp = 0);
 		static void DecodeJsonHome(rapidjson::Value& input);
@@ -48,12 +57,6 @@ namespace server
 		////static void BuildJsonScriptState(const Ref<scripting::Script>& script, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 		////static void DecodeJsonScriptState(const Ref<scripting::Script>& script, rapidjson::Value& input);
 
-		// User
-		static void BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp = 0);
-		static void DecodeJsonUsers(rapidjson::Value& input);
-		static void BuildJsonUser(const Ref<User>& user, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-		static void DecodeJsonUser(const Ref<User>& user, rapidjson::Value& input);
-
 	public: // HTTP
 		// Build
 		static void BuildJsonErrorMessageHTTP(const char* error, rapidjson::Document& output);
@@ -78,6 +81,9 @@ namespace server
 		static void ProcessJsonGetUsersMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 		static void ProcessJsonSetUsersMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 		static void ProcessJsonSetUserMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		// Plugins
+		static void ProcessJsonGetPluginsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
 		// Home
 		static void ProcessJsonGetHomeMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);

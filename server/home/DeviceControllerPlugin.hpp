@@ -4,6 +4,13 @@
 
 namespace home
 {
+	struct DeviceControllerPluginDescription
+	{
+		std::string name;
+		identifier_t pluginID;
+		std::string description;
+	};
+
 	class DeviceControllerCache : public Cache
 	{
 	protected:
@@ -41,4 +48,9 @@ namespace home
 	};
 
 	typedef Ref<DeviceControllerPlugin>(CreateDeviceControllerPluginFunction)();
+
+#define DEVICECONTROLLERPLUGIN_DESCRIPTION(class_, name_, desc_) \
+		PLUGIN_DESCRIPTION(class_, name_) \
+		static std::string GetPluginDescription_() { return desc_; } \
+		static Ref<DeviceControllerPlugin> Create() { return boost::make_shared<class_>(); }
 }

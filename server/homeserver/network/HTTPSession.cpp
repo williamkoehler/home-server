@@ -8,6 +8,7 @@
 #include "../plugin/PluginManager.hpp"
 #include "json/JsonApi.hpp"
 #include "WSSession.hpp"
+#include <cppcodec/base64_rfc4648.hpp>
 
 #define ERROR404 \
 	"<html>" \
@@ -95,68 +96,67 @@ namespace server
 			}
 			else if (strncmp(target.data(), "/auth", 5) == 0)
 			{
-				rapidjson::StringStream stream = rapidjson::StringStream(request.body().c_str());
-
-				rapidjson::Document document;
-				document.ParseStream(stream);
-
-				buffer.consume(size);
-
-				if (document.HasParseError() || !document.IsObject())
+				// Get header
+				boost::beast::http::fields::iterator it = request.find(boost::beast::http::field::authorization);
+				if (it == request.end())
 				{
-					std::string error = "Invalid body. Please call /help for more details. JSON Message : ";
-					error += rapidjson::GetParseError_En(document.GetParseError());
-
-					WriteError(error.c_str());
+					WriteError("Missing authorization field. Please call /api/help for more details.");
 					return;
 				}
 
-				rapidjson::Value::MemberIterator tokenIt = document.FindMember("token");
-
 				std::string token;
 
-				if (tokenIt != document.MemberEnd() && tokenIt->value.IsString())
+				// Check autorization methode
+				boost::beast::string_view authorization = it->value();
+				if (strncmp(authorization.data(), "Bearer ", 7) == 0)
 				{
-					rapidjson::Value& tokenJson = tokenIt->value;
+					// Authenticate using bearer token
 
-					token.append(tokenJson.GetString(), tokenJson.GetStringLength());
+					authorization.remove_prefix(7);
+
+					identifier_t userID = 0;
 					try
 					{
-						jwt::decoded_jwt decodedToken = jwt::decode(token);
+						jwt::decoded_jwt decodedToken = jwt::decode(authorization.to_string());
 
-						identifier_t userID = UserManager::GetInstance()->VerifyToken(decodedToken);
-					#ifndef _DEBUG
-						/*if (jwt::date::clock::now() + std::chrono::hours(120) > decodedToken.get_expires_at())
-							token = UserManager::GetInstance()->GenerateToken(userID);*/
-					#endif
+						userID = UserManager::GetInstance()->VerifyToken(decodedToken);
 					}
+
 					catch (std::exception)
 					{
-						WriteError("Invalid authentication token.");
+						WriteError("Invalid authorization field. Please call /api/help for more details.");
 						return;
 					}
+
+					token = authorization.to_string();
 				}
-				else
+				else if (strncmp(authorization.data(), "Basic ", 6) == 0)
 				{
-					rapidjson::Value::MemberIterator nameIt = document.FindMember("name");
-					rapidjson::Value::MemberIterator passwdIt = document.FindMember("passwd");
+					// Authenticate using basic token
 
-					if (nameIt == document.MemberEnd() || !nameIt->value.GetString() ||
-						passwdIt == document.MemberEnd() || !passwdIt->value.GetString())
-					{
-						WriteError("Invalid body. Please call /help for more details.");
-						return;
-					}
+					authorization.remove_prefix(6);
 
 					try
 					{
-						token = UserManager::GetInstance()->GenerateToken(
-							std::string_view(nameIt->value.GetString(), nameIt->value.GetStringLength()),
-							std::string_view(passwdIt->value.GetString(), passwdIt->value.GetStringLength()));
+						std::vector<uint8_t> decoded = cppcodec::base64_rfc4648::decode(authorization.data(), authorization.size());
+
+						std::string_view basic = std::string_view((const char*)decoded.data(), decoded.size());
+
+						size_t seperator = basic.find(':');
+						if (seperator == std::string_view::npos)
+						{
+							WriteError("Invalid authorization field. Please call /api/help for more details.");
+							return;
+						}
+
+						std::string_view name = basic.substr(0, seperator);
+						std::string_view password = basic.substr(seperator + 1);
+
+						token = UserManager::GetInstance()->GenerateToken(name, password);
 					}
-					catch (std::exception)
+					catch (std::exception) 
 					{
-						WriteError("Invalid credentials.");
+						WriteError("Invalid authorization field. Please call /api/help for more details.");
 						return;
 					}
 				}
@@ -327,27 +327,53 @@ namespace server
 		}
 
 		boost::beast::string_view authorization = it->value();
-		if (strncmp(authorization.data(), "Bearer ", 7))
+		if (strncmp(authorization.data(), "Bearer ", 7) == 0)
 		{
-			WriteError("Invalid authorization field. Please call /api/help for more details.");
-			return nullptr;
+			// Authenticate using bearer token
+
+			authorization.remove_prefix(7);
+
+			identifier_t userID = 0;
+			try
+			{
+				jwt::decoded_jwt decodedToken = jwt::decode(authorization.to_string());
+
+				userID = UserManager::GetInstance()->VerifyToken(decodedToken);
+			}
+			catch (std::exception) {}
+
+			return UserManager::GetInstance()->GetUser(userID);
+		}
+		else if (strncmp(authorization.data(), "Basic ", 6) == 0)
+		{
+			// Authenticate using basic token
+
+			authorization.remove_prefix(6);
+
+			try
+			{
+				std::vector<uint8_t> decoded = cppcodec::base64_rfc4648::decode(authorization.data(), authorization.size());
+
+				std::string_view basic = std::string_view((const char*)decoded.data(), decoded.size());
+
+				size_t seperator = basic.find(':');
+				if (seperator == std::string_view::npos)
+				{
+					WriteError("Invalid authorization field. Please call /api/help for more details.");
+					return nullptr;
+				}
+
+				std::string_view name = basic.substr(0, seperator);
+				std::string_view password = basic.substr(seperator + 1);
+
+				return UserManager::GetInstance()->GetUserByPassword(name, password);
+			}
+			catch (std::exception) {}
 		}
 
-		authorization.remove_prefix(7);
-
-		identifier_t userID = 0;
-		try
-		{
-			jwt::decoded_jwt decodedToken = jwt::decode(authorization.to_string());
-
-			userID = UserManager::GetInstance()->VerifyToken(decodedToken);
-		}
-		catch (std::exception)
-		{
-			return nullptr;
-		}
-
-		return UserManager::GetInstance()->GetUser(userID);
+		// Write error
+		WriteError("Invalid authorization field. Please call /api/help for more details.");
+		return nullptr;
 	}
 	void HTTPSession::WriteError(const char* error)
 	{

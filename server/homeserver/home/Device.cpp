@@ -1,6 +1,7 @@
 #include "Device.hpp"
 #include <xxHash/xxhash.h>
 #include "../plugin/PluginManager.hpp"
+#include "../database/Database.hpp"
 
 namespace server
 {
@@ -11,6 +12,45 @@ namespace server
 	Device::~Device()
 	{
 		plugin->Terminate();
+	}
+
+
+	std::string Device::GetName()
+	{
+		boost::lock_guard lock(mutex);
+		return name;
+	}
+	bool Device::SetName(const std::string& v)
+	{
+		boost::lock_guard lock(mutex);
+		if (Database::GetInstance()->UpdateDevicePropName(shared_from_this(), name, v))
+		{
+			name = v;
+			return true;
+		}
+		return false;
+	}
+
+	Ref<Room> Device::GetRoom()
+	{
+		boost::shared_lock_guard lock(mutex);
+		return room;
+	}
+	bool Device::SetRoom(Ref<Room> v)
+	{
+		boost::lock_guard lock(mutex);
+		if (Database::GetInstance()->UpdateDevicePropRoom(shared_from_this(), room, v))
+		{
+			if (room != nullptr)
+				room->RemoveDevice(shared_from_this());
+
+			room = v;
+
+			if (room != nullptr)
+				room->AddDevice(shared_from_this());
+			return true;
+		}
+		return false;
 	}
 
 	void Device::Update(size_t cycle)

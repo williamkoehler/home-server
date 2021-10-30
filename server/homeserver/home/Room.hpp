@@ -30,31 +30,13 @@ namespace server
 		Room(const std::string& name, identifier_t roomID, const std::string& type);
 		~Room();
 
-		inline std::string GetName()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return name;
-		}
-		inline void SetName(std::string v)
-		{
-			boost::lock_guard lock(mutex);
-			Home::GetInstance()->UpdateTimestamp();
-			name = std::move(v);
-		}
+		std::string GetName();
+		bool SetName(const std::string& v);
 
 		inline uint32_t GetRoomID() { return roomID; }
 
-		inline std::string GetType()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return type;
-		}
-		inline void SetType(std::string v)
-		{
-			boost::lock_guard lock(mutex);
-			Home::GetInstance()->UpdateTimestamp();
-			type = v;
-		}
+		std::string GetType();
+		bool SetType(const std::string& v);
 
 		//! Device
 

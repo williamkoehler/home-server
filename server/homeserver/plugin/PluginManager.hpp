@@ -1,6 +1,8 @@
 #pragma once
 #include "../common.hpp"
 #include <PluginManager.hpp>
+#include <DevicePlugin.hpp>
+#include <DeviceControllerPlugin.hpp>
 #include <boost/dll.hpp>
 
 namespace server
@@ -21,21 +23,27 @@ namespace server
 		// Device plugin
 		struct DevicePluginReference
 		{
-			std::string name;
-			identifier_t pluginID;
+			home::DevicePluginDescription description;
 			home::CreateDevicePluginFunction* createFunction;
 		};
-		boost::unordered_map<uint32_t, DevicePluginReference> devicePluginList;
+		boost::unordered_map<identifier_t, DevicePluginReference> devicePluginList;
 
 		// Device controller plugin
 		struct DeviceControllerPluginReference
 		{
-			std::string name;
-			identifier_t pluginID;
+			home::DeviceControllerPluginDescription description;
 			home::CreateDeviceControllerPluginFunction* createFunction;
 		};
-		boost::unordered_map<uint32_t, DeviceControllerPluginReference> deviceControllerPluginList;
+		boost::unordered_map<identifier_t, DeviceControllerPluginReference> deviceControllerPluginList;
 
+		// Json snapshot of device plugin, and device controller plugin descriptions
+		rapidjson::Document snapshot;
+
+		/// @brief Take a json snaphot
+		void TakeSnapshot();
+
+		/// @brief Loads plugin from plugins folder
+		/// @param name Plugin name/ filename
 		void LoadPlugin(std::string name);
 
 		// IO
@@ -60,10 +68,10 @@ namespace server
 			return timestamp;
 		}
 
-		virtual bool RegisterDevicePlugin(const std::string& name, identifier_t pluginID, home::CreateDevicePluginFunction* createFunction) override;
+		virtual bool RegisterDevicePlugin(home::DevicePluginDescription description, home::CreateDevicePluginFunction* createFunction) override;
 		Ref<home::DevicePlugin> CreateDevicePlugin(identifier_t pluginID);
 
-		virtual bool RegisterDeviceControllerPlugin(const std::string& name, identifier_t pluginID, home::CreateDeviceControllerPluginFunction* createFunction) override;
+		virtual bool RegisterDeviceControllerPlugin(home::DeviceControllerPluginDescription description, home::CreateDeviceControllerPluginFunction* createFunction) override;
 		Ref<home::DeviceControllerPlugin> CreateDeviceControllerPlugin(identifier_t pluginID);
 	};
 }

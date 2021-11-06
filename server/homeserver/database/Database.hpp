@@ -1,4 +1,5 @@
 #include "../common.hpp"
+#include "../scripting/ScriptSource.hpp"
 
 namespace server
 {
@@ -21,7 +22,39 @@ namespace server
 		static Ref<Database> Create();
 		static Ref<Database> GetInstance();
 
-		//! Home
+		//! ScriptSource
+
+		/// @brief Load scripts from database
+		/// @param callback Callback for each user
+		/// @return Successfulness
+		bool LoadScriptSources(const boost::function<void(identifier_t sourceID, const std::string& name, ScriptUsage usage, ScriptLanguage language, const std::string_view& data)>& callback);
+
+		/// @brief Reserves new script source entry in database
+		/// @return Entry identifier
+		identifier_t ReserveScriptSource();
+
+		/// @brief Update script source without pushing record
+		/// @param user Script source to update
+		/// @return Successfulness
+		bool UpdateScriptSource(Ref<ScriptSource> scriptSource);
+
+		/// @brief Update script source name 
+		/// @param scriptSource Script source to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
+		bool UpdateScriptSourcePropName(Ref<ScriptSource> scriptSource, const std::string& value, const std::string& newValue);
+
+		/// @brief Update script source data 
+		/// @param scriptSource Script source to update
+		/// @param newValue New data
+		/// @return Successfulness
+		bool UpdateScriptSourcePropData(Ref<ScriptSource> scriptSource, const std::string_view& newValue);
+		bool RemoveScriptSource(identifier_t sourceID);
+
+		size_t GetScriptSourceCount();
+
+		//! Room
 
 		/// @brief Load rooms from database
 		/// @param callback Callback for each room
@@ -36,11 +69,19 @@ namespace server
 		/// @param room Room to update
 		/// @return Successfulness
 		bool UpdateRoom(Ref<Room> room);
+
+		/// @brief Update room name 
+		/// @param script Room to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
 		bool UpdateRoomPropName(Ref<Room> room, const std::string& value, const std::string& newValue);
 		bool UpdateRoomPropType(Ref<Room> room, const std::string& value, const std::string& newValue);
 		bool RemoveRoom(identifier_t roomID);
 
 		size_t GetRoomCount();
+
+		//! DeviceController
 
 		/// @brief Load device controllers from database
 		/// @param callback Callback for each device controller
@@ -55,11 +96,19 @@ namespace server
 		/// @param room Device controller to update
 		/// @return Successfulness
 		bool UpdateDeviceController(Ref<DeviceController> controller);
+
+		/// @brief Update device controller name 
+		/// @param script Device controller to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
 		bool UpdateDeviceControllerPropName(Ref<DeviceController> controller, const std::string& value, const std::string& newValue);
 		bool UpdateDeviceControllerPropRoom(Ref<DeviceController> controller, Ref<Room> value, Ref<Room> newValue);
 		bool RemoveDeviceController(identifier_t controllerID);
 
 		size_t GetDeviceControllerCount();
+
+		//! Device
 
 		/// @brief Load device from database
 		/// @param callback Callback for each device
@@ -74,6 +123,12 @@ namespace server
 		/// @param room Device to update
 		/// @return Successfulness
 		bool UpdateDevice(Ref<Device> device);
+
+		/// @brief Update device name 
+		/// @param script Device to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
 		bool UpdateDevicePropName(Ref<Device> device, const std::string& value, const std::string& newValue);
 		bool UpdateDevicePropDeviceController(Ref<Device> device, Ref<DeviceController> value, Ref<DeviceController> newValue);
 		bool UpdateDevicePropRoom(Ref<Device> device, Ref<Room> value, Ref<Room> newValue);
@@ -81,7 +136,7 @@ namespace server
 
 		size_t GetDeviceCount();
 
-		//! Users
+		//! User
 
 		/// @brief Load users from database
 		/// @param callback Callback for each user
@@ -96,6 +151,12 @@ namespace server
 		/// @param user User to update
 		/// @return Successfulness
 		bool UpdateUser(Ref<User> user);
+
+		/// @brief Update user name 
+		/// @param script User to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
 		bool UpdateUserPropName(Ref<User> user, const std::string& value, const std::string& newValue);
 		bool UpdateUserPropAccessLevel(Ref<User> user, UserAccessLevel value, UserAccessLevel newValue);
 		bool UpdateUserPropHash(Ref<User> user, uint8_t value[SHA256_DIGEST_LENGTH], uint8_t newValue[SHA256_DIGEST_LENGTH]);

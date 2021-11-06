@@ -1,9 +1,11 @@
 #pragma once
 #include "../../common.hpp"
-#include "../ApiContext.hpp"
+#include "../../ApiContext.hpp"
 
 namespace server
 {
+	class ScriptSource;
+
 	class Room;
 	class Device;
 	class DeviceController;
@@ -19,7 +21,7 @@ namespace server
 		static void BuildJsonSettings(const Ref<User>& user, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
 		// User
-		static void BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp = 0);
+		static void BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 		static void DecodeJsonUsers(rapidjson::Value& input);
 		static void BuildJsonUser(const Ref<User>& user, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 		static void DecodeJsonUser(const Ref<User>& user, rapidjson::Value& input);
@@ -44,18 +46,14 @@ namespace server
 		static void BuildJsonDeviceState(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 		static void DecodeJsonDeviceState(Ref<Device> device, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
-		////// Scripting
-		////static void BuildJsonScriptSources(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		// Scripting
+		static void BuildJsonScriptSources(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
-		////static void BuildJsonScriptSource(const Ref<scripting::ScriptSource>& source, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-		////static void DecodeJsonScriptSource(const Ref<scripting::ScriptSource>& source, rapidjson::Value& input);
+		static void BuildJsonScriptSource(Ref<ScriptSource> source, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		static void DecodeJsonScriptSource(Ref<ScriptSource> source, rapidjson::Value& input);
 
-		////static void BuildJsonScriptSourceContent(const Ref<scripting::ScriptSource>& source, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-		////static void DecodeJsonScriptSourceContent(const Ref<scripting::ScriptSource>& source, rapidjson::Value& input);
-
-		////static void BuildJsonScript(const Ref<scripting::Script>& script, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-		////static void BuildJsonScriptState(const Ref<scripting::Script>& script, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-		////static void DecodeJsonScriptState(const Ref<scripting::Script>& script, rapidjson::Value& input);
+		static void BuildJsonScriptSourceData(Ref<ScriptSource> source, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		static void DecodeJsonScriptSourceData(Ref<ScriptSource> source, rapidjson::Value& input);
 
 	public: // HTTP
 		// Build
@@ -66,20 +64,17 @@ namespace server
 
 
 	public: // WS
-		// Build
-		static void BuildJsonAckMessageWS(rapidjson::Document& output);
-		static void BuildJsonNAckMessageWS(rapidjson::Document& output);
-
-		// Get timestamps
-		static void ProcessJsonGetTimestampsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
-
 		// Settings
 		static void ProcessJsonGetSettingsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 		static void ProcessJsonSetSettingsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
 		// User
 		static void ProcessJsonGetUsersMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
-		static void ProcessJsonSetUsersMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonAddUserMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonRemoveUserMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonGetUserMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 		static void ProcessJsonSetUserMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
 		// Plugins
@@ -120,16 +115,16 @@ namespace server
 
 		static void ProcessJsonGetDeviceStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
-		////// Scripting
-		////static void ProcessJsonGetScriptSourcesMessageWS(rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		// Scripting
+		static void ProcessJsonGetScriptSourcesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
-		////static void ProcessJsonAddScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
-		////static void ProcessJsonRemoveScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonAddScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonRemoveScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
-		////static void ProcessJsonGetScriptSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
-		////static void ProcessJsonSetScriptSourceMessageWS(rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonGetScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonSetScriptSourceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
-		////static void ProcessJsonGetScriptSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
-		////static void ProcessJsonSetScriptSourceContentMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonGetScriptSourceDataMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonSetScriptSourceDataMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 	};
 }

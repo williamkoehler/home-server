@@ -16,8 +16,6 @@ namespace server
 
 		boost::shared_mutex mutex;
 
-		boost::atomic<time_t> timestamp = 0;
-
 		boost::container::vector<Ref<boost::dll::shared_library>> libraryList;
 
 		// Device plugin
@@ -55,18 +53,6 @@ namespace server
 		~PluginManager();
 		static Ref<PluginManager> Create();
 		static Ref<PluginManager> GetInstance();
-
-		//! Timestamp
-
-		/// @brief Update timestamp
-		void UpdateTimestamp();
-
-		/// @brief Get timestamp
-		/// @return Timestamp
-		inline time_t GetLastTimestamp()
-		{
-			return timestamp;
-		}
 
 		virtual bool RegisterDevicePlugin(home::DevicePluginDescription description, home::CreateDevicePluginFunction* createFunction) override;
 		Ref<home::DevicePlugin> CreateDevicePlugin(identifier_t pluginID);

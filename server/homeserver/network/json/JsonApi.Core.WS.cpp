@@ -10,46 +10,6 @@
 
 namespace server
 {
-	void JsonApi::BuildJsonAckMessageWS(rapidjson::Document& output)
-	{
-		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-		output.AddMember("msg", rapidjson::Value("ack", 3, allocator), allocator);
-	}
-	void JsonApi::BuildJsonNAckMessageWS(rapidjson::Document& output)
-	{
-		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-		output.AddMember("msg", rapidjson::Value("nack", 4, allocator), allocator);
-	}
-
-	void JsonApi::ProcessJsonGetTimestampsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
-	{
-		assert(input.IsObject() && output.IsObject());
-
-		// Build response
-		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
-		assert(pluginManager != nullptr);
-
-		//Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
-		//assert(scriptManager != nullptr);
-
-		Ref<Home> home = Home::GetInstance();
-		assert(home != nullptr);
-
-		Ref<UserManager> userManager = UserManager::GetInstance();
-		assert(userManager != nullptr);
-
-		output.AddMember("plugins", rapidjson::Value(pluginManager->timestamp), allocator);
-		output.AddMember("scripts", rapidjson::Value(/*scriptManager->timestamp*/0xff), allocator);
-		output.AddMember("home", rapidjson::Value(home->timestamp), allocator);
-		output.AddMember("users", rapidjson::Value(userManager->timestamp), allocator);
-
-		BuildJsonAckMessageWS(output);
-	}
-
 	// Settings
 	void JsonApi::ProcessJsonGetSettingsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -59,24 +19,22 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		BuildJsonSettings(user, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetSettingsMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
+		// Read core
 		rapidjson::Value::MemberIterator coreIt = input.FindMember("core");
 		if (coreIt != input.MemberEnd() && coreIt->value.IsObject())
 		{
@@ -91,6 +49,7 @@ namespace server
 				core->name.assign(nameIt->value.GetString(), nameIt->value.GetStringLength());
 		}
 
+		// Read emails
 		rapidjson::Value::MemberIterator emailIt = input.FindMember("email");
 		if (emailIt != input.MemberEnd() && emailIt->value.IsObject())
 		{
@@ -112,7 +71,5 @@ namespace server
 				}
 			}
 		}
-
-		BuildJsonAckMessageWS(output);
 	}
 }

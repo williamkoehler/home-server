@@ -16,28 +16,28 @@ namespace server
 			size_t maxTime;
 		};
 
-		class Script : public server::Script
+		class JSScript : public Script
 		{
 		private:
 			DuktapeUserData userdata;
-			duk_context* context;
-
-			Ref<ScriptSource> source;
+			Ref<duk_context> context;
 
 			// Prepare script timeout
 			void PrepareTimeout(size_t maxTime = 5);
 
 			// Duktape safe call
-			static duk_ret_t CompileSafe(duk_context* context, void* udata);
+			static duk_ret_t PrepareSafe(duk_context* context, void* udata);
+			static duk_ret_t ExecuteSafe(duk_context* context, void* udata);
 
 		public:
-			Script(const std::string& name, identifier_t scriptID, const Ref<ScriptSource>& source);
-			~Script();
-			static Ref<Script> Create(const std::string& name, identifier_t scriptID, const Ref<ScriptSource>& source);
+			JSScript(Ref<ScriptSource> source);
+			~JSScript();
 
 			/// @brief Get duktape vm context
 			/// @return Duktape context
-			inline duk_context* GetDuktape() { return context; }
+			inline Ref<duk_context> GetDuktape() { return context; }
+
+			void Execute(const std::string& event);
 		};
 	}
 }

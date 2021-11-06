@@ -6,6 +6,32 @@
 
 namespace server
 {
+	std::string StringifyUserAccessLevel(UserAccessLevel accessLevel)
+	{
+		switch (accessLevel)
+		{
+		case UserAccessLevel::kNormalUserAccessLevel:
+			return "normal";
+		case UserAccessLevel::kMaintainerUserAccessLevel:
+			return "maintainer";
+		case UserAccessLevel::kAdministratorUserAccessLevel:
+			return "admin";
+		default:
+			return "restricted";
+		}
+	}
+	UserAccessLevel ParseUserAccessLevel(const std::string& accessLevel)
+	{
+		if (accessLevel == "normal")
+			return UserAccessLevel::kNormalUserAccessLevel;
+		else if (accessLevel == "maintainer")
+			return UserAccessLevel::kMaintainerUserAccessLevel;
+		else if (accessLevel == "admin")
+			return UserAccessLevel::kAdministratorUserAccessLevel;
+		else
+			return UserAccessLevel::kRestrictedUserAccessLevel;
+	}
+
 	User::User(const std::string& name, identifier_t userID, uint8_t h[SHA256_DIGEST_LENGTH], uint8_t s[SALT_LENGTH], UserAccessLevel& accessLevel)
 		: name(name), userID(userID), accessLevel(accessLevel)
 	{

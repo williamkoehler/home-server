@@ -120,6 +120,11 @@ namespace server
 
 			roomList[room->GetRoomID()] = room;
 		}
+		else
+		{
+			database->RemoveRoom(roomID);
+			return nullptr;
+		}
 
 		UpdateTimestamp();
 
@@ -155,7 +160,6 @@ namespace server
 	//! Device
 	bool Home::LoadDevice(identifier_t deviceID, const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string& data)
 	{
-
 		// Get device plugin
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
 		assert(pluginManager != nullptr);
@@ -225,6 +229,11 @@ namespace server
 				return nullptr;
 
 			deviceList[device->GetDeviceID()] = device;
+		}
+		else
+		{
+			database->RemoveDevice(deviceID);
+			return nullptr;
 		}
 
 		return device;
@@ -324,6 +333,11 @@ namespace server
 				return nullptr;
 
 			deviceControllerList[controllerID] = controller;
+		}
+		else
+		{
+			database->RemoveDeviceController(controllerID);
+			return nullptr;
 		}
 
 		return controller;

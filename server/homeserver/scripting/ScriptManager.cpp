@@ -1,4 +1,6 @@
 #include "ScriptManager.hpp"
+#include "../database/Database.hpp"
+#include "javascript/JSScript.hpp"
 
 namespace server
 {
@@ -19,45 +21,83 @@ namespace server
 
 		Ref<ScriptManager> scriptManager = boost::make_shared<ScriptManager>();
 		instanceScriptManager = scriptManager;
+		if (scriptManager == nullptr)
+			return nullptr;
 
-		if (scriptManager != nullptr)
+		try
 		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
 
+			// Load rooms
+			database->LoadScriptSources(
+				boost::bind(&ScriptManager::LoadScriptSource, scriptManager,
+					boost::placeholders::_1,
+					boost::placeholders::_2,
+					boost::placeholders::_3,
+					boost::placeholders::_4,
+					boost::placeholders::_5));
+		}
+		catch (std::exception)
+		{
+			return nullptr;
 		}
 
 		return scriptManager;
 	}
-
 	Ref<ScriptManager> ScriptManager::GetInstance()
 	{
 		return Ref<ScriptManager>(instanceScriptManager);
 	}
 
-	Ref<ScriptSource> ScriptManager::AddScriptSource(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language)
+	//! ScriptSource
+	bool ScriptManager::LoadScriptSource(identifier_t sourceID, const std::string& name, ScriptUsage usage, ScriptLanguage language, const std::string_view& data)
+	{
+		Ref<ScriptSource> source = boost::make_shared<ScriptSource>(name, sourceID, usage, language, data);
+
+		if (source != nullptr)
+		{
+			scriptSourceList[sourceID] = source;
+
+			return true;
+		}
+		else
+			return false;
+	}
+	Ref<ScriptSource> ScriptManager::AddScriptSource(const std::string& name, ScriptUsage usage, ScriptLanguage language)
 	{
 		boost::lock_guard lock(mutex);
 
-		identifier_t genID = sourceID ? sourceID : XXH32(name.c_str(), name.size(), 0x53535243);
+		Ref<Database> database = Database::GetInstance();
+		assert(database != nullptr);
 
-		// Check for duplicate
+		// Reserve script source in database
+		identifier_t sourceID = database->ReserveScriptSource();
+		if (sourceID == 0)
+			return nullptr;
+
+		// Create new device
+		const char* empty =
+			R"(// This script is empty!)"
+			R"(// Please replace this with proper code.)";
+		Ref<ScriptSource> source = boost::make_shared<ScriptSource>(name, sourceID, usage, language, std::string_view(empty));
+		if (source == nullptr)
+			return nullptr;
+
+		if (source != nullptr)
 		{
-			size_t pass = 10;
-			while (scriptSourceList.count(genID))
-			{
-				genID++;
+			if (!database->UpdateScriptSource(source))
+				return nullptr;
 
-				//Only allow 10 passes
-				if (!(pass--))
-				{
-					LOG_ERROR("Failing to generate unique id for script source '{0}'", name);
-					return nullptr;
-				}
-			}
+			scriptSourceList[sourceID] = source;
+		}
+		else
+		{
+			database->RemoveScriptSource(sourceID);
+			return nullptr;
 		}
 
-		Ref<ScriptSource> source = ScriptSource::Create(name, genID, usage, language);
-		if (source != nullptr)
-			scriptSourceList[genID] = source;
+		//UpdateTimestamp();
 
 		return source;
 	}
@@ -74,6 +114,35 @@ namespace server
 	bool ScriptManager::RemoveScriptSource(identifier_t sourceID)
 	{
 		boost::lock_guard lock(mutex);
-		return scriptSourceList.erase(sourceID);
+
+		if (scriptSourceList.erase(sourceID))
+		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
+
+			database->RemoveScriptSource(sourceID);
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	//! Script
+	Ref<Script> ScriptManager::CreateActionScript(identifier_t sourceID)
+	{
+		Ref<ScriptSource> source = GetScriptSource(sourceID);
+		if (source != nullptr)
+		{
+			switch (source->GetLanguage())
+			{
+			case ScriptLanguage::kJSScriptLanguage:
+				return boost::make_shared<javascript::JSScript>(source);
+			default:
+				return nullptr;
+			}
+		}
+
+		return nullptr;
 	}
 }

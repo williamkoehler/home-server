@@ -1,10 +1,10 @@
 #include "Room.hpp"
+#include "../database/Database.hpp"
 #include "Home.hpp"
 #include "Device.hpp"
 #include "DeviceController.hpp"
 #include "../plugin/PluginManager.hpp"
 #include <xxHash/xxhash.h>
-#include "../database/Database.hpp"
 
 namespace server
 {

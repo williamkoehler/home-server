@@ -60,7 +60,7 @@ namespace server
 		bool SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd);
 		bool SetUserPassword(const Ref<User>& user, std::string_view passwd, std::string_view newPasswd);
 
-		void RemoveUser(identifier_t userID);
+		bool RemoveUser(identifier_t userID);
 
 		//JWT
 		std::string GenerateToken(std::string_view name, std::string_view passwd);

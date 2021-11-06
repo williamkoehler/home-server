@@ -3,13 +3,18 @@
 
 namespace server
 {
+	class Database;
+
 	class JsonApi;
 
 	enum class ScriptUsage
 	{
-		KUnknownUsage,
+		kUnknownUsage,
 		kForActionUsage,
 	};
+
+	std::string StringifyScriptUsage(ScriptUsage usage);
+	ScriptUsage ParseScriptUsage(const std::string& usage);
 
 	enum class ScriptLanguage
 	{
@@ -18,10 +23,14 @@ namespace server
 		kJSScriptLanguage
 	};
 
+	std::string StringifyScriptLanguage(ScriptLanguage language);
+	ScriptLanguage ParseScriptLanguage(const std::string& language);
+
 	class ScriptSource : public boost::enable_shared_from_this<ScriptSource>
 	{
 	private:
-		friend class server::JsonApi;
+		friend class Database;
+		friend class JsonApi;
 
 		boost::shared_mutex mutex;
 
@@ -32,37 +41,25 @@ namespace server
 		const ScriptLanguage language;
 		std::string data;
 
-	public:
-		ScriptSource(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language);
-		~ScriptSource();
-		static Ref<ScriptSource> Create(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language);
+		/// @brief Checksum (changes when the data changes)
+		boost::atomic_uint64_t checksum;
 
-		inline std::string GetName()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return name;
-		}
-		inline void SetName(const std::string& v)
-		{
-			boost::lock_guard lock(mutex);
-			name = v;
-		}
+	public:
+		ScriptSource(const std::string& name, identifier_t sourceID, ScriptUsage usage, ScriptLanguage language, const std::string_view& data);
+		~ScriptSource();
+
+		std::string GetName();
+		bool SetName(const std::string& v);
 
 		inline identifier_t GetSourceID() { return sourceID; }
 
 		inline ScriptUsage GetUsage() { return usage; }
 
-		inline ScriptLanguage GetLanguage() { return language; };
+		inline ScriptLanguage GetLanguage() { return language; }
 
-		inline std::string GetData()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return data;
-		}
-		inline void SetData(const std::string& v)
-		{
-			boost::lock_guard lock(mutex);
-			data = v;
-		}
+		std::string GetData();
+		bool SetData(const std::string_view& v);
+
+		inline uint64_t GetChecksum() { return checksum; }
 	};
 }

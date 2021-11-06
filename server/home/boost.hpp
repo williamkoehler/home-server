@@ -3,6 +3,7 @@
 
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/variant.hpp>
+#include <boost/regex.hpp>
 
 //IO
 #include <boost/filesystem.hpp>

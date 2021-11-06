@@ -140,6 +140,13 @@ namespace server
 	{
 		boost::lock_guard lock(mutex);
 
+		// Verify name
+		if (!boost::regex_match(name, boost::regex(R"(^[a-zA-Z0-9_-]*$)")))
+		{
+			LOG_ERROR("Invalid user name '{0}' (does not match '[a-zA-Z0-9_-]*')", name);
+			return nullptr;
+		}
+
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
@@ -247,17 +254,21 @@ namespace server
 		return true;
 	}
 
-	void UserManager::RemoveUser(identifier_t userID)
+	bool UserManager::RemoveUser(identifier_t userID)
 	{
 		boost::lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<User>>::const_iterator it = userList.find(userID);
-		if (it == userList.end())
-			throw std::invalid_argument("User ID does not exist");
+		if (userList.erase(userID))
+		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
 
-		userList.erase(it);
+			database->RemoveScriptSource(userID);
 
-		UpdateTimestamp();
+			return true;
+		}
+		else
+			return false;
 	}
 
 	void UserManager::GenerateHash(std::string_view passwd, uint8_t* salt, uint8_t* digest)

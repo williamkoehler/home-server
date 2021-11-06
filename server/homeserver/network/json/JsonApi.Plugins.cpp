@@ -13,8 +13,6 @@ namespace server
 
 		boost::shared_lock_guard lock(pluginManager->mutex);
 
-		output.AddMember("timestamp", rapidjson::Value(pluginManager->timestamp), allocator);
-
 		output.CopyFrom(pluginManager->snapshot, allocator);
 	}
 }

@@ -7,7 +7,7 @@
 namespace server
 {
 	// Users
-	void JsonApi::BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp)
+	void JsonApi::BuildJsonUsers(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
 	{
 		Ref<UserManager> userManager = UserManager::GetInstance();
 
@@ -16,25 +16,19 @@ namespace server
 
 		boost::shared_lock_guard lock(userManager->mutex);
 
-		output.AddMember("timestamp", rapidjson::Value(userManager->timestamp), allocator);
+		rapidjson::Value userListJson = rapidjson::Value(rapidjson::kArrayType);
 
-		// Only send tree if it has changed
-		if (userManager->timestamp > timestamp)
+		boost::unordered::unordered_map<uint32_t, Ref<User>> userList = userManager->userList;
+		for (std::pair<uint32_t, Ref<User>> item : userList)
 		{
-			rapidjson::Value userListJson = rapidjson::Value(rapidjson::kArrayType);
+			rapidjson::Value userJson = rapidjson::Value(rapidjson::kObjectType);
 
-			boost::unordered::unordered_map<uint32_t, Ref<User>> userList = userManager->userList;
-			for (std::pair<uint32_t, Ref<User>> item : userList)
-			{
-				rapidjson::Value userJson = rapidjson::Value(rapidjson::kObjectType);
+			BuildJsonUser(item.second, userJson, allocator);
 
-				BuildJsonUser(item.second, userJson, allocator);
-
-				userListJson.PushBack(userJson, allocator);
-			}
-
-			output.AddMember("users", userListJson, allocator);
+			userListJson.PushBack(userJson, allocator);
 		}
+
+		output.AddMember("users", userListJson, allocator);
 	}
 	void JsonApi::DecodeJsonUsers(rapidjson::Value& input)
 	{
@@ -70,7 +64,7 @@ namespace server
 		boost::shared_lock_guard lock(user->mutex);
 
 		output.AddMember("name", rapidjson::Value(user->name.c_str(), user->name.size()), allocator);
-		output.AddMember("userid", rapidjson::Value(user->userID), allocator);
+		output.AddMember("id", rapidjson::Value(user->userID), allocator);
 		output.AddMember("accesslevel", rapidjson::Value(static_cast<size_t>(user->accessLevel)), allocator);
 	}
 	void JsonApi::DecodeJsonUser(const Ref<User>& user, rapidjson::Value& input)

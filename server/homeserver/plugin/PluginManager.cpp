@@ -29,9 +29,6 @@ namespace server
 
 			// Update snapshot
 			pluginManager->TakeSnapshot();
-
-			// Update timestamp
-			pluginManager->UpdateTimestamp();
 		}
 		catch (std::exception e)
 		{
@@ -45,13 +42,6 @@ namespace server
 	Ref<PluginManager> PluginManager::GetInstance()
 	{
 		return Ref<PluginManager>(instancePluginManager);
-	}
-
-	//! Timestamp
-	void PluginManager::UpdateTimestamp()
-	{
-		const time_t ts = time(nullptr);
-		timestamp = ts;
 	}
 
 	void PluginManager::TakeSnapshot()

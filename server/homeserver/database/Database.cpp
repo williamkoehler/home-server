@@ -1,4 +1,5 @@
 #include "Database.hpp"
+#include "../scripting/ScriptSource.hpp"
 #include "../home/Room.hpp"
 #include "../home/DeviceController.hpp"
 #include "../home/Device.hpp"
@@ -42,9 +43,24 @@ namespace server
 		// Create necessary tables
 		char* err = nullptr;
 
+		// Scripting
+		{
+			// Script Source Table
+			if (sqlite3_exec(database->connection,
+				R"(create table if not exists scriptsources)"
+				R"((id integer not null primary key, name text not null, usage text not null, language text not null, data blob not null))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
+			{
+				LOG_ERROR("Failing to create 'scriptsources' table.\n{0}", err);
+				return nullptr;
+			}
+		}
+
 		// Home
 		{
-			// Rooms table
+			// Room table
 			if (sqlite3_exec(database->connection,
 							 R"(create table if not exists rooms)"
 							 R"((id integer not null primary key, name text not null, type text not null))",
@@ -79,14 +95,17 @@ namespace server
 				LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
 				return nullptr;
 			}
+		}
 
+		// User
+		{
 			// User Table
 			if (sqlite3_exec(database->connection,
-							 R"(create table if not exists users)"
-							 R"((id integer not null primary key, name text not null, hash text not null, salt text not null, accesslevel text not null, data text not null))",
-							 nullptr,
-							 nullptr,
-							 &err) != SQLITE_OK)
+				R"(create table if not exists users)"
+				R"((id integer not null primary key, name text not null, hash text not null, salt text not null, accesslevel text not null, data text not null))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
 			{
 				LOG_ERROR("Failing to create 'users' table.\n{0}", err);
 				return nullptr;
@@ -100,6 +119,231 @@ namespace server
 		return Ref<Database>(instanceDatabase);
 	}
 
+	//! ScriptSource
+	bool Database::LoadScriptSources(const boost::function<void(identifier_t sourceID, const std::string& name, ScriptUsage usage, ScriptLanguage language, const std::string_view& data)>& callback)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(select id, name, usage, language, data from scriptsources)", 57,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			identifier_t userID = sqlite3_column_int64(statement, 0);
+			std::string name = (const char*)sqlite3_column_text(statement, 1);
+
+			ScriptUsage usage = ParseScriptUsage((const char*)sqlite3_column_text(statement, 2));
+
+			ScriptLanguage language = ParseScriptLanguage((const char*)sqlite3_column_text(statement, 3));
+
+			std::string_view data = std::string_view((const char*)sqlite3_column_blob(statement, 4), sqlite3_column_bytes(statement, 4));
+
+			callback(userID, name, usage, language, data);
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+
+	identifier_t Database::ReserveScriptSource()
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(insert into scriptsources values)"
+			R"(((select ifnull((select id+1 from scriptsources where (id+1) not in (select id from scriptsources) order by id asc limit 1), 1)),)"
+			R"("unknown script source", "unknown", "unknown", ""))", 211,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to insert user into 'scriptsources' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		identifier_t sourceID = sqlite3_last_insert_rowid(connection);
+
+		sqlite3_finalize(statement);
+		return sourceID;
+	}
+	bool Database::UpdateScriptSource(Ref<ScriptSource> scriptSource)
+	{
+		// Lock
+		boost::lock(mutex, scriptSource->mutex);
+		boost::lock_guard lock(mutex, boost::adopt_lock);
+		boost::lock_guard lock2(scriptSource->mutex, boost::adopt_lock);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(replace into scriptsources values (?, ?, ?, ?, ?))", 49,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		std::string usage = StringifyScriptUsage(scriptSource->usage);
+		
+		std::string language = StringifyScriptLanguage(scriptSource->language);
+
+		if (sqlite3_bind_int64(statement, 1, scriptSource->sourceID) != SQLITE_OK ||
+			sqlite3_bind_text(statement, 2, scriptSource->name.data(), scriptSource->name.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_text(statement, 3, usage.data(), usage.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_text(statement, 4, language.data(), language.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_blob(statement, 5, scriptSource->data.data(), scriptSource->data.size(), nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to insert user into 'scriptsources' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+	bool Database::UpdateScriptSourcePropName(Ref<ScriptSource> scriptSource, const std::string& value, const std::string& newValue)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(update scriptsources set name = ? where id = ?)", 46,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_text(statement, 1, newValue.data(), newValue.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 2, scriptSource->sourceID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to update script source name.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+
+		return true;
+	}
+	bool Database::UpdateScriptSourcePropData(Ref<ScriptSource> scriptSource, const std::string_view& newValue)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(update scriptsources set data = ? where id = ?)", 46,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_blob(statement, 1, newValue.data(), newValue.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 2, scriptSource->sourceID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to update script source data.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+
+		return true;
+	}
+
+	bool Database::RemoveScriptSource(identifier_t sourceID)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(delete from scriptsources where id = ?)", 38,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_int64(statement, 1, sourceID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to delete script source from 'scriptsources' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+
+	size_t Database::GetScriptSourceCount()
+	{
+		return size_t();
+	}
+
+	//! Room
 	bool Database::LoadRooms(const boost::function<void(identifier_t roomID, const std::string& name, const std::string& type)>& callback)
 	{
 		// Lock
@@ -129,6 +373,7 @@ namespace server
 		sqlite3_finalize(statement);
 		return true;
 	}
+	
 	identifier_t Database::ReserveRoom()
 	{
 		// Lock
@@ -335,6 +580,7 @@ namespace server
 		return roomCount;
 	}
 
+	//! DeviceController
 	bool Database::LoadDeviceControllers(const boost::function<void(identifier_t controllerID, const std::string& name, identifier_t pluginID, identifier_t roomID, const std::string& data)>& callback)
 	{
 		// Lock
@@ -366,6 +612,7 @@ namespace server
 		sqlite3_finalize(statement);
 		return true;
 	}
+	
 	identifier_t Database::ReserveDeviceController()
 	{
 		// Lock
@@ -577,6 +824,7 @@ namespace server
 		return deviceControllerCount;
 	}
 
+	//! Device
 	bool Database::LoadDevices(const boost::function<void(identifier_t deviceID, const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string& data)>& callback)
 	{
 		// Lock
@@ -609,6 +857,7 @@ namespace server
 		sqlite3_finalize(statement);
 		return true;
 	}
+	
 	identifier_t Database::ReserveDevice()
 	{
 		// Lock
@@ -861,6 +1110,7 @@ namespace server
 		return deviceCount;
 	}
 
+	//! User
 	bool Database::LoadUsers(const boost::function<void(identifier_t userID, const std::string& name, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel accessLevel)>& callback)
 	{
 		// Lock
@@ -880,9 +1130,13 @@ namespace server
 
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
+			// Read user id
 			identifier_t userID = sqlite3_column_int64(statement, 0);
+
+			// Read name
 			std::string name = (const char*)sqlite3_column_text(statement, 1);
 
+			// Read hash
 			std::string hashStr = (const char*)sqlite3_column_text(statement, 2);
 			std::vector<uint8_t> hash = cppcodec::base64_rfc4648::decode(hashStr.data(), hashStr.size());
 			if (hash.size() != SHA256_DIGEST_LENGTH)
@@ -891,7 +1145,7 @@ namespace server
 				continue; // Invalid user
 			}
 
-
+			// Read salt
 			std::string saltStr = (const char*)sqlite3_column_text(statement, 3);
 			std::vector<uint8_t> salt = cppcodec::base64_rfc4648::decode(saltStr.data(), saltStr.size());
 			if (salt.size() != SALT_LENGTH)
@@ -900,14 +1154,11 @@ namespace server
 				continue; // Invalid user
 			}
 
-			std::string data = (const char*)sqlite3_column_text(statement, 4);
+			// Read access level
+			UserAccessLevel accessLevel = ParseUserAccessLevel(std::string((const char*)sqlite3_column_text(statement, 4), sqlite3_column_bytes(statement, 4)));
 
-			std::string accessLevelStr = (const char*)sqlite3_column_text(statement, 4);
-			UserAccessLevel accessLevel = UserAccessLevel::kRestrictedUserAccessLevel;
-			if (accessLevelStr == "normal")
-				accessLevel = UserAccessLevel::kNormalUserAccessLevel;
-			else if (accessLevelStr == "admin")
-				accessLevel = UserAccessLevel::kAdministratorUserAccessLevel;
+			// Read additional data
+			std::string data = std::string((const char*)sqlite3_column_text(statement, 5), sqlite3_column_bytes(statement, 5));
 
 			callback(userID, name, hash.data(), salt.data(), accessLevel);
 		}
@@ -915,7 +1166,7 @@ namespace server
 		sqlite3_finalize(statement);
 		return true;
 	}
-
+	
 	identifier_t Database::ReserveUser()
 	{
 		// Lock
@@ -1031,7 +1282,7 @@ namespace server
 
 		if (sqlite3_step(statement) != SQLITE_DONE)
 		{
-			LOG_ERROR("Failing to update device name.\n{0}", sqlite3_errmsg(connection));
+			LOG_ERROR("Failing to update user name.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
 			return false;
 		}
@@ -1057,19 +1308,7 @@ namespace server
 			return false;
 		}
 
-		std::string accessLevel;
-		switch (user->accessLevel)
-		{
-			case UserAccessLevel::kAdministratorUserAccessLevel:
-				accessLevel = "admin";
-				break;
-			case UserAccessLevel::kNormalUserAccessLevel:
-				accessLevel = "normal";
-				break;
-			default:
-				accessLevel = "restricted";
-				break;
-		}
+		std::string accessLevel = StringifyUserAccessLevel(newValue);
 
 		if (sqlite3_bind_text(statement, 1, accessLevel.data(), accessLevel.size(), nullptr) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 2, user->userID) != SQLITE_OK)
@@ -1130,7 +1369,37 @@ namespace server
 	}
 	bool Database::RemoveUser(identifier_t userID)
 	{
-		return false;
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(delete from users where id = ?)", 30,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_int64(statement, 1, userID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to delete user from 'users' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+		return true;
 	}
 
 	size_t Database::GetUserCount()

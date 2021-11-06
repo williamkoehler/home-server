@@ -12,7 +12,5 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		BuildJsonPlugins(output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 }

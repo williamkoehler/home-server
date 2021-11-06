@@ -22,9 +22,9 @@ namespace server
 		socket->set_option(
 			boost::beast::websocket::stream_base::decorator(
 				[](boost::beast::websocket::response_type& response) -> void
-		{
-			response.set(boost::beast::http::field::server, Core::GetInstance()->GetName());
-		}
+				{
+					response.set(boost::beast::http::field::server, Core::GetInstance()->GetName());
+				}
 			)
 		);
 		socket->async_accept(request, boost::asio::bind_executor(strand, boost::bind(&WSSession::OnAccept, shared_from_this(), boost::placeholders::_1)));
@@ -104,14 +104,24 @@ namespace server
 		{ "get-settings", JsonApi::ProcessJsonGetSettingsMessageWS },
 		{ "set-settings", JsonApi::ProcessJsonSetSettingsMessageWS },
 
-		// Misc
-		{ "get-changes", JsonApi::ProcessJsonGetTimestampsMessageWS },
-
 		// User
 		{ "get-users", JsonApi::ProcessJsonGetUsersMessageWS },
 
 		// Plugins
 		{ "get-plugins", JsonApi::ProcessJsonGetPluginsMessageWS },
+
+		// Scripting
+		{ "get-scriptsources", JsonApi::ProcessJsonGetScriptSourcesMessageWS },
+
+		{ "add-scriptsource", JsonApi::ProcessJsonAddScriptSourceMessageWS },
+
+		{ "get-scriptsource", JsonApi::ProcessJsonGetScriptSourceMessageWS },
+		{ "get-scriptsource?data", JsonApi::ProcessJsonGetScriptSourceDataMessageWS },
+
+		{ "set-scriptsource", JsonApi::ProcessJsonSetScriptSourceMessageWS },
+		{ "set-scriptsource?data", JsonApi::ProcessJsonSetScriptSourceDataMessageWS },
+
+		{ "rem-scriptsource", JsonApi::ProcessJsonRemoveScriptSourceMessageWS },
 
 		// Home
 		{ "get-home", JsonApi::ProcessJsonGetHomeMessageWS },
@@ -154,20 +164,22 @@ namespace server
 	{
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		rapidjson::Value errorsJson;
-		errorsJson.SetArray();
+		rapidjson::Value logsJson = rapidjson::Value(rapidjson::kArrayType);
 
-		ApiContext context(errorsJson, allocator);
+		ApiContext context(logsJson, allocator);
 
 		// Call websocket message
 		boost::unordered::unordered_map<std::string, WSMethod*>::const_iterator it = methodList.find(msg);
 		if (it != methodList.end())
 			it->second(user, input, output, context);
 		else
-			return false;
+		{
+			context.Error("Invalid message method.");
+			context.Error(ApiError::kError_InvalidArguments);
+		}
 
-		output.AddMember("errors", errorsJson, allocator);
-		output.AddMember("msgid", rapidjson::Value(id), allocator);
+		output.AddMember("logs", logsJson, allocator);
+		output.AddMember("error", context.GetError(), allocator);
 
 		return true;
 	}

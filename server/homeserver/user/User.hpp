@@ -13,8 +13,12 @@ namespace server
 	{
 		kRestrictedUserAccessLevel,
 		kNormalUserAccessLevel,
+		kMaintainerUserAccessLevel,
 		kAdministratorUserAccessLevel,
 	};
+
+	std::string StringifyUserAccessLevel(UserAccessLevel accessLevel);
+	UserAccessLevel ParseUserAccessLevel(const std::string& accessLevel);
 
 	class User : public boost::enable_shared_from_this<User>
 	{

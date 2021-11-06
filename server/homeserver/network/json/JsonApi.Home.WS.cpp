@@ -25,8 +25,6 @@ namespace server
 		size_t timestamp = (timestampIt != input.MemberEnd() && timestampIt->value.IsUint64()) ? timestampIt->value.GetUint64() : 0;
 
 		BuildJsonHome(output, allocator, timestamp);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetHomeMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -38,8 +36,6 @@ namespace server
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
 		DecodeJsonHome(input);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	// Room
@@ -48,10 +44,9 @@ namespace server
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -62,7 +57,7 @@ namespace server
 			typeIt == input.MemberEnd() || !typeIt->value.IsString())
 		{
 			context.Error("Missing name and/or type");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -79,24 +74,21 @@ namespace server
 			json);
 		if (room == nullptr)
 		{
-			context.Error("Add room");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to add room
+			context.Error(ApiError::kError_InternalError);
 			return;
 		}
 
 		BuildJsonRoom(room, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonRemoveRoomMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -105,7 +97,7 @@ namespace server
 		if (roomIDIt == input.MemberEnd() || !roomIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -115,23 +107,17 @@ namespace server
 		Ref<Home> home = Home::GetInstance();
 		assert(home != nullptr);
 
-		try
+		if (!home->RemoveRoom(roomIDIt->value.GetUint()))
 		{
-			home->RemoveRoom(roomIDIt->value.GetUint());
-		}
-
-		catch (std::exception)
-		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to remove room
+			context.Error(ApiError::kError_InternalError);
 			return;
 		}
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetRoomMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
 		// Process request
@@ -139,7 +125,7 @@ namespace server
 		if (roomIDIt == input.MemberEnd() || !roomIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -153,15 +139,12 @@ namespace server
 		Ref<Room> room = home->GetRoom(roomIDIt->value.GetUint());
 		if (room == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Build room
 		BuildJsonRoom(room, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetRoomMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -172,7 +155,7 @@ namespace server
 		if (roomIDIt == input.MemberEnd() || !roomIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -187,15 +170,12 @@ namespace server
 		Ref<Room> room = home->GetRoom(roomIDIt->value.GetUint());
 		if (room == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Decode room
 		DecodeJsonRoom(room, input);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	// DeviceController
@@ -204,10 +184,9 @@ namespace server
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -220,7 +199,7 @@ namespace server
 			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
 		{
 			context.Error("Missing name, pluginid and/or roomid");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -239,25 +218,22 @@ namespace server
 			json);
 		if (controller == nullptr)
 		{
-			context.Error("Add controller");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to add device controller
+			context.Error(ApiError::kError_InternalError);
 			return;
 		}
 
 		// Build response
 		BuildJsonDeviceController(controller, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonRemoveDeviceControllerMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -265,8 +241,7 @@ namespace server
 		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("id");
 		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint64())
 		{
-			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
@@ -279,11 +254,10 @@ namespace server
 		// Remove device
 		if (!home->RemoveDeviceController(controllerIDIt->value.GetUint64()))
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to remove device controller
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
 		}
-		else
-			BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceControllerMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -295,7 +269,7 @@ namespace server
 		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -310,15 +284,12 @@ namespace server
 		Ref<DeviceController> controller = home->GetDeviceController(controllerIDIt->value.GetUint64());
 		if (controller == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Build properties
 		BuildJsonDeviceController(controller, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetDeviceControllerMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -329,7 +300,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -343,15 +314,12 @@ namespace server
 		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
 		if (controller == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Decode properties
 		DecodeJsonDeviceController(controller, input);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceControllerStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -363,7 +331,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -378,15 +346,12 @@ namespace server
 		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
 		if (controller == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Build properties
 		BuildJsonDeviceControllerState(controller, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetDeviceControllerStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -397,7 +362,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -411,8 +376,7 @@ namespace server
 		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
 		if (controller == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
@@ -420,8 +384,6 @@ namespace server
 
 		// Decode properties
 		DecodeJsonDeviceControllerState(controller, input, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceControllerStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -452,8 +414,6 @@ namespace server
 		}
 
 		output.AddMember("devicecontrollers", deviceControllerListJson, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	// Device
@@ -462,10 +422,9 @@ namespace server
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -480,7 +439,7 @@ namespace server
 			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
 		{
 			context.Error("Missing name, pluginid, controllerid, and/or roomid");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -500,25 +459,22 @@ namespace server
 			json);
 		if (device == nullptr)
 		{
-			context.Error("Add device");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to add device
+			context.Error(ApiError::kError_InternalError);
 			return;
 		}
 
 		// Build response
 		BuildJsonDevice(device, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonRemoveDeviceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
 		assert(input.IsObject() && output.IsObject());
 
-		if (user->accessLevel != UserAccessLevel::kAdministratorUserAccessLevel)
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
 		{
-			context.Error("Invalid access level. User needs to be administrator.");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_AccessLevelToLow);
 			return;
 		}
 
@@ -527,7 +483,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -540,11 +496,10 @@ namespace server
 		// Remove device
 		if (!home->RemoveDevice(deviceIDIt->value.GetUint64()))
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			//! Error failed to remove device
+			context.Error(ApiError::kError_InternalError);
+			return;
 		}
-		else
-			BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -556,7 +511,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -570,15 +525,12 @@ namespace server
 		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
 		if (device == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Build properties
-		BuildJsonDevice(device, output, allocator);
-
-		BuildJsonAckMessageWS(output);
+		BuildJsonDevice(device, output, allocator);;
 	}
 	void JsonApi::ProcessJsonSetDeviceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -589,7 +541,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -603,15 +555,12 @@ namespace server
 		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
 		if (device == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Decode properties
 		DecodeJsonDevice(device, input);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -623,7 +572,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -637,15 +586,12 @@ namespace server
 		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
 		if (device == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
 		// Build properties
 		BuildJsonDeviceState(device, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 	void JsonApi::ProcessJsonSetDeviceStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -656,7 +602,7 @@ namespace server
 		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
 		{
 			context.Error("Missing id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidArguments);
 			return;
 		}
 
@@ -670,8 +616,7 @@ namespace server
 		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
 		if (device == nullptr)
 		{
-			context.Error("Invalid id");
-			BuildJsonNAckMessageWS(output);
+			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
 		}
 
@@ -679,8 +624,6 @@ namespace server
 
 		// Decode properties
 		DecodeJsonDeviceState(device, input, output, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 
 	void JsonApi::ProcessJsonGetDeviceStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
@@ -711,7 +654,5 @@ namespace server
 		}
 
 		output.AddMember("devices", deviceListJson, allocator);
-
-		BuildJsonAckMessageWS(output);
 	}
 }

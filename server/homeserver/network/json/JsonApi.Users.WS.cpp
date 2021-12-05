@@ -1,6 +1,4 @@
 #include "JsonApi.hpp"
-#include "../../Core.hpp"
-
 #include "../../user/UserManager.hpp"
 #include "../../user/User.hpp"
 

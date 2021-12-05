@@ -6,3 +6,6 @@ add_subdirectory(home)
 add_subdirectory(homeserver)
 
 add_subdirectory(plugins)
+
+include(CTest)
+add_subdirectory(tests)

@@ -1,7 +1,14 @@
 #pragma once
-#include "common.hpp"
-#include "Plugin.hpp"
+#include "../common.hpp"
+#include "../Plugin.hpp"
+#include "Device.hpp"
 #include "DeviceControllerPlugin.hpp"
+
+namespace server
+{
+	class JsonApi;
+	class Device;
+}
 
 namespace home
 {
@@ -12,26 +19,14 @@ namespace home
 		std::string description;
 	};
 
-	class DeviceCache : public DeviceControllerCache
-	{
-	protected:
-
-	public:
-		template<typename Type>
-		void SetProperty(uint32_t id, Type value);
-
-		virtual void TakeSnapshot(rapidjson::Document& document) override
-		{
-			DeviceControllerCache::TakeSnapshot(document);
-		}
-	};
-
-	class DevicePlugin : public Plugin<DeviceCache>
+	class DevicePlugin : public Plugin
 	{
 	public:
 		friend class server::Device;
 
-		virtual bool Update(Ref<DevicePlugin> controller, size_t cycle) = 0;
+		virtual bool Initialize(Ref<Device> device) = 0;
+
+		virtual bool Terminate(Ref<Device> device) = 0;
 	};
 
 	typedef Ref<DevicePlugin>(CreateDevicePluginFunction)();

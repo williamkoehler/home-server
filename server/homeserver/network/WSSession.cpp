@@ -138,6 +138,8 @@ namespace server
 		// Device
 		{ "add-device", JsonApi::ProcessJsonAddDeviceMessageWS },
 
+		{ "inv-device", JsonApi::ProcessJsonInvokeDeviceEventMessageWS },
+
 		{ "get-device", JsonApi::ProcessJsonGetDeviceMessageWS },
 		{ "get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS },
 		{ "get-devices?state", JsonApi::ProcessJsonGetDeviceStatesMessageWS },
@@ -149,6 +151,8 @@ namespace server
 
 		// DeviceController
 		{ "add-devicecontroller", JsonApi::ProcessJsonAddDeviceControllerMessageWS },
+
+		{ "inv-devicecontroller", JsonApi::ProcessJsonInvokeDeviceControllerEventMessageWS },
 
 		{ "get-devicecontroller", JsonApi::ProcessJsonGetDeviceControllerMessageWS },
 		{ "get-devicecontroller?state", JsonApi::ProcessJsonGetDeviceControllerStateMessageWS },

@@ -523,7 +523,8 @@ DUK_EXTERNAL_DECL void *duk_realloc_raw(duk_context *ctx, void *ptr, duk_size_t 
 DUK_EXTERNAL_DECL void *duk_alloc(duk_context *ctx, duk_size_t size);
 DUK_EXTERNAL_DECL void duk_free(duk_context *ctx, void *ptr);
 DUK_EXTERNAL_DECL void *duk_realloc(duk_context *ctx, void *ptr, duk_size_t size);
-DUK_EXTERNAL_DECL void duk_get_memory_functions(duk_context *ctx, duk_memory_functions *out_funcs);
+DUK_EXTERNAL_DECL void duk_get_memory_functions(duk_context* ctx, duk_memory_functions* out_funcs);
+DUK_EXTERNAL_DECL void* duk_get_user_data(duk_context *ctx);
 DUK_EXTERNAL_DECL void duk_gc(duk_context *ctx, duk_uint_t flags);
 
 /*

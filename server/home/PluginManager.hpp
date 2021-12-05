@@ -1,8 +1,8 @@
 #pragma once
 #include "common.hpp"
 #include "Plugin.hpp"
-#include "DevicePlugin.hpp"
-#include "DeviceControllerPlugin.hpp"
+#include "home/DevicePlugin.hpp"
+#include "home/DeviceControllerPlugin.hpp"
 
 namespace home
 {

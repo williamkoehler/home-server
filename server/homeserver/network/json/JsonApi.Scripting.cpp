@@ -1,6 +1,4 @@
 #include "JsonApi.hpp"
-#include "../../Core.hpp"
-
 #include "../../scripting/ScriptManager.hpp"
 #include "../../scripting/Script.hpp"
 

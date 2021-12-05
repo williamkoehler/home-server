@@ -21,6 +21,10 @@ namespace server
 	}
 	Core::~Core()
 	{
+		home = nullptr;
+		scriptManager = nullptr;
+		userManager = nullptr;
+
 		running = false;
 
 		if (service != nullptr)
@@ -60,12 +64,12 @@ namespace server
 				if (core->userManager == nullptr)
 					return nullptr;
 
-				core->home = Home::Create();
-				if (core->home == nullptr)
-					return nullptr;
-
 				core->scriptManager = ScriptManager::Create();
 				if (core->scriptManager == nullptr)
+					return nullptr;
+
+				core->home = Home::Create();
+				if (core->home == nullptr)
 					return nullptr;
 			}
 
@@ -98,6 +102,8 @@ namespace server
 
 		LOG_INFO("Starting {0} threads(s)", threadCount);
 
+		home->Run();
+
 		for (size_t i = 1; i < threadCount; i++)
 			threads.create_thread(boost::bind(&Core::Worker, shared_from_this()));
 
@@ -129,7 +135,7 @@ namespace server
 			try
 			{
 				service->run();
-				boost::this_thread::sleep_for(boost::chrono::milliseconds(200));
+				boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 			}
 			catch (std::exception e)
 			{

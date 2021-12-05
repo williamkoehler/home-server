@@ -1,5 +1,5 @@
 #include "JsonApi.hpp"
-#include "../../Core.hpp"
+#include "../../tools.hpp"
 
 #include "../../home/Home.hpp"
 #include "../../home/Room.hpp"
@@ -209,8 +209,8 @@ namespace server
 		output.AddMember("id", rapidjson::Value(controller->controllerID), allocator);
 		output.AddMember("pluginid", rapidjson::Value(controller->GetPluginID()), allocator);
 		output.AddMember("roomid",
-						 controller->room != nullptr ?
-						 rapidjson::Value(controller->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+			controller->room != nullptr ?
+			rapidjson::Value(controller->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
 	}
 	void JsonApi::DecodeJsonDeviceController(Ref<DeviceController> controller, rapidjson::Value& input)
 	{
@@ -246,59 +246,89 @@ namespace server
 		assert(controller != nullptr);
 		assert(input.IsObject());
 
-		//// Lock mutex
-		//boost::lock_guard lock(device->scriptMutex);
+		// Decode device properties if they exist
+		{
+			rapidjson::Value::MemberIterator stateIt = input.FindMember("state");
+			if (stateIt != input.MemberEnd() && stateIt->value.IsObject())
+			{
 
-		//// Check device manager script
-		//Ref<home::DeviceScript> script = device->script;
-		//if (script == nullptr)
-		//{
-		//	LOG_ERROR("Invalid device script");
-		//	return;
-		//}
+				boost::lock_guard lock(controller->interfaceMutex);
 
-		//// Decode device script properties if they exist
-		//{
-		//	rapidjson::Value fieldsJson(rapidjson::kArrayType);
-		//	JsonWriteableFieldCollection collection(fieldsJson, allocator);
+				// Parse every property
+				for (rapidjson::Value::MemberIterator propertyIt = stateIt->value.MemberBegin(); propertyIt != stateIt->value.MemberEnd(); propertyIt++)
+				{
+					const robin_hood::unordered_node_map<std::string, Ref<home::Property>>::const_iterator it = controller->propertyList.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
+					if (it != controller->propertyList.end())
+					{
+						switch (propertyIt->value.GetType())
+						{
+						case rapidjson::kFalseType:
+							it->second->SetBoolean(false);
+							break;
+						case rapidjson::kTrueType:
+							it->second->SetBoolean(true);
+							break;
+						case rapidjson::kNumberType:
+							if (it->second->IsInteger())
+								it->second->SetInteger(propertyIt->value.GetInt64());
+							else
+								it->second->SetNumber(propertyIt->value.GetDouble());
+							break;
+						case rapidjson::kStringType:
+							it->second->SetString(std::string(propertyIt->value.GetString(), propertyIt->value.GetStringLength()));
+							break;
+						case rapidjson::kObjectType:
+						{
+							rapidjson::Value::MemberIterator classIt = propertyIt->value.FindMember("class_");
+							if (classIt != propertyIt->value.MemberEnd() && classIt->value.IsString())
+							{
+								switch (crc32(classIt->value.GetString(), classIt->value.GetStringLength()))
+								{
+								case CRC32("endpoint"):
+								{
+									// Parse endpoint
+									rapidjson::Value::MemberIterator hostIt = propertyIt->value.FindMember("host");
+									rapidjson::Value::MemberIterator portIt = propertyIt->value.FindMember("port");
 
-		//	rapidjson::Value::MemberIterator fieldsIt = input.FindMember("fields");
-		//	if (fieldsIt != input.MemberEnd() && fieldsIt->value.IsArray())
-		//	{
-		//		for (rapidjson::Value::ValueIterator it = fieldsIt->value.Begin(); it != fieldsIt->value.End(); it++)
-		//		{
-		//			if (it->IsObject())
-		//			{
-		//				rapidjson::Value::MemberIterator idIt = it->FindMember("id");
-		//				rapidjson::Value::MemberIterator valueIt = it->FindMember("value");
+									if (hostIt != propertyIt->value.MemberEnd() && hostIt->value.IsString() &&
+										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
+									{
+										// Set endpoint
+										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+									}
+									break;
+								}
+								case CRC32("color"):
+								{
+									rapidjson::Value::MemberIterator redIt = propertyIt->value.FindMember("r");
+									rapidjson::Value::MemberIterator greenIt = propertyIt->value.FindMember("g");
+									rapidjson::Value::MemberIterator blueIt = propertyIt->value.FindMember("b");
 
-		//				if (idIt != it->MemberEnd() && idIt->value.IsUint64() &&
-		//					valueIt != it->MemberEnd())
-		//				{
-		//					JsonReadableField field(
-		//						idIt->value.GetUint64(),
-		//						valueIt->value);
+									if (redIt != propertyIt->value.MemberEnd() && redIt->value.IsUint() &&
+										greenIt != propertyIt->value.MemberEnd() && greenIt->value.IsUint() &&
+										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
+									{
+										// Set color
+										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+									}
+									break;
+								}
+								}
+							}
+							break;
+						}
+						default:
+							break;
+						}
+					}
+				}
+			}
 
-		//					// Set field
-		//					if (!script->SetField(field))
-		//					{
-		//						rapidjson::Value valueJson;
-		//						JsonWriteableField field2(
-		//							idIt->value.GetUint64(),
-		//							valueJson,
-		//							allocator);
+			controller->TakeSnapshot();
 
-		//						// If something went wrong get correct value from script
-		//						if (script->GetField(field2))
-		//							collection.AddField(field2);
-		//					}
-		//				}
-		//			}
-		//		}
-		//	}
-
-		//	output.AddMember("fields", fieldsJson, allocator);
-		//}
+			boost::lock_guard lock(controller->mutex);
+			output.AddMember("state", rapidjson::Value(controller->snapshot, allocator), allocator);
+		}
 	}
 
 	void JsonApi::BuildJsonDevice(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -313,9 +343,12 @@ namespace server
 		output.AddMember("name", rapidjson::Value(device->name.c_str(), device->name.size()), allocator);
 		output.AddMember("id", rapidjson::Value(device->deviceID), allocator);
 		output.AddMember("pluginid", rapidjson::Value(device->GetPluginID()), allocator);
+		output.AddMember("controllerid",
+			device->controller != nullptr ?
+			rapidjson::Value(device->controller->GetDeviceControllerID()) : rapidjson::Value(rapidjson::kNullType), allocator);
 		output.AddMember("roomid",
-						 device->room != nullptr ?
-						 rapidjson::Value(device->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+			device->room != nullptr ?
+			rapidjson::Value(device->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
 	}
 	void JsonApi::DecodeJsonDevice(Ref<Device> device, rapidjson::Value& input)
 	{
@@ -329,6 +362,10 @@ namespace server
 		rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
 		if (nameIt != input.MemberEnd() && nameIt->value.IsString())
 			device->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
+
+		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
+		if (controllerIDIt != input.MemberEnd() && controllerIDIt->value.IsUint64())
+			device->SetController(home->GetDeviceController(controllerIDIt->value.GetInt64()));
 
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
 		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint64())
@@ -351,58 +388,87 @@ namespace server
 		assert(device != nullptr);
 		assert(input.IsObject());
 
-		//// Lock mutex
-		//boost::lock_guard lock(device->scriptMutex);
+		// Decode device properties if they exist
+		{
+			rapidjson::Value::MemberIterator stateIt = input.FindMember("state");
+			if (stateIt != input.MemberEnd() && stateIt->value.IsObject())
+			{
+				boost::lock_guard lock(device->interfaceMutex);
 
-		//// Check device manager script
-		//Ref<home::DeviceScript> script = device->script;
-		//if (script == nullptr)
-		//{
-		//	LOG_ERROR("Invalid device script");
-		//	return;
-		//}
+				// Parse every property
+				for (rapidjson::Value::MemberIterator propertyIt = stateIt->value.MemberBegin(); propertyIt != stateIt->value.MemberEnd(); propertyIt++)
+				{
+					const robin_hood::unordered_node_map<std::string, Ref<home::Property>>::const_iterator it = device->propertyList.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
+					if (it != device->propertyList.end())
+					{
+						switch (propertyIt->value.GetType())
+						{
+						case rapidjson::kFalseType:
+							it->second->SetBoolean(false);
+							break;
+						case rapidjson::kTrueType:
+							it->second->SetBoolean(true);
+							break;
+						case rapidjson::kNumberType:
+							if (it->second->IsInteger())
+								it->second->SetInteger(propertyIt->value.GetInt64());
+							else
+								it->second->SetNumber(propertyIt->value.GetDouble());
+							break;
+						case rapidjson::kStringType:
+							it->second->SetString(std::string(propertyIt->value.GetString(), propertyIt->value.GetStringLength()));
+							break;
+						case rapidjson::kObjectType:
+						{
+							rapidjson::Value::MemberIterator classIt = propertyIt->value.FindMember("class_");
+							if (classIt != propertyIt->value.MemberEnd() && classIt->value.IsString())
+							{
+								switch (crc32(classIt->value.GetString(), classIt->value.GetStringLength()))
+								{
+								case CRC32("endpoint"):
+								{
+									// Parse endpoint
+									rapidjson::Value::MemberIterator hostIt = propertyIt->value.FindMember("host");
+									rapidjson::Value::MemberIterator portIt = propertyIt->value.FindMember("port");
 
-		//// Decode device script properties if they exist
-		//{
-		//	rapidjson::Value fieldsJson(rapidjson::kArrayType);
-		//	JsonWriteableFieldCollection collection(fieldsJson, allocator);
+									if (hostIt != propertyIt->value.MemberEnd() && hostIt->value.IsString() &&
+										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
+									{
+										// Set endpoint
+										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+									}
+									break;
+								}
+								case CRC32("color"):
+								{
+									rapidjson::Value::MemberIterator redIt = propertyIt->value.FindMember("r");
+									rapidjson::Value::MemberIterator greenIt = propertyIt->value.FindMember("g");
+									rapidjson::Value::MemberIterator blueIt = propertyIt->value.FindMember("b");
 
-		//	rapidjson::Value::MemberIterator fieldsIt = input.FindMember("fields");
-		//	if (fieldsIt != input.MemberEnd() && fieldsIt->value.IsArray())
-		//	{
-		//		for (rapidjson::Value::ValueIterator it = fieldsIt->value.Begin(); it != fieldsIt->value.End(); it++)
-		//		{
-		//			if (it->IsObject())
-		//			{
-		//				rapidjson::Value::MemberIterator idIt = it->FindMember("id");
-		//				rapidjson::Value::MemberIterator valueIt = it->FindMember("value");
+									if (redIt != propertyIt->value.MemberEnd() && redIt->value.IsUint() &&
+										greenIt != propertyIt->value.MemberEnd() && greenIt->value.IsUint() &&
+										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
+									{
+										// Set color
+										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+									}
+									break;
+								}
+								}
+							}
+							break;
+						}
+						default:
+							break;
+						}
+					}
+				}
+			}
 
-		//				if (idIt != it->MemberEnd() && idIt->value.IsUint64() &&
-		//					valueIt != it->MemberEnd())
-		//				{
-		//					JsonReadableField field(
-		//						idIt->value.GetUint64(),
-		//						valueIt->value);
+			device->TakeSnapshot();
 
-		//					// Set field
-		//					if (!script->SetField(field))
-		//					{
-		//						rapidjson::Value valueJson;
-		//						JsonWriteableField field2(
-		//							idIt->value.GetUint64(),
-		//							valueJson,
-		//							allocator);
-
-		//						// If something went wrong get correct value from script
-		//						if (script->GetField(field2))
-		//							collection.AddField(field2);
-		//					}
-		//				}
-		//			}
-		//		}
-		//	}
-
-		//	output.AddMember("fields", fieldsJson, allocator);
-		//}
+			boost::lock_guard lock(device->mutex);
+			output.AddMember("state", rapidjson::Value(device->snapshot, allocator), allocator);
+		}
 	}
 }

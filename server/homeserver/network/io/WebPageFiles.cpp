@@ -3,13 +3,13 @@
 
 namespace server
 {
-	boost::unordered::unordered_map<std::string, WebPageFile> WebPageFiles::fileList;
+	robin_hood::unordered_node_map<std::string, WebPageFile> WebPageFiles::fileList;
 
 	void WebPageFiles::LoadWebPage(boost::filesystem::path directoryPath)
 	{
 		LOG_INFO("Loading website from directory '{0}'", directoryPath.string());
 
-		if(boost::filesystem::exists(directoryPath))
+		if (boost::filesystem::exists(directoryPath))
 		{
 			for (boost::filesystem::directory_entry fileEntry : boost::filesystem::recursive_directory_iterator(directoryPath))
 			{
@@ -64,9 +64,9 @@ namespace server
 			LOG_ERROR("Could not find website directory {0}", directoryPath.string());
 		}
 	}
-	WebPageFile *WebPageFiles::GetFile(const char* target)
+	WebPageFile* WebPageFiles::GetFile(const char* target)
 	{
-		boost::unordered::unordered_map<std::string, WebPageFile>::iterator it = fileList.find(target);
+		const robin_hood::unordered_node_map<std::string, WebPageFile>::iterator it = fileList.find(target);
 		if (it == fileList.end())
 			return nullptr;
 
@@ -74,7 +74,7 @@ namespace server
 	}
 	WebPageFile* WebPageFiles::GetFile(std::string target)
 	{
-		boost::unordered::unordered_map<std::string, WebPageFile>::iterator it = fileList.find(target);
+		const robin_hood::unordered_node_map<std::string, WebPageFile>::iterator it = fileList.find(target);
 		if (it == fileList.end())
 			return nullptr;
 

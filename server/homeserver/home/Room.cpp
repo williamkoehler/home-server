@@ -3,8 +3,7 @@
 #include "Home.hpp"
 #include "Device.hpp"
 #include "DeviceController.hpp"
-#include "../plugin/PluginManager.hpp"
-#include <xxHash/xxhash.h>
+#include "Action.hpp"
 
 namespace server
 {
@@ -15,6 +14,12 @@ namespace server
 	{
 		deviceList.clear();
 		deviceControllerList.clear();
+	}
+	Ref<Room> Room::Create(const std::string& name, identifier_t roomID, const std::string& type)
+	{
+		Ref<Room> room = boost::make_shared<Room>(name, roomID, type);
+
+		return room;
 	}
 
 	std::string Room::GetName()
@@ -51,6 +56,7 @@ namespace server
 			return false;
 	}
 
+	//! Device
 	bool Room::AddDevice(Ref<Device> device)
 	{
 		assert(device != nullptr);
@@ -70,6 +76,7 @@ namespace server
 		return deviceList.erase(device->GetDeviceID());
 	}
 
+	//! Device Controller
 	bool Room::AddDeviceController(Ref<DeviceController> controller)
 	{
 		assert(controller != nullptr);
@@ -85,7 +92,27 @@ namespace server
 
 		boost::lock_guard lock(mutex);
 
-		// Remove device id from list
+		// Remove device controller id from list
 		return deviceControllerList.erase(controller->GetDeviceControllerID());
+	}
+
+	//! Action
+	bool Room::AddAction(Ref<Action> action)
+	{
+		assert(action != nullptr);
+
+		boost::lock_guard lock(mutex);
+
+		// Add action id to list
+		return actionList.insert(action->GetActionID()).second;
+	}
+	bool Room::RemoveAction(Ref<Action> action)
+	{
+		assert(action != nullptr);
+
+		boost::lock_guard lock(mutex);
+
+		// Remove action id from list
+		return actionList.erase(action->GetActionID());
 	}
 }

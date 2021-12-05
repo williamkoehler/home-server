@@ -1,4 +1,5 @@
 #include "Mime.hpp"
+#include "../../tools.hpp"
 
 namespace server
 {
@@ -40,32 +41,33 @@ namespace server
 		"text",
 	};
 
-	FileTypes GetFileTypeFromExt(const char* ext)
+	FileTypes GetFileTypeFromExt(const std::string& ext)
 	{
-		if (strncmp(ext, ".htm", 4) == 0)
+		switch (crc32(ext.data(), ext.size()))
+		{
+		case CRC32(".htm"):
+		case CRC32(".html"):
 			return FileTypes::kHTMLFileType;
-		else if (strncmp(ext, ".css", 4) == 0)
-			return FileTypes::kCSSFileType;
-		else if (strncmp(ext, ".js", 3) == 0)
-			return FileTypes::kJSFileType;
-
-		else if (strncmp(ext, ".json", 5) == 0)
+		case CRC32(".css"):
 			return FileTypes::kHTMLFileType;
-		else if (strncmp(ext, ".xml", 4) == 0)
+		case CRC32(".js"):
 			return FileTypes::kHTMLFileType;
-
-		else if (strncmp(ext, ".png", 4) == 0)
+		case CRC32(".json"):
+			return FileTypes::kJSONFileType;
+		case CRC32(".xml"):
+			return FileTypes::kXMLFileType;
+		case CRC32(".png"):
 			return FileTypes::kPNGFileType;
-		else if (strncmp(ext, ".svg", 4) == 0)
+		case CRC32(".jpeg"):
+		case CRC32(".jpg"):
+			return FileTypes::kJPGFileType;
+		case CRC32(".svg"):
 			return FileTypes::kSVGFileType;
-		else if (strncmp(ext, ".jpg", 4) == 0)
-			return FileTypes::kJPGFileType;
-		else if (strncmp(ext, ".jpe", 4) == 0)
-			return FileTypes::kJPGFileType;
-		else if (strncmp(ext, ".ico", 4) == 0)
+		case CRC32(".ico"):
 			return FileTypes::kICONFileType;
-		else
+		default:
 			return FileTypes::kTEXTFileType;
+		}
 	}
 
 	const char* GetExtFromFileType(FileTypes type)
@@ -73,30 +75,31 @@ namespace server
 		return fileExts[type];
 	}
 
-	FileTypes GetFileTypeFromIdentifier(const char* identifier)
+	FileTypes GetFileTypeFromIdentifier(const std::string& identifier)
 	{
-		if (strncmp(identifier, "html", 4) == 0)
+		switch (crc32(identifier.data(), identifier.size()))
+		{
+		case CRC32("html"):
 			return FileTypes::kHTMLFileType;
-		else if (strncmp(identifier, "css", 3) == 0)
-			return FileTypes::kCSSFileType;
-		else if (strncmp(identifier, "javascript", 10) == 0)
-			return FileTypes::kJSFileType;
-
-		else if (strncmp(identifier, "json", 4) == 0)
+		case CRC32("css"):
 			return FileTypes::kHTMLFileType;
-		else if (strncmp(identifier, "xml", 3) == 0)
+		case CRC32("javascript"):
 			return FileTypes::kHTMLFileType;
-
-		else if (strncmp(identifier, "png", 3) == 0)
+		case CRC32("json"):
+			return FileTypes::kJSONFileType;
+		case CRC32("xml"):
+			return FileTypes::kXMLFileType;
+		case CRC32("png"):
 			return FileTypes::kPNGFileType;
-		else if (strncmp(identifier, "svg", 3) == 0)
-			return FileTypes::kSVGFileType;
-		else if (strncmp(identifier, "jpg", 3) == 0)
+		case CRC32("jpg"):
 			return FileTypes::kJPGFileType;
-		else if (strncmp(identifier, "icon", 4) == 0)
+		case CRC32("svg"):
+			return FileTypes::kSVGFileType;
+		case CRC32("icon"):
 			return FileTypes::kICONFileType;
-		else
+		default:
 			return FileTypes::kTEXTFileType;
+		}
 	}
 
 	const char* GetIdentifierFromFileType(FileTypes type)

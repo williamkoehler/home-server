@@ -1,8 +1,8 @@
 #pragma once
 #include "../common.hpp"
 #include <PluginManager.hpp>
-#include <DevicePlugin.hpp>
-#include <DeviceControllerPlugin.hpp>
+#include <home/DevicePlugin.hpp>
+#include <home/DeviceControllerPlugin.hpp>
 #include <boost/dll.hpp>
 
 namespace server

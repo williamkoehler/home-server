@@ -9,6 +9,7 @@ typedef int64_t identifier_t;
 
 //Dependencies
 #include "boost.hpp"
+#include <robin-hood/robin_hood.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>

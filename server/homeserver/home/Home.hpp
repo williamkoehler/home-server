@@ -22,6 +22,7 @@ namespace server
 		boost::unordered::unordered_map<identifier_t, Ref<Device>> deviceList;
 		boost::unordered::unordered_map<identifier_t, Ref<DeviceController>> deviceControllerList;
 
+		Ref<boost::asio::io_service> service = nullptr;
 		boost::thread worker;
 
 		void Worker();
@@ -36,6 +37,8 @@ namespace server
 		~Home();
 		static Ref<Home> Create();
 		static Ref<Home> GetInstance();
+
+		inline Ref<boost::asio::io_service> GetService() const { return service; }
 
 		//! Timestamp
 
@@ -126,5 +129,8 @@ namespace server
 		/// @brief Remove device controller using controller id
 		/// @param controllerID Device controller id
 		bool RemoveDeviceController(identifier_t controllerID);
+
+		/// @brief Start home worker
+		void Run();
 	};
 }

@@ -16,9 +16,9 @@ namespace server
 		kICONFileType,
 		kTEXTFileType,
 	};
-	FileTypes GetFileTypeFromExt(const char* ext);
+	FileTypes GetFileTypeFromExt(const std::string& ext);
 	const char* GetExtFromFileType(FileTypes type);
-	FileTypes GetFileTypeFromIdentifier(const char* identifier);
+	FileTypes GetFileTypeFromIdentifier(const std::string& identifier);
 	const char* GetIdentifierFromFileType(FileTypes type);
 	std::string GetMimeFromFileType(FileTypes type);
 }

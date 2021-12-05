@@ -6,6 +6,7 @@ namespace server
 	class Room;
 	class DeviceController;
 	class Device;
+	class Action;
 
 	enum class UserAccessLevel;
 	class User;
@@ -71,7 +72,7 @@ namespace server
 		bool UpdateRoom(Ref<Room> room);
 
 		/// @brief Update room name 
-		/// @param script Room to update
+		/// @param room Room to update
 		/// @param value Old name (for record)
 		/// @param newValue New name
 		/// @return Successfulness
@@ -98,7 +99,7 @@ namespace server
 		bool UpdateDeviceController(Ref<DeviceController> controller);
 
 		/// @brief Update device controller name 
-		/// @param script Device controller to update
+		/// @param controller Device controller to update
 		/// @param value Old name (for record)
 		/// @param newValue New name
 		/// @return Successfulness
@@ -125,7 +126,7 @@ namespace server
 		bool UpdateDevice(Ref<Device> device);
 
 		/// @brief Update device name 
-		/// @param script Device to update
+		/// @param device Device to update
 		/// @param value Old name (for record)
 		/// @param newValue New name
 		/// @return Successfulness
@@ -135,6 +136,33 @@ namespace server
 		bool RemoveDevice(identifier_t deviceID);
 
 		size_t GetDeviceCount();
+
+		//! Action
+
+		/// @brief Load action from database
+		/// @param callback Callback for each action
+		/// @return Successfulness
+		bool LoadActions(const boost::function<void(identifier_t actionID, const std::string& name, identifier_t sourceID, identifier_t roomID, const std::string& data)>& callback);
+
+		/// @brief Reserves new action entry in database
+		/// @return Entry identifier
+		identifier_t ReserveAction();
+
+		/// @brief Update action without pushing record
+		/// @param room Action to update
+		/// @return Successfulness
+		bool UpdateAction(Ref<Action> action);
+
+		/// @brief Update action name 
+		/// @param action Action to update
+		/// @param value Old name (for record)
+		/// @param newValue New name
+		/// @return Successfulness
+		bool UpdateActionPropName(Ref<Action> action, const std::string& value, const std::string& newValue);
+		bool UpdateActionPropRoom(Ref<Action> action, Ref<Room> value, Ref<Room> newValue);
+		bool RemoveAction(identifier_t actionID);
+
+		size_t GetActionCount();
 
 		//! User
 

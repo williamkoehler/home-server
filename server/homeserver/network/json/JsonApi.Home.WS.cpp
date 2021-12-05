@@ -1,6 +1,4 @@
 #include "JsonApi.hpp"
-#include "../../Core.hpp"
-
 #include "../../home/Home.hpp"
 #include "../../home/Room.hpp"
 #include "../../home/DeviceController.hpp"
@@ -322,6 +320,40 @@ namespace server
 		DecodeJsonDeviceController(controller, input);
 	}
 
+	void JsonApi::ProcessJsonInvokeDeviceControllerEventMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
+		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64() ||
+			eventIt == input.MemberEnd() || !eventIt->value.IsString())
+		{
+			context.Error("Missing id and/or event");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+
+		assert(home != nullptr);
+
+		// Get device
+		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
+		if (controller == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Invoke event
+		controller->Invoke(std::string(eventIt->value.GetString(), eventIt->value.GetStringLength()));
+	}
+
 	void JsonApi::ProcessJsonGetDeviceControllerStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(input.IsObject() && output.IsObject());
@@ -561,6 +593,39 @@ namespace server
 
 		// Decode properties
 		DecodeJsonDevice(device, input);
+	}
+
+	void JsonApi::ProcessJsonInvokeDeviceEventMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
+		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64() ||
+			eventIt == input.MemberEnd() || !eventIt->value.IsString())
+		{
+			context.Error("Missing id and/or event");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get device
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		if (device == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Invoke event
+		device->Invoke(std::string(eventIt->value.GetString(), eventIt->value.GetStringLength()));
 	}
 
 	void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)

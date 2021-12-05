@@ -3,31 +3,35 @@
 #include "../Script.hpp"
 #include "duktape.h"
 
+extern "C"
+{
+	duk_ret_t duk_exec_timeout(void* udata);
+}
+
 namespace server
 {
 	class ScriptSource;
 
 	namespace javascript
 	{
-		// User data used for script timeout
-		struct DuktapeUserData
-		{
-			size_t startTime;
-			size_t maxTime;
-		};
-
 		class JSScript : public Script
 		{
 		private:
-			DuktapeUserData userdata;
+			size_t startTime;
+			size_t maxTime;
 			Ref<duk_context> context;
+
+			boost::container::vector<Ref<home::Property>> propertyListByID;
 
 			// Prepare script timeout
 			void PrepareTimeout(size_t maxTime = 5);
 
 			// Duktape safe call
 			static duk_ret_t PrepareSafe(duk_context* context, void* udata);
-			static duk_ret_t ExecuteSafe(duk_context* context, void* udata);
+			static duk_ret_t InvokeSafe(duk_context* context, void* udata);
+
+			static duk_ret_t PropertyGetter(duk_context* context);
+			static duk_ret_t PropertySetter(duk_context* context);
 
 		public:
 			JSScript(Ref<ScriptSource> source);
@@ -37,7 +41,16 @@ namespace server
 			/// @return Duktape context
 			inline Ref<duk_context> GetDuktape() { return context; }
 
-			void Execute(const std::string& event);
+			inline bool CheckTimeout()
+			{
+				// Test elapsed time
+				size_t currentTime = clock() / (CLOCKS_PER_SEC / 1000);
+				size_t elapsedTime = currentTime - startTime;
+
+				return elapsedTime > maxTime;
+			}
+
+			virtual bool Invoke(const std::string& event) override;
 		};
 	}
 }

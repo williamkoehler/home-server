@@ -16958,6 +16958,14 @@ DUK_EXTERNAL void duk_get_memory_functions(duk_hthread *thr, duk_memory_function
 	out_funcs->udata = heap->heap_udata;
 }
 
+DUK_EXTERNAL void* duk_get_user_data(duk_hthread* thr) {
+	DUK_ASSERT_API_ENTRY(thr);
+	DUK_ASSERT(thr != NULL);
+	DUK_ASSERT(thr->heap != NULL);
+
+	return thr->heap->heap_udata;
+}
+
 DUK_EXTERNAL void duk_gc(duk_hthread *thr, duk_uint_t flags) {
 	duk_heap *heap;
 	duk_small_uint_t ms_flags;

@@ -3,6 +3,7 @@
 #include "../home/Room.hpp"
 #include "../home/DeviceController.hpp"
 #include "../home/Device.hpp"
+#include "../home/Action.hpp"
 #include "../user/User.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 
@@ -75,7 +76,7 @@ namespace server
 			// Device Controller Table
 			if (sqlite3_exec(database->connection,
 							 R"(create table if not exists devicecontrollers)"
-							 R"((id integer not null primary key, name text not null, pluginid integer not null, roomid integer not null, data text not null, foreign key(roomid) references rooms(id)))",
+							 R"((id integer not null primary key, name text not null, pluginid integer not null, roomid integer, data text not null, foreign key(roomid) references rooms(id)))",
 							 nullptr,
 							 nullptr,
 							 &err) != SQLITE_OK)
@@ -87,12 +88,24 @@ namespace server
 			// Device Table
 			if (sqlite3_exec(database->connection,
 							 R"(create table if not exists devices)"
-							 R"((id integer not null primary key, name text not null, pluginid integer not null, controllerid integer not null, roomid integer not null, data text not null, foreign key (controllerid) references devicecontrollers (id), foreign key (roomid) references rooms (id)))",
+							 R"((id integer not null primary key, name text not null, pluginid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references devicecontrollers (id), foreign key (roomid) references rooms (id)))",
 							 nullptr,
 							 nullptr,
 							 &err) != SQLITE_OK)
 			{
 				LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
+				return nullptr;
+			}
+
+			// Action Table
+			if (sqlite3_exec(database->connection,
+				R"(create table if not exists actions)"
+				R"((id integer not null primary key, name text not null, sourceid integer not null, roomid integer, data text not null, foreign key (roomid) references rooms (id)))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
+			{
+				LOG_ERROR("Failing to create 'actions' table.\n{0}", err);
 				return nullptr;
 			}
 		}
@@ -1108,6 +1121,250 @@ namespace server
 
 		sqlite3_finalize(statement);
 		return deviceCount;
+	}
+
+	//! Action
+	bool Database::LoadActions(const boost::function<void(identifier_t actionID, const std::string& name, identifier_t sourceID, identifier_t roomID, const std::string& data)>& callback)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(select id, name, sourceid, roomid, data from actions)", 52,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			identifier_t actionID = sqlite3_column_int64(statement, 0);
+			std::string name = (const char*)sqlite3_column_text(statement, 1);
+			identifier_t sourceID = sqlite3_column_int64(statement, 2);
+			identifier_t roomID = sqlite3_column_int64(statement, 3);
+			std::string data = (const char*)sqlite3_column_text(statement, 4);
+
+			callback(actionID, name, sourceID, roomID, data);
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+
+	identifier_t Database::ReserveAction()
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(insert into actions values)"
+			R"(((select ifnull((select id+1 from actions where (id+1) not in (select id from actions) order by id asc limit 1), 1)),)"
+			R"("unknown action", 0, null, "{}"))", 175,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to insert action into 'actions' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		identifier_t actionID = sqlite3_last_insert_rowid(connection);
+
+		sqlite3_finalize(statement);
+		return actionID;
+	}
+	bool Database::UpdateAction(Ref<Action> action)
+	{
+		// Lock
+		boost::lock(mutex, action->mutex);
+		boost::lock_guard lock(mutex, boost::adopt_lock);
+		boost::lock_guard lock2(action->mutex, boost::adopt_lock);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(replace into devices values (?, ?, ?, ?, "{}"))", 46,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_int64(statement, 1, action->actionID) != SQLITE_OK ||
+			sqlite3_bind_text(statement, 2, action->name.data(), action->name.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 3, action->script->GetSourceID()) != SQLITE_OK ||
+			(action->room != nullptr ?
+				sqlite3_bind_int64(statement, 4, action->room->GetRoomID()) :
+				sqlite3_bind_null(statement, 4)) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to insert action into 'actions' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+	bool Database::UpdateActionPropName(Ref<Action> action, const std::string& value, const std::string& newValue)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(update actions set name = ? where id = ?)", 40,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_text(statement, 1, newValue.data(), newValue.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 2, action->actionID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to update action name.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+
+		return true;
+	}
+	bool Database::UpdateActionPropRoom(Ref<Action> action, Ref<Room> value, Ref<Room> newValue)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(update actions set roomid = ? where id = ?)", 42,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if ((newValue != nullptr ?
+			sqlite3_bind_int64(statement, 1, newValue->GetRoomID()) :
+			sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 2, action->actionID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to update device room.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+
+		return true;
+	}
+	bool Database::RemoveAction(identifier_t actionID)
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(delete from actions where id = ?)", 32,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_bind_int64(statement, 1, actionID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to delete action from 'actions' table.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+		return true;
+	}
+
+	size_t Database::GetActionCount()
+	{
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(select count(*) from actions)", 28,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_ROW)
+		{
+			LOG_ERROR("Failing to count actions.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return 0;
+		}
+
+		size_t actionCount = sqlite3_column_int64(statement, 0);
+
+		sqlite3_finalize(statement);
+		return actionCount;
 	}
 
 	//! User

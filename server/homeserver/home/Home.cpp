@@ -1,5 +1,6 @@
 #include "Home.hpp"
 #include "../database/Database.hpp"
+#include "../Core.hpp"
 #include "Room.hpp"
 #include "Device.hpp"
 #include "DeviceController.hpp"
@@ -32,34 +33,40 @@ namespace server
 
 		try
 		{
-			Ref<Database> database = Database::GetInstance();
-			assert(database != nullptr);
+			// Start service
+			home->service = boost::make_shared<boost::asio::io_service>(1);
 
-			// Load rooms
-			database->LoadRooms(
-				boost::bind(&Home::LoadRoom, home, 
-							boost::placeholders::_1, 
-							boost::placeholders::_2, 
-							boost::placeholders::_3));
+			// Load from database
+			{
+				Ref<Database> database = Database::GetInstance();
+				assert(database != nullptr);
 
-			// Load device controllers
-			database->LoadDeviceControllers(
-				boost::bind(&Home::LoadDeviceController, home, 
-							boost::placeholders::_1, 
-							boost::placeholders::_2, 
-							boost::placeholders::_3,
-							boost::placeholders::_4,
-							boost::placeholders::_5));
+				// Load rooms
+				database->LoadRooms(
+					boost::bind(&Home::LoadRoom, home,
+						boost::placeholders::_1,
+						boost::placeholders::_2,
+						boost::placeholders::_3));
 
-			// Load devices
-			database->LoadDevices(
-				boost::bind(&Home::LoadDevice, home,
-							boost::placeholders::_1,
-							boost::placeholders::_2,
-							boost::placeholders::_3,
-							boost::placeholders::_4,
-							boost::placeholders::_5,
-							boost::placeholders::_6));
+				// Load device controllers
+				database->LoadDeviceControllers(
+					boost::bind(&Home::LoadDeviceController, home,
+						boost::placeholders::_1,
+						boost::placeholders::_2,
+						boost::placeholders::_3,
+						boost::placeholders::_4,
+						boost::placeholders::_5));
+
+				// Load devices
+				database->LoadDevices(
+					boost::bind(&Home::LoadDevice, home,
+						boost::placeholders::_1,
+						boost::placeholders::_2,
+						boost::placeholders::_3,
+						boost::placeholders::_4,
+						boost::placeholders::_5,
+						boost::placeholders::_6));
+			}
 		}
 		catch (std::exception)
 		{
@@ -85,7 +92,7 @@ namespace server
 	//! Room
 	bool Home::LoadRoom(identifier_t roomID, const std::string& name, const std::string& type)
 	{
-		Ref<Room> room = boost::make_shared<Room>(name, roomID, type);
+		Ref<Room> room = Room::Create(name, roomID, type);
 
 		if (room != nullptr)
 		{
@@ -98,8 +105,6 @@ namespace server
 	}
 	Ref<Room> Home::AddRoom(const std::string& name, const std::string& type, rapidjson::Value& json)
 	{
-		boost::lock_guard lock(mutex);
-
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
@@ -109,7 +114,7 @@ namespace server
 			return nullptr;
 
 		// Create new device
-		Ref<Room> room = boost::make_shared<Room>(name, roomID, type);
+		Ref<Room> room = Room::Create(name, roomID, type);
 		if (room == nullptr)
 			return nullptr;
 
@@ -118,6 +123,7 @@ namespace server
 			if (!database->UpdateRoom(room))
 				return nullptr;
 
+			boost::lock_guard lock(mutex);
 			roomList[room->GetRoomID()] = room;
 		}
 		else
@@ -167,7 +173,7 @@ namespace server
 		Ref<home::DevicePlugin> plugin = pluginManager->CreateDevicePlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Create device plugin '{0}'", pluginID);
+			LOG_ERROR("Failing to create device plugin '{0}'", pluginID);
 			return false;
 		}
 
@@ -177,7 +183,7 @@ namespace server
 		Ref<Room> room = GetRoom(roomID);
 
 		// Create new device
-		Ref<Device> device = boost::make_shared<Device>(name, deviceID, plugin, controller, room);
+		Ref<Device> device = Device::Create(name, deviceID, std::move(plugin), std::move(controller), std::move(room));
 
 		if (device != nullptr)
 		{
@@ -190,8 +196,6 @@ namespace server
 	}
 	Ref<Device> Home::AddDevice(const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, rapidjson::Value& json)
 	{
-		boost::lock_guard lock(mutex);
-
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
@@ -217,17 +221,16 @@ namespace server
 		Ref<Room> room = GetRoom(roomID);
 
 		// Create new device
-		Ref<Device> device = boost::make_shared<Device>(name, deviceID, plugin, controller, room);
+		Ref<Device> device = Device::Create(name, deviceID, std::move(plugin), std::move(controller), std::move(room));
 		if (device == nullptr)
 			return nullptr;
 
 		if (device != nullptr)
 		{
-			//device->Load(json);
-
 			if (!database->UpdateDevice(device))
 				return nullptr;
 
+			boost::lock_guard lock(mutex);
 			deviceList[device->GetDeviceID()] = device;
 		}
 		else
@@ -275,7 +278,7 @@ namespace server
 		Ref<home::DeviceControllerPlugin> plugin = pluginManager->CreateDeviceControllerPlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Create device controller plugin '{0}'", pluginID);
+			LOG_ERROR("Failing to create device controller plugin '{0}'", pluginID);
 			return false;
 		}
 
@@ -284,7 +287,7 @@ namespace server
 		Ref<Room> room = GetRoom(roomID);
 
 		// Create new device controller
-		Ref<DeviceController> controller = boost::make_shared<DeviceController>(name, controllerID, plugin, room);
+		Ref<DeviceController> controller = DeviceController::Create(name, controllerID, std::move(plugin), std::move(room));
 
 		if (controller != nullptr)
 		{
@@ -323,15 +326,14 @@ namespace server
 		Ref<Room> room = GetRoom(roomID);
 
 		// Create new device controller
-		Ref<DeviceController> controller = boost::make_shared<DeviceController>(name, controllerID, plugin, room);
+		Ref<DeviceController> controller = DeviceController::Create(name, controllerID, std::move(plugin), std::move(room));
 
 		if (controller != nullptr)
 		{
-			//controller->Load(json);
-
 			if (!database->UpdateDeviceController(controller))
 				return nullptr;
 
+			boost::lock_guard lock(mutex);
 			deviceControllerList[controllerID] = controller;
 		}
 		else
@@ -372,6 +374,26 @@ namespace server
 	//! Worker
 	void Home::Worker()
 	{
-		//TODO Work
+		Ref<Core> core = Core::GetInstance();
+
+		while (core->IsRunning())
+		{
+			try
+			{
+				service->run();
+				boost::this_thread::sleep_for(boost::chrono::milliseconds(1));
+			}
+			catch (std::exception e)
+			{
+				printf("Ooops!!! Something bad happend");
+				LOG_ERROR("An exception was thrown and not catched: {0}", e.what());
+			}
+		}
+	}
+
+	void Home::Run() 
+	{
+		// Start worker thread
+		worker = boost::thread(boost::bind(&Home::Worker, shared_from_this()));
 	}
 }

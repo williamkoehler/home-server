@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(CTest)
 
 add_compile_definitions(OS_LINUX)
-find_package(Boost 1.74 REQUIRED COMPONENTS chrono filesystem system thread regex unit_test_framework)
+find_package(Boost 1.71 REQUIRED COMPONENTS chrono filesystem system thread regex unit_test_framework)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(CURL REQUIRED)

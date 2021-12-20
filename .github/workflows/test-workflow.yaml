@@ -10,6 +10,7 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt update -qq -y
+          chmod -x ./bootstrap-debian.sh
           sudo ./bootstrap-debian.sh
       - name: Build
         run: |

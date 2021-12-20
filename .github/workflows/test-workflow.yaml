@@ -15,7 +15,7 @@ jobs:
         run: |
           sudo apt update -qq -y
           chmod -x ./bootstrap-debian.sh
-          sudo ./bootstrap-debian.sh
+          ./bootstrap-debian.sh
       - name: Build
         run: |
           cmake -G "Ninja" -b "build"

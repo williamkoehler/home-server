@@ -1,12 +1,16 @@
 name: Tests
 
-on: [push]
+on:
+  push:
 
 jobs:
   test:
     name: Test Ubuntu Latest
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2.4.0
+        with:
+          submodules: true
       - name: Install Packages
         run: |
           sudo apt update -qq -y

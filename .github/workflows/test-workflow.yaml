@@ -14,8 +14,7 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt update -qq -y
-          chmod -x ./bootstrap-debian.sh
-          ./bootstrap-debian.sh
+          sudo apt install -y wget build-essential cmake ninja-build libc6-dev libssl-dev libsqlite3-dev libcurl4-openssl-dev
       - name: Build
         run: |
           cmake -G "Ninja" -b "build"

@@ -7,7 +7,7 @@
 #include "Action.hpp"
 #include "../plugin/PluginManager.hpp"
 #include "../scripting/ScriptManager.hpp"
-#include <xxHash/xxhash.h>
+#include <xxhash/xxhash.h>
 
 namespace server
 {

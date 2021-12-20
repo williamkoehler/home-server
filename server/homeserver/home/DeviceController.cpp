@@ -1,5 +1,5 @@
 #include "DeviceController.hpp"
-#include <xxHash/xxhash.h>
+#include <xxhash/xxhash.h>
 #include "../plugin/PluginManager.hpp"
 #include "Room.hpp"
 #include "../database/Database.hpp"

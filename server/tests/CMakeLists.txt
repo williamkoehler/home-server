@@ -27,7 +27,7 @@ if(${ENABLE_TESTS})
             "${PROJECT_SOURCE_DIR}/server/home"
             "${PROJECT_SOURCE_DIR}/server/homeserver"
             "${PROJECT_SOURCE_DIR}/server/plugins"
-            "${PROJECT_SOURCE_DIR}/Dependencies"
+            "${PROJECT_SOURCE_DIR}/dependencies"
             ${OPENSSL_INCLUDE_DIR}
             ${Boost_INCLUDE_DIRS}
             ${SQLite3_INCLUDE_DIRS}

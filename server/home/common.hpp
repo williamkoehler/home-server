@@ -29,6 +29,6 @@ namespace rapidjson
 }
 
 //HASH
-#include <xxHash/xxhash.h>
+#include <xxhash/xxhash.h>
 
 #include "memory.hpp"

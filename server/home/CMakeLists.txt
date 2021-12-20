@@ -10,7 +10,7 @@ target_compile_definitions(HOME
 )
 target_include_directories(HOME
     PUBLIC
-    "${PROJECT_SOURCE_DIR}/Dependencies"
+    "${PROJECT_SOURCE_DIR}/dependencies"
 )
 target_link_libraries(HOME
     XXHASH

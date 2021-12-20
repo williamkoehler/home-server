@@ -17,12 +17,12 @@ namespace home
 
 	public:
 		virtual std::string GetPluginName() = 0;
-		virtual uint32_t GetPluginID() = 0;
+		virtual identifier_t GetPluginID() = 0;
 	};
 
 #define PLUGIN_DESCRIPTION(class_, name_) \
 		static std::string GetPluginName_() { return name_; } \
-		static uint32_t GetPluginID_() { return XXH32(name_, strlen(name_), 0x504c5547); } \
+		static identifier_t GetPluginID_() { return XXH64(name_, strlen(name_), 0x504c5547504c5547); } \
 		virtual std::string GetPluginName() override { return GetPluginName_(); } \
-		virtual uint32_t GetPluginID() override { return GetPluginID_(); }
+		virtual identifier_t GetPluginID() override { return GetPluginID_(); }
 }

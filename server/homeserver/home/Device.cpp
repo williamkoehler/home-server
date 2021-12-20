@@ -11,34 +11,12 @@ namespace server
 	}
 	Device::~Device()
 	{
-		try
-		{
-			if (!plugin->Terminate(boost::reinterpret_pointer_cast<home::Device>(shared_from_this())))
-				LOG_ERROR("Failing to terminate plugin {0}:{1}", name, deviceID);
-		}
-		catch (std::exception)
-		{
-			LOG_ERROR("Failing to initialize plugin internal error {0}:{1}", name, deviceID);
-		}
 	}
 	Ref<Device> Device::Create(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room)
 	{
 		assert(plugin != nullptr);
 
 		Ref<Device> device = boost::make_shared<Device>(name, deviceID, std::move(plugin), std::move(controller), std::move(room));
-
-		if (device != nullptr)
-		{
-			try
-			{
-				if (!device->plugin->Initialize(boost::reinterpret_pointer_cast<home::Device>(device)))
-					LOG_ERROR("Failing to initialize plugin {0}:{1}", name, deviceID);
-			}
-			catch (std::exception)
-			{
-				LOG_ERROR("Failing to initialize plugin internal error {0}:{1}", name, deviceID);
-			}
-		}
 
 		return device;
 	}
@@ -249,6 +227,19 @@ namespace server
 			return false;
 	}
 
+	void Device::Initialize()
+	{
+		try
+		{
+			if (!plugin->Initialize(boost::reinterpret_pointer_cast<home::Device>(shared_from_this())))
+				LOG_ERROR("Failing to initialize plugin '{0}':{1}", name, deviceID);
+		}
+		catch (std::exception e)
+		{
+			LOG_ERROR("Failing to initialize plugin internal error '{0}':{1}", name, deviceID);
+		}
+	}
+
 	void Device::TakeSnapshot()
 	{
 		boost::lock_guard lock(mutex);
@@ -311,6 +302,19 @@ namespace server
 				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(rapidjson::kNullType), allocator);
 				break;
 			}
+		}
+	}
+
+	void Device::Terminate()
+	{
+		try
+		{
+			if (!plugin->Initialize(boost::reinterpret_pointer_cast<home::Device>(shared_from_this())))
+				LOG_ERROR("Failing to terminate plugin '{0}':{1}", name, deviceID);
+		}
+		catch (std::exception e)
+		{
+			LOG_ERROR("Failing to terminate plugin internal error '{0}':{1}", name, deviceID);
 		}
 	}
 }

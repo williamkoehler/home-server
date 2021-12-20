@@ -124,10 +124,16 @@ namespace server
 		/// @return Device controller plugin id
 		inline identifier_t GetPluginID() { return plugin->GetPluginID(); }
 
-		void TakeSnapshot();
+		/// @brief Initialize plugin
+		void Initialize();
 
 		/// @brief Invoke plugin event
 		/// @param event Eveent name
+		void TakeSnapshot();
+
 		void Invoke(const std::string& event);
+
+		/// @brief Teraminate plugin
+		void Terminate();
 	};
 }

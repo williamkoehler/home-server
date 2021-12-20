@@ -11,7 +11,7 @@
 
 using namespace server;
 
-int main(int argc, char** argv)
+int ExecuteServer(int argc, char** argv)
 {
 	try
 	{

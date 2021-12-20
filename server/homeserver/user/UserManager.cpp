@@ -110,7 +110,7 @@ namespace server
 	bool UserManager::LoadUser(identifier_t userID, const std::string& name, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel accessLevel)
 	{
 		// Create new user
-		Ref<User> user = boost::make_shared<User>(name, userID, hash, salt, accessLevel);
+		Ref<User> user = User::Create(name, userID, hash, salt, accessLevel);
 
 		if (user != nullptr)
 		{
@@ -155,7 +155,7 @@ namespace server
 		if (userID == 0)
 			return nullptr;
 
-		if (boost::range::find_if(userList, [&name](std::pair<uint32_t, Ref<User>> user) {return name == user.second->GetName(); }) != userList.end())
+		if (boost::range::find_if(userList, [&name](std::pair<identifier_t, Ref<User>> user) {return name == user.second->GetName(); }) != userList.end())
 		{
 			LOG_ERROR("User name already exists", name);
 			return nullptr;
@@ -180,7 +180,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<User>>::const_iterator it = userList.find(userID);
+		const boost::unordered::unordered_map<identifier_t, Ref<User>>::const_iterator it = userList.find(userID);
 		if (it == userList.end())
 			return nullptr;
 
@@ -190,7 +190,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<User>>::const_iterator it = boost::find_if(userList, [&name](std::pair<uint32_t, Ref<User>> pair) -> bool
+		const boost::unordered::unordered_map<identifier_t, Ref<User>>::const_iterator it = boost::find_if(userList, [&name](std::pair<identifier_t, Ref<User>> pair) -> bool
 			{ return pair.second->GetName() == name; });
 		if (it == userList.end())
 			return nullptr;
@@ -201,7 +201,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<User>>::const_iterator it = boost::find_if(userList, [&name](std::pair<uint32_t, Ref<User>> pair) -> bool
+		const boost::unordered::unordered_map<identifier_t, Ref<User>>::const_iterator it = boost::find_if(userList, [&name](std::pair<identifier_t, Ref<User>> pair) -> bool
 			{ return pair.second->GetName() == name; });
 		if (it == userList.end())
 			return nullptr;
@@ -227,7 +227,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<uint32_t, Ref<User>>::const_iterator it = userList.find(userID);
+		const boost::unordered::unordered_map<identifier_t, Ref<User>>::const_iterator it = userList.find(userID);
 		if (it == userList.end())
 			return false;
 
@@ -308,7 +308,7 @@ namespace server
 #endif
 			.sign(jwt::algorithm::hs256(std::string(reinterpret_cast<const char*>(authenticationKey), AUTHKEY_SIZE)));
 	}
-	uint32_t UserManager::VerifyToken(jwt::decoded_jwt& decoded)
+	identifier_t UserManager::VerifyToken(jwt::decoded_jwt& decoded)
 	{
 		boost::shared_lock_guard lock(mutex);
 

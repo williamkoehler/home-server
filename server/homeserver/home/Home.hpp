@@ -3,9 +3,10 @@
 
 namespace server
 {
+	class Room;
 	class Device;
 	class DeviceController;
-	class Room;
+	class Action;
 
 	class JsonApi;
 
@@ -18,9 +19,10 @@ namespace server
 
 		boost::atomic<time_t> timestamp = 0;
 
-		boost::unordered::unordered_map<identifier_t, Ref<Room>> roomList;
-		boost::unordered::unordered_map<identifier_t, Ref<Device>> deviceList;
-		boost::unordered::unordered_map<identifier_t, Ref<DeviceController>> deviceControllerList;
+		robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
+		robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
+		robin_hood::unordered_node_map<identifier_t, Ref<DeviceController>> deviceControllerList;
+		robin_hood::unordered_node_map<identifier_t, Ref<Action>> actionList;
 
 		Ref<boost::asio::io_service> service = nullptr;
 		boost::thread worker;
@@ -29,8 +31,9 @@ namespace server
 
 		// Database
 		bool LoadRoom(identifier_t roomID, const std::string& name, const std::string& type);
-		bool LoadDeviceController(identifier_t controllerID, const std::string& name, identifier_t pluginID, identifier_t roomID, const std::string& data);
 		bool LoadDevice(identifier_t deviceID, const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string& data);
+		bool LoadDeviceController(identifier_t controllerID, const std::string& name, identifier_t pluginID, identifier_t roomID, const std::string& data);
+		bool LoadAction(identifier_t actionID, const std::string& name, identifier_t sourceID, identifier_t roomID, const std::string& data);
 
 	public:
 		Home();
@@ -58,7 +61,7 @@ namespace server
 		/// @param name Room name
 		/// @param type Room type
 		/// @param json JSON
-		/// @return 
+		/// @return Room
 		Ref<Room> AddRoom(const std::string& name, const std::string& type, rapidjson::Value& json);
 
 		/// @brief Get room count
@@ -84,7 +87,7 @@ namespace server
 		/// @param name Device name
 		/// @param pluginID Device script id
 		/// @param json JSON
-		/// @return 
+		/// @return Device
 		Ref<Device> AddDevice(const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, rapidjson::Value& json);
 
 		/// @brief Get device count
@@ -110,7 +113,7 @@ namespace server
 		/// @param name Device controller name
 		/// @param pluginID Device controller script id
 		/// @param json JSON
-		/// @return 
+		/// @return Device Controller
 		Ref<DeviceController> AddDeviceController(const std::string& name, identifier_t pluginID, identifier_t roomID, rapidjson::Value& json);
 
 		/// @brief Get device controller count
@@ -129,6 +132,32 @@ namespace server
 		/// @brief Remove device controller using controller id
 		/// @param controllerID Device controller id
 		bool RemoveDeviceController(identifier_t controllerID);
+
+		//! Action
+
+		/// @brief Add action
+		/// @param name Action name
+		/// @param pluginID Action script id
+		/// @param json JSON
+		/// @return Action
+		Ref<Action> AddAction(const std::string& name, identifier_t sourceID, identifier_t roomID, rapidjson::Value& json);
+
+		/// @brief Get action count
+		/// @return Action count
+		inline size_t GetActionCount()
+		{
+			boost::shared_lock_guard lock(mutex);
+			return actionList.size();
+		}
+
+		/// @brief Get action using action id
+		/// @param controllerID Action id
+		/// @return Action or nullptr
+		Ref<Action> GetAction(identifier_t actionID);
+
+		/// @brief Remove action using action id
+		/// @param actionID Action id
+		bool RemoveAction(identifier_t actionID);
 
 		/// @brief Start home worker
 		void Run();

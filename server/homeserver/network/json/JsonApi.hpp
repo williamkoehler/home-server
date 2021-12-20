@@ -46,6 +46,11 @@ namespace server
 		static void BuildJsonDeviceState(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 		static void DecodeJsonDeviceState(Ref<Device> device, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
+		static void BuildJsonAction(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		static void DecodeJsonAction(Ref<Action> action, rapidjson::Value& input);
+		static void BuildJsonActionState(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+		static void DecodeJsonActionState(Ref<Action> action, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+
 		// Scripting
 		static void BuildJsonScriptSources(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
@@ -118,6 +123,20 @@ namespace server
 		static void ProcessJsonSetDeviceStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
 		static void ProcessJsonGetDeviceStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		// Action
+		static void ProcessJsonAddActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonRemoveActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonGetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonSetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonInvokeActionEventMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonGetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+		static void ProcessJsonSetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
+
+		static void ProcessJsonGetActionStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);
 
 		// Scripting
 		static void ProcessJsonGetScriptSourcesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context);

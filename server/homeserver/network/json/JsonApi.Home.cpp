@@ -5,6 +5,7 @@
 #include "../../home/Room.hpp"
 #include "../../home/DeviceController.hpp"
 #include "../../home/Device.hpp"
+#include "../../home/Action.hpp"
 
 namespace server
 {
@@ -26,12 +27,10 @@ namespace server
 			// Devices
 			rapidjson::Value deviceListJson = rapidjson::Value(rapidjson::kArrayType);
 
-			boost::unordered::unordered_map<identifier_t, Ref<Device>>& deviceList = home->deviceList;
-
 			// Reserve memory
-			deviceListJson.Reserve(deviceList.size(), allocator);
+			deviceListJson.Reserve(home->deviceList.size(), allocator);
 
-			for (std::pair<identifier_t, Ref<Device>> item : deviceList)
+			for (robin_hood::pair<const identifier_t, Ref<Device>> item : home->deviceList)
 			{
 				rapidjson::Value deviceJson = rapidjson::Value(rapidjson::kObjectType);
 
@@ -45,12 +44,10 @@ namespace server
 			// DeviceControllers
 			rapidjson::Value deviceControllerListJson = rapidjson::Value(rapidjson::kArrayType);
 
-			boost::unordered::unordered_map<identifier_t, Ref<DeviceController>>& deviceControllerList = home->deviceControllerList;
-
 			// Reserve memory
-			deviceControllerListJson.Reserve(deviceControllerList.size(), allocator);
+			deviceControllerListJson.Reserve(home->deviceControllerList.size(), allocator);
 
-			for (std::pair<identifier_t, Ref<DeviceController>> item : deviceControllerList)
+			for (robin_hood::pair<const identifier_t, Ref<DeviceController>> item : home->deviceControllerList)
 			{
 				rapidjson::Value deviceControllerJson = rapidjson::Value(rapidjson::kObjectType);
 
@@ -64,12 +61,10 @@ namespace server
 			// Rooms
 			rapidjson::Value roomListJson = rapidjson::Value(rapidjson::kArrayType);
 
-			boost::unordered::unordered_map<identifier_t, Ref<Room>>& roomList = home->roomList;
-
 			// Reserve memory
-			roomListJson.Reserve(roomList.size(), allocator);
+			roomListJson.Reserve(home->roomList.size(), allocator);
 
-			for (std::pair<identifier_t, Ref<Room>> item : roomList)
+			for (robin_hood::pair<const identifier_t, Ref<Room>> item : home->roomList)
 			{
 				rapidjson::Value roomJson = rapidjson::Value(rapidjson::kObjectType);
 
@@ -469,6 +464,140 @@ namespace server
 
 			boost::lock_guard lock(device->mutex);
 			output.AddMember("state", rapidjson::Value(device->snapshot, allocator), allocator);
+		}
+	}
+
+	void JsonApi::BuildJsonAction(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	{
+		assert(action != nullptr);
+		assert(output.IsObject());
+
+		// Lock
+		boost::shared_lock_guard lock(action->mutex);
+
+		// Build properties
+		output.AddMember("name", rapidjson::Value(action->name.c_str(), action->name.size()), allocator);
+		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
+		output.AddMember("sourceid", rapidjson::Value(action->GetScriptSourceID()), allocator);
+		output.AddMember("roomid",
+			action->room != nullptr ?
+			rapidjson::Value(action->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+	}
+	void JsonApi::DecodeJsonAction(Ref<Action> action, rapidjson::Value& input)
+	{
+		assert(action != nullptr);
+		assert(input.IsObject());
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Decode properties
+		rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
+		if (nameIt != input.MemberEnd() && nameIt->value.IsString())
+			action->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
+
+		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
+		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint64())
+			action->SetRoom(home->GetRoom(roomIDIt->value.GetUint64()));
+	}
+	void JsonApi::BuildJsonActionState(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	{
+		assert(action != nullptr);
+		assert(output.IsObject());
+
+		// Lock
+		boost::shared_lock_guard lock(action->mutex);
+
+		// Build properties
+		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
+		output.AddMember("state", rapidjson::Value(action->snapshot, allocator), allocator);
+	}
+	void JsonApi::DecodeJsonActionState(Ref<Action> action, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	{
+		assert(action != nullptr);
+		assert(input.IsObject());
+
+		// Decode device properties if they exist
+		{
+			rapidjson::Value::MemberIterator stateIt = input.FindMember("state");
+			if (stateIt != input.MemberEnd() && stateIt->value.IsObject())
+			{
+				boost::lock_guard lock(action->interfaceMutex);
+
+				// Parse every property
+				for (rapidjson::Value::MemberIterator propertyIt = stateIt->value.MemberBegin(); propertyIt != stateIt->value.MemberEnd(); propertyIt++)
+				{
+					const robin_hood::unordered_node_map<std::string, Ref<home::Property>>::const_iterator it = action->propertyList.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
+					if (it != action->propertyList.end())
+					{
+						switch (propertyIt->value.GetType())
+						{
+						case rapidjson::kFalseType:
+							it->second->SetBoolean(false);
+							break;
+						case rapidjson::kTrueType:
+							it->second->SetBoolean(true);
+							break;
+						case rapidjson::kNumberType:
+							if (it->second->IsInteger())
+								it->second->SetInteger(propertyIt->value.GetInt64());
+							else
+								it->second->SetNumber(propertyIt->value.GetDouble());
+							break;
+						case rapidjson::kStringType:
+							it->second->SetString(std::string(propertyIt->value.GetString(), propertyIt->value.GetStringLength()));
+							break;
+						case rapidjson::kObjectType:
+						{
+							rapidjson::Value::MemberIterator classIt = propertyIt->value.FindMember("class_");
+							if (classIt != propertyIt->value.MemberEnd() && classIt->value.IsString())
+							{
+								switch (crc32(classIt->value.GetString(), classIt->value.GetStringLength()))
+								{
+								case CRC32("endpoint"):
+								{
+									// Parse endpoint
+									rapidjson::Value::MemberIterator hostIt = propertyIt->value.FindMember("host");
+									rapidjson::Value::MemberIterator portIt = propertyIt->value.FindMember("port");
+
+									if (hostIt != propertyIt->value.MemberEnd() && hostIt->value.IsString() &&
+										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
+									{
+										// Set endpoint
+										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+									}
+									break;
+								}
+								case CRC32("color"):
+								{
+									rapidjson::Value::MemberIterator redIt = propertyIt->value.FindMember("r");
+									rapidjson::Value::MemberIterator greenIt = propertyIt->value.FindMember("g");
+									rapidjson::Value::MemberIterator blueIt = propertyIt->value.FindMember("b");
+
+									if (redIt != propertyIt->value.MemberEnd() && redIt->value.IsUint() &&
+										greenIt != propertyIt->value.MemberEnd() && greenIt->value.IsUint() &&
+										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
+									{
+										// Set color
+										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+									}
+									break;
+								}
+								}
+							}
+							break;
+						}
+						default:
+							break;
+						}
+					}
+				}
+			}
+
+			action->TakeSnapshot();
+
+			boost::lock_guard lock(action->mutex);
+			output.AddMember("state", rapidjson::Value(action->snapshot, allocator), allocator);
 		}
 	}
 }

@@ -1,0 +1,22 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  test:
+    name: Test Ubuntu Latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt update -qq -y
+          sudo ./bootstrap-debian.sh
+      - name: Build
+        run: |
+          cmake -G "Ninja" -b "build"
+      - name: Compile
+        run: |
+          ninja -D "build"
+      - name: Test
+        run: |
+          (cd "build/"; ctest --verbose)

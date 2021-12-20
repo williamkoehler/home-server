@@ -21,7 +21,7 @@ namespace server
 
 		boost::atomic<time_t> timestamp = 0;
 
-		boost::unordered::unordered_map<uint32_t, Ref<User>> userList;
+		boost::unordered::unordered_map<identifier_t, Ref<User>> userList;
 
 		//Authentication
 		uint8_t* authenticationKey = nullptr;
@@ -64,6 +64,6 @@ namespace server
 
 		//JWT
 		std::string GenerateToken(std::string_view name, std::string_view passwd);
-		uint32_t VerifyToken(jwt::decoded_jwt& decoded);
+		identifier_t VerifyToken(jwt::decoded_jwt& decoded);
 	};
 }

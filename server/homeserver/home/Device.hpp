@@ -135,11 +135,17 @@ namespace server
 		/// @return Device plugin id
 		inline identifier_t GetPluginID() { return plugin->GetPluginID(); }
 
+		/// @brief Initialize plugin
+		void Initialize();
+
 		/// @brief Invoke plugin event
 		/// @param event Event name
 		void Invoke(const std::string& event);
 
 		/// @brief Take property snapshot
 		void TakeSnapshot();
+
+		/// @brief Terminate plugin
+		void Terminate();
 	};
 }

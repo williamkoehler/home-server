@@ -1,15 +1,23 @@
 if(${ENABLE_TESTS})
     message(STATUS "Using tests")
 
-    # Find all test files
-    file(GLOB_RECURSE TEST_SOURCES "Test*.cpp")
+    # All test files
+    set(TEST_SOURCES
+
+        # Database
+        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestTables.cpp"
+        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestRooms.cpp"
+        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestControllers.cpp"
+        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestDevices.cpp"
+        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestUsers.cpp"
+    )
 
     # Add one test for each test file
-    foreach( testfile ${TEST_SOURCES} )
+    foreach(testfile ${TEST_SOURCES})
         string(REPLACE ".cpp" "" testname ${testfile})
-        string(REPLACE ${PROJECT_SOURCE_DIR} "" testname ${testname})
+        string(REPLACE "${PROJECT_SOURCE_DIR}/server/tests/" "" testname ${testname})
         message(STATUS "Found " ${testname})
-        string(REGEX MATCH "Test[^.]*" exename ${testname})
+        string(REPLACE "/" "-" exename ${testname})
 
         add_executable(${exename} ${testfile} "common.hpp")
     
@@ -26,7 +34,7 @@ if(${ENABLE_TESTS})
         )
         target_link_libraries(${exename}
             HOME
-            LIBHOMESERVER
+            HOMESERVER
             XXHASH
             LIBQUICKMAIL
             dl

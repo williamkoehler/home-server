@@ -12,34 +12,12 @@ namespace server
 	}
 	DeviceController::~DeviceController()
 	{
-		try
-		{
-			if (!plugin->Terminate(boost::reinterpret_pointer_cast<home::DeviceController>(shared_from_this())))
-				LOG_ERROR("Failing to terminate plugin {0}:{1}", name, controllerID);
-		}
-		catch (std::exception)
-		{
-			LOG_ERROR("Failing to initialize plugin internal error {0}:{1}", name, controllerID);
-		}
 	}
 	Ref<DeviceController> DeviceController::Create(const std::string& name, identifier_t controllerID, Ref<home::DeviceControllerPlugin> plugin, Ref<Room> room)
 	{
 		assert(plugin != nullptr);
 
 		Ref<DeviceController> controller = boost::make_shared<DeviceController>(name, controllerID, std::move(plugin), std::move(room));
-
-		if (controller != nullptr)
-		{
-			try
-			{
-				if (!controller->plugin->Initialize(boost::reinterpret_pointer_cast<home::DeviceController>(controller)))
-					LOG_ERROR("Failing to initialize plugin {0}:{1}", name, controllerID);
-			}
-			catch (std::exception)
-			{
-				LOG_ERROR("Failing to initialize plugin internal error {0}:{1}", name, controllerID);
-			}
-		}
 
 		return controller;
 	}
@@ -209,6 +187,19 @@ namespace server
 			return false;
 	}
 
+	void DeviceController::Initialize()
+	{
+		try
+		{
+			if (!plugin->Initialize(boost::reinterpret_pointer_cast<home::DeviceController>(shared_from_this())))
+				LOG_ERROR("Failing to initialize plugin '{0}':{1}", name, controllerID);
+		}
+		catch (std::exception e)
+		{
+			LOG_ERROR("Failing to initialize plugin internal error '{0}':{1}", name, controllerID);
+		}
+	}
+
 	void DeviceController::TakeSnapshot()
 	{
 		boost::lock_guard lock(mutex);
@@ -271,6 +262,19 @@ namespace server
 				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(rapidjson::kNullType), allocator);
 				break;
 			}
+		}
+	}
+
+	void DeviceController::Terminate()
+	{
+		try
+		{
+			if (!plugin->Terminate(boost::reinterpret_pointer_cast<home::DeviceController>(shared_from_this())))
+				LOG_ERROR("Failing to terminate plugin '{0}':{1}", name, controllerID);
+		}
+		catch (std::exception e)
+		{
+			LOG_ERROR("Failing to initialize plugin internal error '{0}':{1}", name, controllerID);
 		}
 	}
 }

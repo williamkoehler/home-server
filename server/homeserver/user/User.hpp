@@ -39,8 +39,9 @@ namespace server
 		// Settings
 
 	public:
-		User(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel& accessLevel);
+		User(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel accessLevel);
 		~User();
+		static Ref<User> Create(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel accessLevel);
 
 		std::string GetName();
 		bool SetName(const std::string& v);

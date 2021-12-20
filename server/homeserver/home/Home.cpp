@@ -4,7 +4,9 @@
 #include "Room.hpp"
 #include "Device.hpp"
 #include "DeviceController.hpp"
+#include "Action.hpp"
 #include "../plugin/PluginManager.hpp"
+#include "../scripting/ScriptManager.hpp"
 #include <xxHash/xxhash.h>
 
 namespace server
@@ -140,7 +142,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<identifier_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
+		const robin_hood::unordered_node_map<identifier_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
 		if (it == roomList.end())
 			return nullptr;
 
@@ -173,7 +175,7 @@ namespace server
 		Ref<home::DevicePlugin> plugin = pluginManager->CreateDevicePlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Failing to create device plugin '{0}'", pluginID);
+			LOG_ERROR("Creating device plugin '{0}'", pluginID);
 			return false;
 		}
 
@@ -189,6 +191,9 @@ namespace server
 		{
 			deviceList[deviceID] = device;
 
+			// Initialize device plugin
+			device->Initialize();
+
 			return true;
 		}
 		else
@@ -199,11 +204,6 @@ namespace server
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
-		// Reserve room in database
-		identifier_t deviceID = database->ReserveDevice();
-		if (deviceID == 0)
-			return nullptr;
-
 		// Get device plugin
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
 		assert(pluginManager != nullptr);
@@ -211,9 +211,14 @@ namespace server
 		Ref<home::DevicePlugin> plugin = pluginManager->CreateDevicePlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Create device plugin '{0}'", pluginID);
+			LOG_ERROR("Creating device plugin '{0}'", pluginID);
 			return nullptr;
 		}
+
+		// Reserve room in database
+		identifier_t deviceID = database->ReserveDevice();
+		if (deviceID == 0)
+			return nullptr;
 
 		// Get controller and room
 		//! We don't care if no room nor controller is found, since it is allowed to be null
@@ -232,6 +237,9 @@ namespace server
 
 			boost::lock_guard lock(mutex);
 			deviceList[device->GetDeviceID()] = device;
+
+			// Initialize device plugin
+			device->Initialize();
 		}
 		else
 		{
@@ -245,7 +253,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
+		const robin_hood::unordered_node_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
 		if (it == deviceList.end())
 			return nullptr;
 
@@ -255,12 +263,18 @@ namespace server
 	{
 		boost::lock_guard lock(mutex);
 
-		if (deviceList.erase(deviceID))
+		const robin_hood::unordered_node_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(deviceID);
+		if (it != deviceList.end())
 		{
 			Ref<Database> database = Database::GetInstance();
 			assert(database != nullptr);
 
 			database->RemoveDevice(deviceID);
+
+			// Terminate device
+			it->second->Terminate();
+
+			deviceList.erase(it);
 
 			return true;
 		}
@@ -278,7 +292,7 @@ namespace server
 		Ref<home::DeviceControllerPlugin> plugin = pluginManager->CreateDeviceControllerPlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Failing to create device controller plugin '{0}'", pluginID);
+			LOG_ERROR("Creating device controller plugin '{0}'", pluginID);
 			return false;
 		}
 
@@ -292,6 +306,9 @@ namespace server
 		if (controller != nullptr)
 		{
 			deviceControllerList[controllerID] = controller;
+
+			// Initialize device controller plugin
+			controller->Initialize();
 
 			return true;
 		}
@@ -305,11 +322,6 @@ namespace server
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
-		// Reserve room in database
-		identifier_t controllerID = database->ReserveDeviceController();
-		if (controllerID == 0)
-			return nullptr;
-
 		// Get device plugin
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
 		assert(pluginManager != nullptr);
@@ -317,12 +329,17 @@ namespace server
 		Ref<home::DeviceControllerPlugin> plugin = pluginManager->CreateDeviceControllerPlugin(pluginID);
 		if (plugin == nullptr)
 		{
-			LOG_ERROR("Create device controller plugin '{0}'", pluginID);
+			LOG_ERROR("Creating device controller plugin '{0}'", pluginID);
 			return nullptr;
 		}
 
+		// Reserve device controller in database
+		identifier_t controllerID = database->ReserveDeviceController();
+		if (controllerID == 0)
+			return nullptr;
+
 		// Get room
-		//! We don't care if no controller is found, since it is allowed to be null
+		//! We don't care if no room is found, since it is allowed to be null
 		Ref<Room> room = GetRoom(roomID);
 
 		// Create new device controller
@@ -335,6 +352,9 @@ namespace server
 
 			boost::lock_guard lock(mutex);
 			deviceControllerList[controllerID] = controller;
+
+			// Initialie device controller plugin
+			controller->Initialize();
 		}
 		else
 		{
@@ -348,7 +368,7 @@ namespace server
 	{
 		boost::shared_lock_guard lock(mutex);
 
-		const boost::unordered::unordered_map<identifier_t, Ref<DeviceController>>::const_iterator it = deviceControllerList.find(controllerID);
+		const robin_hood::unordered_node_map<identifier_t, Ref<DeviceController>>::const_iterator it = deviceControllerList.find(controllerID);
 		if (it == deviceControllerList.end())
 			return nullptr;
 
@@ -358,12 +378,121 @@ namespace server
 	{
 		boost::lock_guard lock(mutex);
 
-		if (deviceControllerList.erase(controllerID))
+		const robin_hood::unordered_node_map<identifier_t, Ref<DeviceController>>::const_iterator it = deviceControllerList.find(controllerID);
+		if (it != deviceControllerList.end())
 		{
 			Ref<Database> database = Database::GetInstance();
 			assert(database != nullptr);
 
 			database->RemoveDeviceController(controllerID);
+
+			// Terminate device controller plugin
+			it->second->Terminate();
+
+			deviceControllerList.erase(it);
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	//! Action
+	bool Home::LoadAction(identifier_t actionID, const std::string& name, identifier_t sourceID, identifier_t roomID, const std::string& data)
+	{
+		// Get script
+		Ref<ScriptManager> scriptManager = ScriptManager::GetInstance();
+		assert(scriptManager != nullptr);
+
+		Ref<Script> script = scriptManager->CreateActionScript(sourceID);
+		if (script == nullptr)
+		{
+			LOG_ERROR("Creating action script '{0}'", sourceID);
+			return false;
+		}
+
+		// Get room
+		//! We don't care if no room is found, since it is allowed to be null
+		Ref<Room> room = GetRoom(roomID);
+
+		// Create new action
+		Ref<Action> action = Action::Create(name, actionID, std::move(script), std::move(room));
+
+		if (action != nullptr)
+		{
+			actionList[actionID] = action;
+
+			return true;
+		}
+		else
+			return false;
+	}
+	Ref<Action> Home::AddAction(const std::string& name, identifier_t sourceID, identifier_t roomID, rapidjson::Value& json)
+	{
+		boost::lock_guard lock(mutex);
+
+		Ref<Database> database = Database::GetInstance();
+		assert(database != nullptr);
+
+		// Get script
+		Ref<ScriptManager> scriptManager = ScriptManager::GetInstance();
+		assert(scriptManager != nullptr);
+
+		Ref<Script> script = scriptManager->CreateActionScript(sourceID);
+		if (script == nullptr)
+		{
+			LOG_ERROR("Creating action script '{0}'", sourceID);
+			return nullptr;
+		}
+
+		// Reserve action in database
+		identifier_t actionID = database->ReserveAction();
+		if (actionID == 0)
+			return nullptr;
+
+		// Get room
+		//! We don't care if no room is found, since it is allowed to be null
+		Ref<Room> room = GetRoom(roomID);
+
+		// Create new action
+		Ref<Action> action = Action::Create(name, actionID, std::move(script), std::move(room));
+
+		if (action != nullptr)
+		{
+			if (!database->UpdateAction(action))
+				return nullptr;
+
+			boost::lock_guard lock(mutex);
+			actionList[actionID] = action;
+		}
+		else
+		{
+			database->RemoveAction(actionID);
+			return nullptr;
+		}
+
+		return action;
+	}
+	Ref<Action> Home::GetAction(identifier_t actionID)
+	{
+		boost::shared_lock_guard lock(mutex);
+
+		const robin_hood::unordered_node_map<identifier_t, Ref<Action>>::const_iterator it = actionList.find(actionID);
+		if (it == actionList.end())
+			return nullptr;
+
+		return (*it).second;
+	}
+	bool Home::RemoveAction(identifier_t actionID)
+	{
+		boost::lock_guard lock(mutex);
+
+		if (actionList.erase(actionID))
+		{
+			Ref<Database> database = Database::GetInstance();
+			assert(database != nullptr);
+
+			database->RemoveAction(actionID);
 
 			return true;
 		}

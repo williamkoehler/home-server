@@ -37,7 +37,7 @@ namespace server
 		std::string GetName();
 		bool SetName(const std::string& v);
 
-		inline uint32_t GetRoomID() { return roomID; }
+		inline identifier_t GetRoomID() { return roomID; }
 
 		std::string GetType();
 		bool SetType(const std::string& v);

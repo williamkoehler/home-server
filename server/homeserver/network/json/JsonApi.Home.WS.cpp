@@ -9,7 +9,7 @@
 
 namespace server
 {
-	// Home
+	//! Home
 	void JsonApi::ProcessJsonGetHomeMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(input.IsObject() && output.IsObject());
@@ -36,7 +36,7 @@ namespace server
 		DecodeJsonHome(input);
 	}
 
-	// Room
+	//! Room
 	void JsonApi::ProcessJsonAddRoomMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
@@ -176,7 +176,7 @@ namespace server
 		DecodeJsonRoom(room, input);
 	}
 
-	// DeviceController
+	//! DeviceController
 	void JsonApi::ProcessJsonAddDeviceControllerMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
@@ -433,8 +433,7 @@ namespace server
 		rapidjson::Value deviceControllerListJson = rapidjson::Value(rapidjson::kArrayType);
 
 		// Parse every device controller
-		boost::unordered::unordered_map<identifier_t, Ref<DeviceController>>& deviceControllerList = home->deviceControllerList;
-		for (std::pair<uint32_t, Ref<DeviceController>> item : deviceControllerList)
+		for (robin_hood::pair<const identifier_t, Ref<DeviceController>> item : home->deviceControllerList)
 		{
 			assert(item.second != nullptr);
 
@@ -448,7 +447,7 @@ namespace server
 		output.AddMember("devicecontrollers", deviceControllerListJson, allocator);
 	}
 
-	// Device
+	//! Device
 	void JsonApi::ProcessJsonAddDeviceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
 		assert(user != nullptr);
@@ -706,8 +705,7 @@ namespace server
 		rapidjson::Value deviceListJson = rapidjson::Value(rapidjson::kArrayType);
 
 		// Parse every device
-		boost::unordered::unordered_map<identifier_t, Ref<Device>>& deviceList = home->deviceList;
-		for (std::pair<uint32_t, Ref<Device>> item : deviceList)
+		for (robin_hood::pair<const identifier_t, Ref<Device>> item : home->deviceList)
 		{
 			assert(item.second != nullptr);
 
@@ -719,5 +717,79 @@ namespace server
 		}
 
 		output.AddMember("devices", deviceListJson, allocator);
+	}
+
+	//! Action
+	void JsonApi::ProcessJsonAddActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+		assert(user != nullptr);
+		assert(input.IsObject() && output.IsObject());
+
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
+		{
+			context.Error(ApiError::kError_AccessLevelToLow);
+			return;
+		}
+
+		// Process request
+		rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
+		rapidjson::Value::MemberIterator sourceIDIt = input.FindMember("sourceid");
+		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
+		if (nameIt == input.MemberEnd() || !nameIt->value.IsString() ||
+			sourceIDIt == input.MemberEnd() || !sourceIDIt->value.IsUint64() ||
+			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
+		{
+			context.Error("Missing name, sourceid, and/or roomid");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Add new device
+		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
+		Ref<Action> action = home->AddAction(
+			nameIt->value.GetString(),
+			sourceIDIt->value.GetUint64(),
+			roomIDIt->value.IsUint64() ? roomIDIt->value.GetUint64() : 0,
+			json);
+		if (action == nullptr)
+		{
+			//! Error failed to add action
+			context.Error(ApiError::kError_InternalError);
+			return;
+		}
+
+		// Build response
+		BuildJsonAction(action, output, allocator);
+	}
+	void JsonApi::ProcessJsonRemoveActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+
+	void JsonApi::ProcessJsonGetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+	void JsonApi::ProcessJsonSetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+
+	void JsonApi::ProcessJsonInvokeActionEventMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+
+	void JsonApi::ProcessJsonGetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+	void JsonApi::ProcessJsonSetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
+	}
+
+	void JsonApi::ProcessJsonGetActionStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
+	{
 	}
 }

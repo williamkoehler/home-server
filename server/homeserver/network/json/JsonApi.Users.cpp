@@ -16,8 +16,8 @@ namespace server
 
 		rapidjson::Value userListJson = rapidjson::Value(rapidjson::kArrayType);
 
-		boost::unordered::unordered_map<uint32_t, Ref<User>> userList = userManager->userList;
-		for (std::pair<uint32_t, Ref<User>> item : userList)
+		boost::unordered::unordered_map<identifier_t, Ref<User>> userList = userManager->userList;
+		for (std::pair<identifier_t, Ref<User>> item : userList)
 		{
 			rapidjson::Value userJson = rapidjson::Value(rapidjson::kObjectType);
 

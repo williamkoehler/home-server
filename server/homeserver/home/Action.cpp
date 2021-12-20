@@ -13,7 +13,11 @@ namespace server
 	}
 	Ref<Action> Action::Create(const std::string& name, identifier_t actionID, Ref<Script> script, Ref<Room> room)
 	{
-		return Ref<Action>();
+		assert(script != nullptr);
+
+		Ref<Action> action = boost::make_shared<Action>(name, actionID, std::move(script), std::move(room));
+
+		return action;
 	}
 
 	std::string Action::GetName()

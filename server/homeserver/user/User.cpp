@@ -32,7 +32,7 @@ namespace server
 			return UserAccessLevel::kRestrictedUserAccessLevel;
 	}
 
-	User::User(const std::string& name, identifier_t userID, uint8_t h[SHA256_DIGEST_LENGTH], uint8_t s[SALT_LENGTH], UserAccessLevel& accessLevel)
+	User::User(const std::string& name, identifier_t userID, uint8_t h[SHA256_DIGEST_LENGTH], uint8_t s[SALT_LENGTH], UserAccessLevel accessLevel)
 		: name(name), userID(userID), accessLevel(accessLevel)
 	{
 		memcpy(hash, h, SHA256_DIGEST_LENGTH);
@@ -40,6 +40,11 @@ namespace server
 	}
 	User::~User()
 	{
+	}
+
+	Ref<User> User::Create(const std::string& name, identifier_t id, uint8_t hash[SHA256_DIGEST_LENGTH], uint8_t salt[SALT_LENGTH], UserAccessLevel accessLevel)
+	{
+		return boost::make_shared<User>(name, id, hash, salt, accessLevel);
 	}
 
 	std::string User::GetName()
@@ -72,7 +77,7 @@ namespace server
 	bool User::SetHash(uint8_t h[SHA256_DIGEST_LENGTH])
 	{
 		boost::lock_guard lock(mutex);
-		if (Database::GetInstance()->UpdateUserPropHash(shared_from_this(), hash, h))
+		if (Database::GetInstance()->UpdateUserPropHash(shared_from_this(), h))
 		{
 			memcpy(hash, h, SHA256_DIGEST_LENGTH);
 			return true;

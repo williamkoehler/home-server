@@ -20,7 +20,7 @@ namespace server
 	public:
 		Database();
 		~Database();
-		static Ref<Database> Create();
+		static Ref<Database> Create(const std::string& db = "home.sqlite3");
 		static Ref<Database> GetInstance();
 
 		//! ScriptSource
@@ -187,9 +187,16 @@ namespace server
 		/// @return Successfulness
 		bool UpdateUserPropName(Ref<User> user, const std::string& value, const std::string& newValue);
 		bool UpdateUserPropAccessLevel(Ref<User> user, UserAccessLevel value, UserAccessLevel newValue);
-		bool UpdateUserPropHash(Ref<User> user, uint8_t value[SHA256_DIGEST_LENGTH], uint8_t newValue[SHA256_DIGEST_LENGTH]);
+		bool UpdateUserPropHash(Ref<User> user, uint8_t newValue[SHA256_DIGEST_LENGTH]);
+		bool UpdateUserPropSalt(Ref<User> user, uint8_t newValue[SHA256_DIGEST_LENGTH]);
 		bool RemoveUser(identifier_t userID);
 
 		size_t GetUserCount();
+
+		//! Testing
+
+		/// @brief Only used in tests
+		/// @return SQLite Database connection
+		inline sqlite3* GetConnection_TEST() const { return connection; }
 	};
 }

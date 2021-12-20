@@ -23,7 +23,7 @@ namespace server
 			connection != nullptr;
 		}
 	}
-	Ref<Database> Database::Create()
+	Ref<Database> Database::Create(const std::string& db)
 	{
 		if (!instanceDatabase.expired())
 			return Ref<Database>(instanceDatabase);
@@ -35,7 +35,7 @@ namespace server
 		instanceDatabase = database;
 
 		// Open / Create database
-		if (sqlite3_open_v2("home.sqlite3", &database->connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK)
+		if (sqlite3_open_v2(db.c_str(), &database->connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to open/create database.\n{0}", sqlite3_errcode(database->connection));
 			return nullptr;
@@ -49,7 +49,7 @@ namespace server
 			// Script Source Table
 			if (sqlite3_exec(database->connection,
 				R"(create table if not exists scriptsources)"
-				R"((id integer not null primary key, name text not null, usage text not null, language text not null, data blob not null))",
+				R"((id integer not null primary key, name text, usage text not null, language text not null, data blob not null))",
 				nullptr,
 				nullptr,
 				&err) != SQLITE_OK)
@@ -63,11 +63,11 @@ namespace server
 		{
 			// Room table
 			if (sqlite3_exec(database->connection,
-							 R"(create table if not exists rooms)"
-							 R"((id integer not null primary key, name text not null, type text not null))",
-							 nullptr,
-							 nullptr,
-							 &err) != SQLITE_OK)
+				R"(create table if not exists rooms)"
+				R"((id integer not null primary key, name text, type text not null))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
 			{
 				LOG_ERROR("Failing to create 'rooms' table.\n{0}", err);
 				return nullptr;
@@ -75,11 +75,11 @@ namespace server
 
 			// Device Controller Table
 			if (sqlite3_exec(database->connection,
-							 R"(create table if not exists devicecontrollers)"
-							 R"((id integer not null primary key, name text not null, pluginid integer not null, roomid integer, data text not null, foreign key(roomid) references rooms(id)))",
-							 nullptr,
-							 nullptr,
-							 &err) != SQLITE_OK)
+				R"(create table if not exists devicecontrollers)"
+				R"((id integer not null primary key, name text, pluginid integer not null, roomid integer, data text not null, foreign key(roomid) references rooms(id)))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
 			{
 				LOG_ERROR("Failing to create 'devicecontrollers' table.\n{0}", err);
 				return nullptr;
@@ -87,11 +87,11 @@ namespace server
 
 			// Device Table
 			if (sqlite3_exec(database->connection,
-							 R"(create table if not exists devices)"
-							 R"((id integer not null primary key, name text not null, pluginid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references devicecontrollers (id), foreign key (roomid) references rooms (id)))",
-							 nullptr,
-							 nullptr,
-							 &err) != SQLITE_OK)
+				R"(create table if not exists devices)"
+				R"((id integer not null primary key, name text, pluginid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references devicecontrollers (id), foreign key (roomid) references rooms (id)))",
+				nullptr,
+				nullptr,
+				&err) != SQLITE_OK)
 			{
 				LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
 				return nullptr;
@@ -100,7 +100,7 @@ namespace server
 			// Action Table
 			if (sqlite3_exec(database->connection,
 				R"(create table if not exists actions)"
-				R"((id integer not null primary key, name text not null, sourceid integer not null, roomid integer, data text not null, foreign key (roomid) references rooms (id)))",
+				R"((id integer not null primary key, name text, sourceid integer not null, roomid integer, data text not null, foreign key (roomid) references rooms (id)))",
 				nullptr,
 				nullptr,
 				&err) != SQLITE_OK)
@@ -115,7 +115,7 @@ namespace server
 			// User Table
 			if (sqlite3_exec(database->connection,
 				R"(create table if not exists users)"
-				R"((id integer not null primary key, name text not null, hash text not null, salt text not null, accesslevel text not null, data text not null))",
+				R"((id integer not null primary key, name text, hash text not null, salt text not null, accesslevel text not null, data text not null))",
 				nullptr,
 				nullptr,
 				&err) != SQLITE_OK)
@@ -152,16 +152,46 @@ namespace server
 
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			identifier_t userID = sqlite3_column_int64(statement, 0);
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
+			identifier_t sourceID = sqlite3_column_int64(statement, 0);
 
-			ScriptUsage usage = ParseScriptUsage((const char*)sqlite3_column_text(statement, 2));
+			// Check for null
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 2) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 3) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 4) == SQLITE_NULL)
+			{
+				LOG_ERROR("Failing to load invalid room {0}");
+				continue;
+			}
 
-			ScriptLanguage language = ParseScriptLanguage((const char*)sqlite3_column_text(statement, 3));
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
 
-			std::string_view data = std::string_view((const char*)sqlite3_column_blob(statement, 4), sqlite3_column_bytes(statement, 4));
+			const unsigned char* usage = sqlite3_column_text(statement, 2);
+			size_t usageSize = sqlite3_column_bytes(statement, 2);
 
-			callback(userID, name, usage, language, data);
+			const unsigned char* language = sqlite3_column_text(statement, 3);
+			size_t languageSize = sqlite3_column_bytes(statement, 3);
+
+			const void* data = sqlite3_column_text(statement, 4);
+			size_t dataSize = sqlite3_column_bytes(statement, 4);
+
+			// Check values
+			if (name == nullptr ||
+				usage == nullptr ||
+				language == nullptr ||
+				data == nullptr)
+			{
+				LOG_ERROR("Failing to load invalid script source properties {0}", sourceID);
+				continue;
+			}
+
+			callback(
+				sourceID, 
+				std::string((const char*)name, nameSize), 
+				ParseScriptUsage(std::string((const char*)usage, usageSize)), 
+				ParseScriptLanguage(std::string((const char*)language, languageSize)), 
+				std::string_view((const char*)data, dataSize));
 		}
 
 		sqlite3_finalize(statement);
@@ -179,7 +209,7 @@ namespace server
 		if (sqlite3_prepare_v2(connection,
 			R"(insert into scriptsources values)"
 			R"(((select ifnull((select id+1 from scriptsources where (id+1) not in (select id from scriptsources) order by id asc limit 1), 1)),)"
-			R"("unknown script source", "unknown", "unknown", ""))", 211,
+			R"(null, "unknown", "unknown", ""))", 192,
 			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -201,6 +231,8 @@ namespace server
 	}
 	bool Database::UpdateScriptSource(Ref<ScriptSource> scriptSource)
 	{
+		assert(scriptSource != nullptr);
+
 		// Lock
 		boost::lock(mutex, scriptSource->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -219,7 +251,7 @@ namespace server
 		}
 
 		std::string usage = StringifyScriptUsage(scriptSource->usage);
-		
+
 		std::string language = StringifyScriptLanguage(scriptSource->language);
 
 		if (sqlite3_bind_int64(statement, 1, scriptSource->sourceID) != SQLITE_OK ||
@@ -245,6 +277,8 @@ namespace server
 	}
 	bool Database::UpdateScriptSourcePropName(Ref<ScriptSource> scriptSource, const std::string& value, const std::string& newValue)
 	{
+		assert(scriptSource != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -281,6 +315,8 @@ namespace server
 	}
 	bool Database::UpdateScriptSourcePropData(Ref<ScriptSource> scriptSource, const std::string_view& newValue)
 	{
+		assert(scriptSource != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -315,7 +351,6 @@ namespace server
 
 		return true;
 	}
-
 	bool Database::RemoveScriptSource(identifier_t sourceID)
 	{
 		// Lock
@@ -366,8 +401,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(select id, name, type from rooms)", 32,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(select id, name, type from rooms)", 32,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -377,16 +412,39 @@ namespace server
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
 			identifier_t roomID = sqlite3_column_int64(statement, 0);
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
-			std::string type = (const char*)sqlite3_column_text(statement, 2);
 
-			callback(roomID, name, type);
+			// Check for null
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 2) == SQLITE_NULL)
+			{
+				LOG_ERROR("Failing to load invalid room {0}", roomID);
+				continue;
+			}
+
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
+
+			const unsigned char* type = sqlite3_column_text(statement, 2);
+			size_t typeSize = sqlite3_column_bytes(statement, 2);
+
+			// Check values
+			if (name == nullptr ||
+				type == nullptr)
+			{
+				LOG_ERROR("Failing to load invalid room properties {0}", roomID);
+				continue;
+			}
+
+			callback(
+				roomID,
+				std::string((const char*)name, nameSize),
+				std::string((const char*)type, typeSize));
 		}
 
 		sqlite3_finalize(statement);
 		return true;
 	}
-	
+
 	identifier_t Database::ReserveRoom()
 	{
 		// Lock
@@ -396,10 +454,10 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(insert into rooms values)"
-							   R"(((select ifnull((select (id+1) from rooms where (id+1) not in (select id from rooms) order by id asc limit 1), 1)),)"
-							   R"("unknown room", "no type"))", 165,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(insert into rooms values)"
+			R"(((select ifnull((select (id+1) from rooms where (id+1) not in (select id from rooms) order by id asc limit 1), 1)),)"
+			R"(null, "no type"))", 155,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -420,6 +478,8 @@ namespace server
 	}
 	bool Database::UpdateRoom(Ref<Room> room)
 	{
+		assert(room != nullptr);
+
 		// Lock
 		boost::lock(mutex, room->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -429,8 +489,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(replace into rooms values (?, ?, ?))", 48,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(replace into rooms values (?, ?, ?))", 48,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -458,6 +518,8 @@ namespace server
 	}
 	bool Database::UpdateRoomPropName(Ref<Room> room, const std::string& value, const std::string& newValue)
 	{
+		assert(room != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -465,8 +527,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update rooms set name = ? where id = ?)", 40,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update rooms set name = ? where id = ?)", 40,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -494,6 +556,8 @@ namespace server
 	}
 	bool Database::UpdateRoomPropType(Ref<Room> room, const std::string& value, const std::string& newValue)
 	{
+		assert(room != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -501,8 +565,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update rooms set type = ? where id = ?)", 40,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update rooms set type = ? where id = ?)", 40,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -537,8 +601,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(delete from rooms where id = ?)", 30,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(delete from rooms where id = ?)", 30,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -603,8 +667,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(select id, name, pluginid, roomid, data from devicecontrollers)", 62,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(select id, name, pluginid, roomid, data from devicecontrollers)", 62,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -614,18 +678,44 @@ namespace server
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
 			identifier_t controllerID = sqlite3_column_int64(statement, 0);
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
-			identifier_t pluginID = sqlite3_column_int64(statement, 2);
-			identifier_t roomID = sqlite3_column_int64(statement, 3);
-			std::string data = (const char*)sqlite3_column_text(statement, 4);
 
-			callback(controllerID, name, pluginID, roomID, data);
+			// Check values
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 4) == SQLITE_NULL)
+			{
+				LOG_ERROR("Failing to load invalid device controller {0}", controllerID);
+				continue;
+			}
+
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
+
+			identifier_t pluginID = sqlite3_column_int64(statement, 2);
+
+			identifier_t roomID = sqlite3_column_int64(statement, 3);
+
+			const unsigned char* data = sqlite3_column_text(statement, 4);
+			size_t dataSize = sqlite3_column_bytes(statement, 4);
+
+			// Check values
+			if (name == nullptr ||
+				data == nullptr)
+			{
+				LOG_ERROR("Failing to load invalid device controller properties {0}", controllerID);
+				continue;
+			}
+
+			callback(controllerID,
+				std::string((const char*)name, nameSize),
+				pluginID,
+				roomID,
+				std::string((const char*)data, dataSize));
 		}
 
 		sqlite3_finalize(statement);
 		return true;
 	}
-	
+
 	identifier_t Database::ReserveDeviceController()
 	{
 		// Lock
@@ -635,10 +725,10 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(insert into devicecontrollers values)"
-							   R"(((select ifnull((select id+1 from devicecontrollers where (id+1) not in (select id from devicecontrollers) order by id asc limit 1), 1)),)"
-							   R"("unknown devicecontroller", 0, null, "{}"))", 215,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(insert into devicecontrollers values)"
+			R"(((select ifnull((select id+1 from devicecontrollers where (id+1) not in (select id from devicecontrollers) order by id asc limit 1), 1)),)"
+			R"(null, 0, null, "{}"))", 193,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -659,6 +749,8 @@ namespace server
 	}
 	bool Database::UpdateDeviceController(Ref<DeviceController> controller)
 	{
+		assert(controller != nullptr);
+
 		// Lock
 		boost::lock(mutex, controller->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -668,8 +760,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(replace into devicecontrollers values (?, ?, ?, ?, "{}"))", 56,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(replace into devicecontrollers values (?, ?, ?, ?, "{}"))", 56,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -680,8 +772,8 @@ namespace server
 			sqlite3_bind_text(statement, 2, controller->name.data(), controller->name.size(), nullptr) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 3, controller->plugin->GetPluginID()) != SQLITE_OK ||
 			(controller->room != nullptr ?
-			 sqlite3_bind_int64(statement, 4, controller->room->GetRoomID()) :
-			 sqlite3_bind_null(statement, 4)) != SQLITE_OK)
+				sqlite3_bind_int64(statement, 4, controller->room->GetRoomID()) :
+				sqlite3_bind_null(statement, 4)) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -700,6 +792,8 @@ namespace server
 	}
 	bool Database::UpdateDeviceControllerPropName(Ref<DeviceController> controller, const std::string& value, const std::string& newValue)
 	{
+		assert(controller != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -707,8 +801,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update devicecontrollers set name = ? where id = ?)", 50,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update devicecontrollers set name = ? where id = ?)", 50,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -736,6 +830,8 @@ namespace server
 	}
 	bool Database::UpdateDeviceControllerPropRoom(Ref<DeviceController> controller, Ref<Room> value, Ref<Room> newValue)
 	{
+		assert(controller != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -743,8 +839,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update devicecontrollers set roomid = ? where id = ?)", 42,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update devicecontrollers set roomid = ? where id = ?)", 52,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -752,8 +848,8 @@ namespace server
 		}
 
 		if ((newValue != nullptr ?
-			 sqlite3_bind_int64(statement, 1, newValue->GetRoomID()) :
-			 sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 1, newValue->GetRoomID()) :
+			sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 2, controller->controllerID) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -781,8 +877,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(delete from devicecontrollers where id = ?)", 42,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(delete from devicecontrollers where id = ?)", 42,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -816,7 +912,7 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-			R"(select count(*) from devicecontrollers)", 28,
+			R"(select count(*) from devicecontrollers)", 38,
 			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -847,8 +943,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(select id, name, pluginid, controllerid, roomid, data from devices)", 66,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(select id, name, pluginid, controllerid, roomid, data from devices)", 66,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -858,19 +954,48 @@ namespace server
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
 			identifier_t deviceID = sqlite3_column_int64(statement, 0);
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
-			identifier_t pluginID = sqlite3_column_int64(statement, 2);
-			identifier_t controllerID = sqlite3_column_int64(statement, 3);
-			identifier_t roomID = sqlite3_column_int64(statement, 4);
-			std::string data = (const char*)sqlite3_column_text(statement, 5);
 
-			callback(deviceID, name, pluginID, controllerID, roomID, data);
+			// Check values
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 5) == SQLITE_NULL)
+			{
+				LOG_ERROR("Failing to load invalid device {0}", deviceID);
+				continue;
+			}
+
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
+
+			identifier_t pluginID = sqlite3_column_int64(statement, 2);
+
+			identifier_t controllerID = sqlite3_column_int64(statement, 3);
+
+			identifier_t roomID = sqlite3_column_int64(statement, 4);
+
+			const unsigned char* data = sqlite3_column_text(statement, 5);
+			size_t dataSize = sqlite3_column_bytes(statement, 5);
+
+			// Check values
+			if (name == nullptr ||
+				data == nullptr)
+			{
+				LOG_ERROR("Failing to load invalid device properties {0}", deviceID);
+				continue;
+			}
+
+			callback(
+				deviceID,
+				std::string((const char*)name, nameSize),
+				pluginID,
+				controllerID,
+				roomID,
+				std::string((const char*)data, dataSize));
 		}
 
 		sqlite3_finalize(statement);
 		return true;
 	}
-	
+
 	identifier_t Database::ReserveDevice()
 	{
 		// Lock
@@ -880,10 +1005,10 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(insert into devices values)"
-							   R"(((select ifnull((select id+1 from devices where (id+1) not in (select id from devices) order by id asc limit 1), 1)),)"
-							   R"("unknown device", 0, null, null, "{}"))", 181,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(insert into devices values)"
+			R"(((select ifnull((select id+1 from devices where (id+1) not in (select id from devices) order by id asc limit 1), 1)),)"
+			R"(null, 0, null, null, "{}"))", 179,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -904,6 +1029,8 @@ namespace server
 	}
 	bool Database::UpdateDevice(Ref<Device> device)
 	{
+		assert(device != nullptr);
+
 		// Lock
 		boost::lock(mutex, device->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -913,8 +1040,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(replace into devices values (?, ?, ?, ?, ?, "{}"))", 49,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(replace into devices values (?, ?, ?, ?, ?, "{}"))", 49,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -925,11 +1052,11 @@ namespace server
 			sqlite3_bind_text(statement, 2, device->name.data(), device->name.size(), nullptr) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 3, device->plugin->GetPluginID()) != SQLITE_OK ||
 			(device->controller != nullptr ?
-			 sqlite3_bind_int64(statement, 4, device->controller->GetDeviceControllerID()) :
-			 sqlite3_bind_null(statement, 4)) != SQLITE_OK ||
+				sqlite3_bind_int64(statement, 4, device->controller->GetDeviceControllerID()) :
+				sqlite3_bind_null(statement, 4)) != SQLITE_OK ||
 			(device->room != nullptr ?
-			 sqlite3_bind_int64(statement, 5, device->room->GetRoomID()) :
-			 sqlite3_bind_null(statement, 5)) != SQLITE_OK)
+				sqlite3_bind_int64(statement, 5, device->room->GetRoomID()) :
+				sqlite3_bind_null(statement, 5)) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -948,6 +1075,8 @@ namespace server
 	}
 	bool Database::UpdateDevicePropName(Ref<Device> device, const std::string& value, const std::string& newValue)
 	{
+		assert(device != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -955,8 +1084,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update devices set name = ? where id = ?)", 40,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update devices set name = ? where id = ?)", 40,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -984,6 +1113,8 @@ namespace server
 	}
 	bool Database::UpdateDevicePropDeviceController(Ref<Device> device, Ref<DeviceController> value, Ref<DeviceController> newValue)
 	{
+		assert(device != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -991,8 +1122,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update devices set controllerid = ? where id = ?)", 48,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update devices set controllerid = ? where id = ?)", 48,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1000,8 +1131,8 @@ namespace server
 		}
 
 		if ((newValue != nullptr ?
-			 sqlite3_bind_int64(statement, 1, newValue->GetDeviceControllerID()) :
-			 sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 1, newValue->GetDeviceControllerID()) :
+			sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 2, device->deviceID) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -1022,6 +1153,8 @@ namespace server
 	}
 	bool Database::UpdateDevicePropRoom(Ref<Device> device, Ref<Room> value, Ref<Room> newValue)
 	{
+		assert(device != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1029,8 +1162,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update devices set roomid = ? where id = ?)", 42,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update devices set roomid = ? where id = ?)", 42,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1038,8 +1171,8 @@ namespace server
 		}
 
 		if ((newValue != nullptr ?
-			 sqlite3_bind_int64(statement, 1, newValue->GetRoomID()) :
-			 sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 1, newValue->GetRoomID()) :
+			sqlite3_bind_null(statement, 1)) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 2, device->deviceID) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -1067,8 +1200,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(delete from devices where id = ?)", 32,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(delete from devices where id = ?)", 32,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1144,12 +1277,39 @@ namespace server
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
 			identifier_t actionID = sqlite3_column_int64(statement, 0);
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
-			identifier_t sourceID = sqlite3_column_int64(statement, 2);
-			identifier_t roomID = sqlite3_column_int64(statement, 3);
-			std::string data = (const char*)sqlite3_column_text(statement, 4);
 
-			callback(actionID, name, sourceID, roomID, data);
+			// Check values
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 4) == SQLITE_NULL)
+			{
+				LOG_ERROR("Failing to load invalid action {0}", actionID);
+				continue;
+			}
+
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
+
+			identifier_t sourceID = sqlite3_column_int64(statement, 2);
+
+			identifier_t roomID = sqlite3_column_int64(statement, 3);
+
+			const unsigned char* data = sqlite3_column_text(statement, 4);
+			size_t dataSize = sqlite3_column_bytes(statement, 4);
+
+			// Check values
+			if (name == nullptr ||
+				data == nullptr)
+			{
+				LOG_ERROR("Failing to load invalid action properties {0}", actionID);
+				continue;
+			}
+
+			callback(
+				actionID, 
+				std::string((const char*)name, nameSize), 
+				sourceID, 
+				roomID, 
+				std::string((const char*)data, dataSize));
 		}
 
 		sqlite3_finalize(statement);
@@ -1167,7 +1327,7 @@ namespace server
 		if (sqlite3_prepare_v2(connection,
 			R"(insert into actions values)"
 			R"(((select ifnull((select id+1 from actions where (id+1) not in (select id from actions) order by id asc limit 1), 1)),)"
-			R"("unknown action", 0, null, "{}"))", 175,
+			R"(null, 0, null, "{}"))", 163,
 			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -1189,6 +1349,8 @@ namespace server
 	}
 	bool Database::UpdateAction(Ref<Action> action)
 	{
+		assert(action != nullptr);
+
 		// Lock
 		boost::lock(mutex, action->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -1230,6 +1392,8 @@ namespace server
 	}
 	bool Database::UpdateActionPropName(Ref<Action> action, const std::string& value, const std::string& newValue)
 	{
+		assert(action != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1266,6 +1430,8 @@ namespace server
 	}
 	bool Database::UpdateActionPropRoom(Ref<Action> action, Ref<Room> value, Ref<Room> newValue)
 	{
+		assert(action != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1377,8 +1543,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(select id, name, hash, salt, accesslevel, data from users)", 57,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(select id, name, hash, salt, accesslevel, data from users)", 57,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1387,43 +1553,70 @@ namespace server
 
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			// Read user id
 			identifier_t userID = sqlite3_column_int64(statement, 0);
 
-			// Read name
-			std::string name = (const char*)sqlite3_column_text(statement, 1);
-
-			// Read hash
-			std::string hashStr = (const char*)sqlite3_column_text(statement, 2);
-			std::vector<uint8_t> hash = cppcodec::base64_rfc4648::decode(hashStr.data(), hashStr.size());
-			if (hash.size() != SHA256_DIGEST_LENGTH)
+			// Check values
+			if (sqlite3_column_type(statement, 1) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 2) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 3) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 4) == SQLITE_NULL ||
+				sqlite3_column_type(statement, 5) == SQLITE_NULL)
 			{
-				LOG_ERROR("Failing to load user '{0}' with invalid hash", name);
-				continue; // Invalid user
+				LOG_ERROR("Failing to load invalid user {0}", userID);
+				continue;
 			}
 
-			// Read salt
-			std::string saltStr = (const char*)sqlite3_column_text(statement, 3);
-			std::vector<uint8_t> salt = cppcodec::base64_rfc4648::decode(saltStr.data(), saltStr.size());
-			if (salt.size() != SALT_LENGTH)
+			const unsigned char* name = sqlite3_column_text(statement, 1);
+			size_t nameSize = sqlite3_column_bytes(statement, 1);
+
+			const unsigned char* hash = sqlite3_column_text(statement, 2);
+			size_t hashSize = sqlite3_column_bytes(statement, 2);
+
+			const unsigned char* salt = sqlite3_column_text(statement, 3);
+			size_t saltSize = sqlite3_column_bytes(statement, 3);
+
+			const unsigned char* accessLevel = sqlite3_column_text(statement, 4);
+			size_t accessLevelSize = sqlite3_column_bytes(statement, 4);
+
+			const unsigned char* data = sqlite3_column_text(statement, 5);
+			size_t dataSize = sqlite3_column_bytes(statement, 5);
+
+			// Check values
+			if (name == nullptr ||
+				data == nullptr)
 			{
-				LOG_ERROR("Failing to load user '{0}' with invalid salt", name);
-				continue; // Invalid user
+				LOG_ERROR("Failing to load invalid user properties {0}", userID);
+				continue;
 			}
 
-			// Read access level
-			UserAccessLevel accessLevel = ParseUserAccessLevel(std::string((const char*)sqlite3_column_text(statement, 4), sqlite3_column_bytes(statement, 4)));
+			// Decode hash
+			std::vector<uint8_t> hashBuffer = cppcodec::base64_rfc4648::decode((const char*)hash, hashSize);
+			if (hashBuffer.size() != SHA256_DIGEST_LENGTH)
+			{
+				LOG_ERROR("Failing to load invalid user hash {0}", userID);
+				continue;
+			}
 
-			// Read additional data
-			std::string data = std::string((const char*)sqlite3_column_text(statement, 5), sqlite3_column_bytes(statement, 5));
+			// Decode salt
+			std::vector<uint8_t> saltBuffer = cppcodec::base64_rfc4648::decode((const char*)salt, saltSize);
+			if (saltBuffer.size() != SALT_LENGTH)
+			{
+				LOG_ERROR("Failing to load invalid user salt {0}", userID);
+				continue;
+			}
 
-			callback(userID, name, hash.data(), salt.data(), accessLevel);
+			callback(
+				userID, 
+				std::string((const char*)name, nameSize), 
+				hashBuffer.data(), 
+				saltBuffer.data(), 
+				ParseUserAccessLevel(std::string((const char*)accessLevel, accessLevelSize)));
 		}
 
 		sqlite3_finalize(statement);
 		return true;
 	}
-	
+
 	identifier_t Database::ReserveUser()
 	{
 		// Lock
@@ -1433,10 +1626,10 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(insert into users values)"
-							   R"(((select ifnull((select id+1 from users where (id+1) not in (select id from users) order by id asc limit 1), 1)),)"
-							   R"("unknown user", "", "", "restricted", "{}"))", 180,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(insert into users values)"
+			R"(((select ifnull((select id+1 from users where (id+1) not in (select id from users) order by id asc limit 1), 1)),)"
+			R"(null, "", "", "restricted", "{}"))", 170,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1457,6 +1650,8 @@ namespace server
 	}
 	bool Database::UpdateUser(Ref<User> user)
 	{
+		assert(user != nullptr);
+
 		// Lock
 		boost::lock(mutex, user->mutex);
 		boost::lock_guard lock(mutex, boost::adopt_lock);
@@ -1466,8 +1661,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(replace into users values (?, ?, ?, ?, ?, "{}"))", 47,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(replace into users values (?, ?, ?, ?, ?, "{}"))", 47,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1477,19 +1672,7 @@ namespace server
 		std::string hash = cppcodec::base64_rfc4648::encode(user->hash, SHA256_DIGEST_LENGTH);
 		std::string salt = cppcodec::base64_rfc4648::encode(user->salt, SALT_LENGTH);
 
-		std::string accessLevel;
-		switch (user->accessLevel)
-		{
-			case UserAccessLevel::kAdministratorUserAccessLevel:
-				accessLevel = "admin";
-				break;
-			case UserAccessLevel::kNormalUserAccessLevel:
-				accessLevel = "normal";
-				break;
-			default:
-				accessLevel = "restricted";
-				break;
-		}
+		std::string accessLevel = server::StringifyUserAccessLevel(user->accessLevel);
 
 		if (sqlite3_bind_int64(statement, 1, user->userID) != SQLITE_OK ||
 			sqlite3_bind_text(statement, 2, user->name.data(), user->name.size(), nullptr) != SQLITE_OK ||
@@ -1514,6 +1697,8 @@ namespace server
 	}
 	bool Database::UpdateUserPropName(Ref<User> user, const std::string& value, const std::string& newValue)
 	{
+		assert(user != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1521,8 +1706,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update users set name = ? where id = ?)", 40,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update users set name = ? where id = ?)", 40,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1550,6 +1735,8 @@ namespace server
 	}
 	bool Database::UpdateUserPropAccessLevel(Ref<User> user, UserAccessLevel value, UserAccessLevel newValue)
 	{
+		assert(user != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1557,8 +1744,8 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update users set accesslevel = ? where id = ?)", 45,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update users set accesslevel = ? where id = ?)", 45,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
@@ -1586,8 +1773,10 @@ namespace server
 
 		return true;
 	}
-	bool Database::UpdateUserPropHash(Ref<User> user, uint8_t value[SHA256_DIGEST_LENGTH], uint8_t newValue[SHA256_DIGEST_LENGTH])
+	bool Database::UpdateUserPropHash(Ref<User> user, uint8_t newValue[SHA256_DIGEST_LENGTH])
 	{
+		assert(user != nullptr);
+
 		// Lock
 		boost::lock_guard lock(mutex);
 
@@ -1595,15 +1784,15 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-							   R"(update users set hash = ? where id = ?)", 38,
-							   &statement, nullptr) != SQLITE_OK)
+			R"(update users set hash = ? where id = ?)", 38,
+			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
 			return false;
 		}
 
-		std::string hash = cppcodec::base64_rfc4648::encode(user->hash, SHA256_DIGEST_LENGTH);
+		std::string hash = cppcodec::base64_rfc4648::encode(newValue, SHA256_DIGEST_LENGTH);
 
 		if (sqlite3_bind_text(statement, 1, hash.data(), hash.size(), nullptr) != SQLITE_OK ||
 			sqlite3_bind_int64(statement, 2, user->userID) != SQLITE_OK)
@@ -1616,6 +1805,46 @@ namespace server
 		if (sqlite3_step(statement) != SQLITE_DONE)
 		{
 			LOG_ERROR("Failing to update user hash.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		sqlite3_finalize(statement);
+
+		return true;
+	}
+	bool Database::UpdateUserPropSalt(Ref<User> user, uint8_t newValue[SALT_LENGTH])
+	{
+		assert(user != nullptr);
+
+		// Lock
+		boost::lock_guard lock(mutex);
+
+		// Insert into database
+		sqlite3_stmt* statement;
+
+		if (sqlite3_prepare_v2(connection,
+			R"(update users set salt = ? where id = ?)", 38,
+			&statement, nullptr) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		std::string salt = cppcodec::base64_rfc4648::encode(newValue, SALT_LENGTH);
+
+		if (sqlite3_bind_text(statement, 1, salt.data(), salt.size(), nullptr) != SQLITE_OK ||
+			sqlite3_bind_int64(statement, 2, user->userID) != SQLITE_OK)
+		{
+			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+			sqlite3_finalize(statement);
+			return false;
+		}
+
+		if (sqlite3_step(statement) != SQLITE_DONE)
+		{
+			LOG_ERROR("Failing to update user salt.\n{0}", sqlite3_errmsg(connection));
 			sqlite3_finalize(statement);
 			return false;
 		}

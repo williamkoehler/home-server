@@ -18,11 +18,13 @@ namespace server
 		rapidjson::Value ScriptSourceListJson = rapidjson::Value(rapidjson::kArrayType);
 
 		boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>>& scriptSourceList = scriptManager->scriptSourceList;
-		for (std::pair<identifier_t, Ref<ScriptSource>> item : scriptSourceList)
+		for (auto [id, scriptSource] : scriptSourceList)
 		{
+			assert(scriptSource != nullptr);
+
 			rapidjson::Value scriptSourceJson = rapidjson::Value(rapidjson::kObjectType);
 
-			BuildJsonScriptSource(item.second, scriptSourceJson, allocator);
+			BuildJsonScriptSource(scriptSource, scriptSourceJson, allocator);
 
 			ScriptSourceListJson.PushBack(scriptSourceJson, allocator);
 		}
@@ -53,11 +55,9 @@ namespace server
 
 		// Decode script properties if they exist
 		{
-			boost::lock_guard lock(source->mutex);
-
 			rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
 			if (nameIt != input.MemberEnd() && nameIt->value.IsString())
-				source->name.assign(nameIt->value.GetString(), nameIt->value.GetStringLength());
+				source->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
 		}
 	}
 
@@ -77,8 +77,6 @@ namespace server
 
 		// Decode script properties if they exist
 		{
-			boost::lock_guard lock(source->mutex);
-
 			rapidjson::Value::MemberIterator sourceIt = input.FindMember("data");
 			if (sourceIt != input.MemberEnd() && sourceIt->value.IsString())
 				source->SetData(std::string_view((const char*)sourceIt->value.GetString(), sourceIt->value.GetStringLength()));

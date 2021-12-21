@@ -3,6 +3,7 @@
 #include "../../home/Room.hpp"
 #include "../../home/DeviceController.hpp"
 #include "../../home/Device.hpp"
+#include "../../home/Action.hpp"
 
 #include "../../user/UserManager.hpp"
 #include "../../user/User.hpp"
@@ -433,13 +434,13 @@ namespace server
 		rapidjson::Value deviceControllerListJson = rapidjson::Value(rapidjson::kArrayType);
 
 		// Parse every device controller
-		for (robin_hood::pair<const identifier_t, Ref<DeviceController>> item : home->deviceControllerList)
+		for (auto [id, controller] : home->deviceControllerList)
 		{
-			assert(item.second != nullptr);
+			assert(controller != nullptr);
 
 			rapidjson::Value deviceControllerJson = rapidjson::Value(rapidjson::kObjectType);
 
-			BuildJsonDeviceControllerState(item.second, deviceControllerJson, allocator);
+			BuildJsonDeviceControllerState(controller, deviceControllerJson, allocator);
 
 			deviceControllerListJson.PushBack(deviceControllerJson, allocator);
 		}
@@ -561,7 +562,7 @@ namespace server
 		}
 
 		// Build properties
-		BuildJsonDevice(device, output, allocator);;
+		BuildJsonDevice(device, output, allocator);
 	}
 	void JsonApi::ProcessJsonSetDeviceMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
@@ -705,13 +706,13 @@ namespace server
 		rapidjson::Value deviceListJson = rapidjson::Value(rapidjson::kArrayType);
 
 		// Parse every device
-		for (robin_hood::pair<const identifier_t, Ref<Device>> item : home->deviceList)
+		for (auto [id, device] : home->deviceList)
 		{
-			assert(item.second != nullptr);
+			assert(device != nullptr);
 
 			rapidjson::Value deviceJson = rapidjson::Value(rapidjson::kObjectType);
 
-			BuildJsonDeviceState(item.second, deviceJson, allocator);
+			BuildJsonDeviceState(device, deviceJson, allocator);
 
 			deviceListJson.PushBack(deviceJson, allocator);
 		}
@@ -769,27 +770,222 @@ namespace server
 	}
 	void JsonApi::ProcessJsonRemoveActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(user != nullptr);
+		assert(input.IsObject() && output.IsObject());
+
+		if (user->accessLevel < UserAccessLevel::kMaintainerUserAccessLevel)
+		{
+			context.Error(ApiError::kError_AccessLevelToLow);
+			return;
+		}
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		{
+			context.Error("Missing id");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Remove action
+		if (!home->RemoveAction(actionIDIt->value.GetUint64()))
+		{
+			//! Error failed to remove action
+			context.Error(ApiError::kError_InternalError);
+			return;
+		}
 	}
 
 	void JsonApi::ProcessJsonGetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		{
+			context.Error("Missing id");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get action
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		if (action == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Build properties
+		BuildJsonAction(action, output, allocator);
 	}
 	void JsonApi::ProcessJsonSetActionMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		{
+			context.Error("Missing id");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get action
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		if (action == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Decode properties
+		DecodeJsonAction(action, input);
 	}
 
 	void JsonApi::ProcessJsonInvokeActionEventMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64() ||
+			eventIt == input.MemberEnd() || !eventIt->value.IsString())
+		{
+			context.Error("Missing id and/or event");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get action
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		if (action == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Invoke event
+		action->Invoke(std::string(eventIt->value.GetString(), eventIt->value.GetStringLength()));
 	}
 
 	void JsonApi::ProcessJsonGetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		{
+			context.Error("Missing id");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get device
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		if (action == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		// Build properties
+		BuildJsonActionState(action, output, allocator);
 	}
 	void JsonApi::ProcessJsonSetActionStateMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Process request
+		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		{
+			context.Error("Missing id");
+			context.Error(ApiError::kError_InvalidArguments);
+			return;
+		}
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		// Get action
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		if (action == nullptr)
+		{
+			context.Error(ApiError::kError_InvalidIdentifier);
+			return;
+		}
+
+		output.AddMember("id", actionIDIt->value, allocator);
+
+		// Decode properties
+		DecodeJsonActionState(action, input, output, allocator);
 	}
 
 	void JsonApi::ProcessJsonGetActionStatesMessageWS(const Ref<User>& user, rapidjson::Document& input, rapidjson::Document& output, ApiContext& context)
 	{
+		assert(input.IsObject() && output.IsObject());
+
+		// Build response
+		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
+		Ref<Home> home = Home::GetInstance();
+		assert(home != nullptr);
+
+		boost::shared_lock_guard lock(home->mutex);
+
+		rapidjson::Value actionListJson = rapidjson::Value(rapidjson::kArrayType);
+
+		// Parse every action
+		for (auto [id, action] : home->actionList)
+		{
+			assert(action != nullptr);
+
+			rapidjson::Value actionJson = rapidjson::Value(rapidjson::kObjectType);
+
+			BuildJsonActionState(action, actionJson, allocator);
+
+			actionListJson.PushBack(actionJson, allocator);
+		}
+
+		output.AddMember("actions", actionListJson, allocator);
 	}
 }

@@ -27,6 +27,10 @@ namespace server
 
 		inline identifier_t GetSourceID() { return source->GetSourceID(); }
 
+		/// @brief Compile script if necessary
+		/// @return Successfulness
+		virtual bool Prepare() = 0;
+
 		/// @brief Invoke script event
 		/// @param event Event name
 		/// @return Successfulness

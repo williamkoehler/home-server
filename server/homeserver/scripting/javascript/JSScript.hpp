@@ -50,6 +50,8 @@ namespace server
 				return elapsedTime > maxTime;
 			}
 
+			virtual bool Prepare() override;
+
 			virtual bool Invoke(const std::string& event) override;
 		};
 	}

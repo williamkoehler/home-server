@@ -30,11 +30,13 @@ namespace server
 			// Reserve memory
 			deviceListJson.Reserve(home->deviceList.size(), allocator);
 
-			for (robin_hood::pair<const identifier_t, Ref<Device>> item : home->deviceList)
+			for (auto [id, device] : home->deviceList)
 			{
+				assert(device != nullptr);
+
 				rapidjson::Value deviceJson = rapidjson::Value(rapidjson::kObjectType);
 
-				BuildJsonDevice(item.second, deviceJson, allocator);
+				BuildJsonDevice(device, deviceJson, allocator);
 
 				deviceListJson.PushBack(deviceJson, allocator);
 			}
@@ -47,16 +49,37 @@ namespace server
 			// Reserve memory
 			deviceControllerListJson.Reserve(home->deviceControllerList.size(), allocator);
 
-			for (robin_hood::pair<const identifier_t, Ref<DeviceController>> item : home->deviceControllerList)
+			for (auto [id, controller] : home->deviceControllerList)
 			{
+				assert(controller != nullptr);
+
 				rapidjson::Value deviceControllerJson = rapidjson::Value(rapidjson::kObjectType);
 
-				BuildJsonDeviceController(item.second, deviceControllerJson, allocator);
+				BuildJsonDeviceController(controller, deviceControllerJson, allocator);
 
 				deviceControllerListJson.PushBack(deviceControllerJson, allocator);
 			}
 
 			output.AddMember("devicecontrollers", deviceControllerListJson, allocator);
+
+			// Actions
+			rapidjson::Value actionListJson = rapidjson::Value(rapidjson::kArrayType);
+
+			// Reserve memory
+			actionListJson.Reserve(home->actionList.size(), allocator);
+
+			for (auto [id, action] : home->actionList)
+			{
+				assert(action != nullptr);
+
+				rapidjson::Value actionJson = rapidjson::Value(rapidjson::kObjectType);
+
+				BuildJsonAction(action, actionJson, allocator);
+
+				actionListJson.PushBack(actionJson, allocator);
+			}
+
+			output.AddMember("actions", actionListJson, allocator);
 
 			// Rooms
 			rapidjson::Value roomListJson = rapidjson::Value(rapidjson::kArrayType);
@@ -64,11 +87,13 @@ namespace server
 			// Reserve memory
 			roomListJson.Reserve(home->roomList.size(), allocator);
 
-			for (robin_hood::pair<const identifier_t, Ref<Room>> item : home->roomList)
+			for (auto [id, room] : home->roomList)
 			{
+				assert(room != nullptr);
+
 				rapidjson::Value roomJson = rapidjson::Value(rapidjson::kObjectType);
 
-				BuildJsonRoom(item.second, roomJson, allocator);
+				BuildJsonRoom(room, roomJson, allocator);
 
 				roomListJson.PushBack(roomJson, allocator);
 			}

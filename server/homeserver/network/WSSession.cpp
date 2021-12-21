@@ -162,6 +162,20 @@ namespace server
 		{ "set-devicecontroller?state", JsonApi::ProcessJsonSetDeviceControllerStateMessageWS },
 
 		{ "rem-devicecontroller", JsonApi::ProcessJsonRemoveDeviceControllerMessageWS },
+
+		// Action
+		{ "add-action", JsonApi::ProcessJsonAddActionMessageWS },
+
+		{ "inv-action", JsonApi::ProcessJsonInvokeActionEventMessageWS },
+
+		{ "get-action", JsonApi::ProcessJsonGetActionMessageWS },
+		{ "get-action?state", JsonApi::ProcessJsonGetActionStateMessageWS },
+		{ "get-actions?state", JsonApi::ProcessJsonGetActionStatesMessageWS},
+
+		{ "set-action", JsonApi::ProcessJsonSetActionMessageWS },
+		{ "set-action?state", JsonApi::ProcessJsonSetActionStateMessageWS },
+
+		{ "rem-action", JsonApi::ProcessJsonRemoveActionMessageWS },
 	};
 
 	bool WSSession::ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input, rapidjson::Document& output)

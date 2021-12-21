@@ -317,8 +317,6 @@ namespace server
 	}
 	Ref<DeviceController> Home::AddDeviceController(const std::string& name, identifier_t pluginID, identifier_t roomID, rapidjson::Value& json)
 	{
-		boost::lock_guard lock(mutex);
-
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 
@@ -429,8 +427,6 @@ namespace server
 	}
 	Ref<Action> Home::AddAction(const std::string& name, identifier_t sourceID, identifier_t roomID, rapidjson::Value& json)
 	{
-		boost::lock_guard lock(mutex);
-
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
 

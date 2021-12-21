@@ -126,6 +126,36 @@ namespace server
 			return DUK_EXEC_SUCCESS;
 		}
 
+		bool JSScript::Prepare()
+		{
+			// Check if compilation stage is needed
+			size_t c = source->GetChecksum();
+			if (c != checksum || context == nullptr)
+			{
+				context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr), [](duk_context* context) -> void { duk_destroy_heap(context); });
+				if (context == nullptr)
+				{
+					checksum = 0;
+					return false;
+				}
+
+				// Prepare context
+				if (duk_safe_call(context.get(), JSScript::PrepareSafe, this, 0, 0) != 0)
+				{
+					//TODO Error message duk_safe_to_string(context, -1);
+
+					context = nullptr;
+					checksum = 0;
+					return false;
+				}
+
+				// Set checksum to prevent recompilation
+				checksum = c;
+			}
+
+			return true;
+		}
+
 		duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
 		{
 			JSScript* script = (JSScript*)duk_get_user_data(context);
@@ -309,40 +339,21 @@ namespace server
 
 		bool JSScript::Invoke(const std::string& event)
 		{
-			// Check if compilation stage is needed
-			size_t c = source->GetChecksum();
-			if (c != checksum || context == nullptr)
+			if (context != nullptr)
 			{
-				context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr), [](duk_context* context) -> void { duk_destroy_heap(context); });
-				if (context == nullptr)
-				{
-					checksum = 0;
-					return false;
-				}
-
-				// Prepare context
-				if (duk_safe_call(context.get(), JSScript::PrepareSafe, this, 0, 0) != 0)
+				if (duk_safe_call(context.get(), JSScript::InvokeSafe, (void*)&event, 0, 0) != 0)
 				{
 					//TODO Error message duk_safe_to_string(context, -1);
 
 					context = nullptr;
-					checksum = 0;
 					return false;
 				}
 
-				// Set checksum to prevent recompilation
-				checksum = c;
+				return true;
 			}
-
-			if (duk_safe_call(context.get(), JSScript::InvokeSafe, (void*)&event, 0, 0) != 0)
-			{
-				//TODO Error message duk_safe_to_string(context, -1);
-
-				context = nullptr;
+			else
 				return false;
-			}
 
-			return true;
 		}
 	}
 }

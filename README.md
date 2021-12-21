@@ -10,7 +10,7 @@
 
 Some dependencies are needed beforehand:
 - **CMake** version 1.8
-- **boost** version 1.75.0
+- **boost** version 1.71
 - **OpenSSL** version 1.1.1f
 - **pthread**
 - **curl**
@@ -34,6 +34,7 @@ The plan is to provide a free, open source and fast home automation system that 
 
 - **boost** version 1.75.0
 - **pthread**
+- **sqlite3**
 - **OpenSSL**
 - **jwt-cpp**:          https://github.com/Thalhammer/jwt-cpp
 - **libquickmail**

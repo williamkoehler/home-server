@@ -1360,7 +1360,7 @@ namespace server
 		sqlite3_stmt* statement;
 
 		if (sqlite3_prepare_v2(connection,
-			R"(replace into devices values (?, ?, ?, ?, "{}"))", 46,
+			R"(replace into actions values (?, ?, ?, ?, "{}"))", 46,
 			&statement, nullptr) != SQLITE_OK)
 		{
 			LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));

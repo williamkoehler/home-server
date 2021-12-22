@@ -2,6 +2,7 @@ out/
 build/
 test/
 .vs/
+.idea/
 **/lib
 *.json
 /dependencies/libgit2

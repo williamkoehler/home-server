@@ -7,25 +7,10 @@ set(lib_quick_mail_src
 "smtpsocket.c"
 )
 
-add_library(LIBQUICKMAIL STATIC ${lib_quick_mail_src})
-set_target_properties(LIBQUICKMAIL PROPERTIES OUTPUT_NAME "quickmail")
+add_library(libquickmail STATIC ${lib_quick_mail_src})
+set_target_properties(libquickmail PROPERTIES OUTPUT_NAME "quickmail")
 
-# Windows
-if (WIN32)
-target_link_directories(LIBQUICKMAIL
-    PUBLIC
-    "${PROJECT_SOURCE_DIR}/../curl/windows"
-)
-target_link_libraries(LIBQUICKMAIL
-    "libcurl.lib"
-    "ws2_32.lib"
-)
-endif (WIN32)
-
-# Linux
-if (UNIX)
 find_package( CURL REQUIRED )
-target_link_libraries(LIBQUICKMAIL
+target_link_libraries(libquickmail
     CURL::libcurl
 )
-endif (UNIX)

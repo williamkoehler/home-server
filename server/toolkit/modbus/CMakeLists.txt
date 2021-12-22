@@ -5,10 +5,10 @@ set(modbus_src
 "modbus.cpp"
 )
 
-add_library(MODBUS SHARED ${modbus_src})
-set_target_properties(MODBUS PROPERTIES OUTPUT_NAME "modbus")
+add_library(modbus SHARED ${modbus_src})
+set_target_properties(modbus PROPERTIES OUTPUT_NAME "modbus")
 
-target_compile_definitions(MODBUS
+target_compile_definitions(modbus
     PUBLIC
     MODBUS_COMPILE
 )

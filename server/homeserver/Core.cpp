@@ -114,10 +114,10 @@ namespace server
 				service->run();
 				boost::this_thread::sleep_for(boost::chrono::milliseconds(200));
 			}
-			catch (std::exception e)
+			catch (const std::exception& e)
 			{
 				printf("Ooops!!! Something bad happend");
-				LOG_ERROR("An exception was thrown and not catched: {0}", e.what());
+				LOG_ERROR("Exception not catched:\n{0}", std::string(e.what()));
 			}
 		}
 
@@ -137,10 +137,10 @@ namespace server
 				service->run();
 				boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 			}
-			catch (std::exception e)
+			catch (const std::exception& e)
 			{
 				printf("Ooops!!! Something bad happend");
-				LOG_ERROR("An exception was thrown and not catched: {0}", e.what());
+				LOG_ERROR("Exception not catched:\n{0}", std::string(e.what()));
 			}
 		}
 	}

@@ -30,7 +30,7 @@ namespace server
 		instanceNetworkManager = networkManager;
 
 		WebPageFiles::LoadWebPage("www");
-		
+
 		// Initialize dynamic resources
 		networkManager->dynamicResources = DynamicResources::Create();
 		if (networkManager->dynamicResources == nullptr)
@@ -98,8 +98,8 @@ namespace server
 
 		LOG_INFO("Web server listenning on port {0}", port);
 
-		networkManager->socket = boost::make_shared<ssl_socket_t>(*networkManager->service, *networkManager->context);
-		networkManager->server->async_accept(networkManager->socket->next_layer().socket(), boost::bind(&NetworkManager::OnAccept, networkManager, boost::placeholders::_1));
+		networkManager->socket = boost::make_shared<ssl_socket_t>(*(networkManager->service), *(networkManager->context));
+		networkManager->server->async_accept(networkManager->socket->next_layer().socket(), boost::bind(&NetworkManager::OnAccept, networkManager.get(), boost::placeholders::_1));
 
 		// Initialize beacon listener
 		networkManager->beaconListener = BeaconListener::Create(port);
@@ -116,14 +116,16 @@ namespace server
 		return Ref<NetworkManager>(instanceNetworkManager);
 	}
 
-	void NetworkManager::OnAccept(boost::system::error_code error)
+	void NetworkManager::OnAccept(boost::system::error_code err)
 	{
 		boost::lock_guard lock(mutex);
 
-		if (!error)
+		if (!err)
 		{
+			// Start SSL Handshake
 			socket->async_handshake(boost::asio::ssl::stream_base::handshake_type::server, boost::bind(&NetworkManager::OnHandshake, this, boost::placeholders::_1, socket));
 
+			// Wait for new connection
 			socket = boost::make_shared<ssl_socket_t>(*service, *context);
 		}
 
@@ -139,7 +141,7 @@ namespace server
 		httpSession->Run();
 	}
 
-	void NetworkManager::Broadcast(rapidjson::Document& document)
+	void NetworkManager::Broadcast(rapidjson::Document &document)
 	{
 		boost::lock_guard lock(mutex);
 

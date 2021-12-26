@@ -68,6 +68,15 @@ namespace server
 						boost::placeholders::_4,
 						boost::placeholders::_5,
 						boost::placeholders::_6));
+
+				// Load actions
+				database->LoadActions(
+					boost::bind(&Home::LoadAction, home,
+						boost::placeholders::_1,
+						boost::placeholders::_2,
+						boost::placeholders::_3,
+						boost::placeholders::_4,
+						boost::placeholders::_5));
 			}
 		}
 		catch (std::exception)

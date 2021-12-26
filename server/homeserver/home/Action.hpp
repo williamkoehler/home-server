@@ -16,7 +16,7 @@ namespace server
 
 	class JsonApi;
 
-	class Action : public boost::enable_shared_from_this<Action>
+	class Action : public Scriptable, public boost::enable_shared_from_this<Action>
 	{
 	private:
 		friend class Home;
@@ -77,17 +77,21 @@ namespace server
 		robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 		robin_hood::unordered_node_map<std::string, Ref<Timer>> timerList;
 
-		bool AddAttribute(const std::string& id, const char* json);
-		bool RemoveAttribute(const std::string& id);
+        virtual bool AddAttribute(const std::string& id, const char* json) override;
+		virtual bool RemoveAttribute(const std::string& id) override;
+        virtual void ClearAttributes() override;
 
-		Ref<home::Property> AddProperty(const std::string& id, Ref<home::Property> property);
-		bool RemoveProperty(const std::string& id);
+		virtual Ref<home::Property> AddProperty(const std::string& id, home::PropertyType type) override;
+		virtual bool RemoveProperty(const std::string& id) override;
+        virtual void ClearProperties() override;
 
-		Ref<home::Event> AddEvent(const std::string& id, const std::string& callback);
-		bool RemoveEvent(const std::string& id);
+		virtual Ref<home::Event> AddEvent(const std::string& id, const std::string& callback) override;
+		virtual bool RemoveEvent(const std::string& id) override;
+        virtual void ClearEvents() override;
 
-		Ref<home::Timer> AddTimer(const std::string& id, const std::string& callback);
-		bool RemoveTimer(const std::string& id);
+		virtual Ref<home::Timer> AddTimer(const std::string& id, const std::string& callback) override;
+		virtual bool RemoveTimer(const std::string& id) override;
+        virtual void ClearTimers() override;
 
 		// Cache for properties
 		rapidjson::Document snapshot;
@@ -122,6 +126,9 @@ namespace server
 		/// @brief Get device plugin id
 		/// @return Device plugin id
 		inline identifier_t GetScriptSourceID() { return script->GetSourceID(); }
+
+		/// @brief Update action plugin
+		void Update();
 
 		/// @brief Invoke script event
 		/// @param event Event name

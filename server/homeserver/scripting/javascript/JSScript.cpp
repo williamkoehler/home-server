@@ -6,9 +6,9 @@ extern "C"
 {
 	// Interrupt function called by the duktape engine
 	// This allows to interruption of any javascript code that runs too long
-	duk_ret_t duk_exec_timeout(void* udata)
+	duk_ret_t duk_exec_timeout(void *udata)
 	{
-		return ((server::javascript::JSScript*)udata)->CheckTimeout();
+		return ((server::javascript::JSScript *)udata)->CheckTimeout();
 	}
 }
 
@@ -17,8 +17,9 @@ namespace server
 	namespace javascript
 	{
 		JSScript::JSScript(Ref<ScriptSource> source) : Script(source),
-			context(nullptr)
-		{ }
+													   context(nullptr)
+		{
+		}
 		JSScript::~JSScript()
 		{
 		}
@@ -29,110 +30,186 @@ namespace server
 			maxTime = maxTime;
 		}
 
-		duk_ret_t JSScript::PrepareSafe(duk_context* context, void* udata)
+		struct JSPrepareTuple
 		{
-			JSScript* script = (JSScript*)udata;
+			Ref<JSScript> script;
+			Ref<Scriptable> scriptable;
+		};
+
+		duk_ret_t JSScript::PrepareSafe(duk_context *context, void *udata)
+		{
+			auto &[script, scriptable] = *(JSPrepareTuple *)udata;
 
 			// Setup default variables
 			duk_push_object(context);
 			duk_put_global_lstring(context, "events", 6);
+
+			duk_push_object(context);
+			duk_put_global_lstring(context, "properties", 10);
 
 			// Import modules
 			//script->ImportModules();
 
 			// Load script source
 			std::string data = script->source->GetData();
-			duk_push_lstring(context, (const char*)data.c_str(), data.size());
+			duk_push_lstring(context, (const char *)data.c_str(), data.size());
 
 			std::string name = script->source->GetName();
-			duk_push_lstring(context, (const char*)name.c_str(), name.size());
+			duk_push_lstring(context, (const char *)name.c_str(), name.size());
 
 			// Compile
 			duk_compile(context, 0);
+
+			// Prepare timout
+			script->PrepareTimeout(5000); // 5 seconds
 
 			// Call script
 			duk_call(context, 0);
 			duk_pop(context);
 
-			// Prepare properties
-			duk_get_global_string(context, "properties");
-
-			// Iterate over every property in 'properties'
-			duk_enum(context, -1, 0);
-			while (duk_next(context, -1, 0))
-			{
-				size_t nameLength;
-				const char* nameStr = duk_to_lstring(context, -1, &nameLength);
-				std::string name = std::string(nameStr, nameLength);
-
-				// Read type
-				duk_dup_top(context);
-				duk_get_prop(context, -4);
-
-				Ref<home::Property> property;
-
-				size_t typeLength;
-				const char* typeStr = duk_to_lstring(context, -1, &typeLength);
-				switch (crc32(typeStr, typeLength))
-				{
-				case CRC32("boolean"):
-					property = home::BooleanProperty::Create();
-					break;
-				case CRC32("integer"):
-					property = home::IntegerProperty::Create();
-					break;
-				case CRC32("number"):
-					property = home::NumberProperty::Create();
-					break;
-				case CRC32("string"):
-					property = home::StringProperty::Create();
-					break;
-				case CRC32("endpoint"):
-					property = home::EndpointProperty::Create();
-					break;
-				case CRC32("color"):
-					property = home::ColorProperty::Create();
-					break;
-				default:
-					property = home::NullProperty::Create();
-					break;
-				}
-
-				// Insert
-				uint32_t index = (uint32_t)script->propertyListByID.size();
-				script->propertyList[name] = property;
-				script->propertyListByID.push_back(property);
-
-				// Pop type
-				duk_pop(context);
-
-				// Push function
-				duk_push_c_function(context, JSScript::PropertyGetter, 0);
-				duk_set_magic(context, -1, index);
-				duk_push_c_function(context, JSScript::PropertySetter, 1);
-				duk_set_magic(context, -1, index);
-
-				duk_def_prop(context, -5,
-					DUK_DEFPROP_HAVE_GETTER |
-					DUK_DEFPROP_HAVE_SETTER |
-					DUK_DEFPROP_FORCE |
-					DUK_DEFPROP_HAVE_ENUMERABLE |
-					DUK_DEFPROP_HAVE_CONFIGURABLE);
-			}
-
-			// Pop properties
-			duk_pop(context);
+			// Prepare
+			script->PrepareProperties(scriptable);
+			script->PrepareEvents(scriptable);
 
 			return DUK_EXEC_SUCCESS;
 		}
 
-		bool JSScript::Prepare()
+		void JSScript::PrepareProperties(Ref<Scriptable> scriptable)
 		{
+			assert(context != nullptr);
+			assert(scriptable != nullptr);
+
+			// Clear properties
+			scriptable->ClearProperties();
+
+			// Clear old property id list
+			propertyListByID.clear();
+
+			duk_context *c = context.get();
+
+			duk_get_global_lstring(c, "properties", 10);
+
+			// Iterate over every property in 'properties'
+			duk_enum(c, -1, 0);
+			while (duk_next(c, -1, 0))
+			{
+				size_t nameLength;
+				const char *nameStr = duk_to_lstring(c, -1, &nameLength);
+				std::string name = std::string(nameStr, nameLength);
+
+				home::PropertyType type = home::PropertyType::kUnknownType;
+
+				// Read type
+				duk_dup_top(c);
+				duk_get_prop(c, -4);
+
+				size_t typeLength;
+				const char *typeStr = duk_to_lstring(c, -1, &typeLength);
+				switch (crc32(typeStr, typeLength))
+				{
+				case CRC32("boolean"):
+					type = home::PropertyType::kBooleanType;
+					break;
+				case CRC32("integer"):
+					type = home::PropertyType::kIntegerType;
+					break;
+				case CRC32("number"):
+					type = home::PropertyType::kNumberType;
+					break;
+				case CRC32("string"):
+					type = home::PropertyType::kStringType;
+					break;
+				case CRC32("endpoint"):
+					type = home::PropertyType::kEndpointType;
+					break;
+				case CRC32("color"):
+					type = home::PropertyType::kColorType;
+					break;
+				}
+
+				uint32_t index = UINT32_MAX;
+
+				// Add property
+				Ref<home::Property> property = scriptable->AddProperty(name, type);
+				if (property != nullptr)
+				{
+					index = (uint32_t)propertyListByID.size();
+					if (index >= UINT8_MAX)
+						duk_error(c, DUK_ERR_ERROR, "Too many properties");
+
+					propertyListByID.push_back(property);
+				}
+
+				// Pop type
+				duk_pop(c);
+
+				// Push function
+				duk_push_c_function(c, JSScript::PropertyGetter, 0);
+				duk_set_magic(c, -1, index);
+				duk_push_c_function(c, JSScript::PropertySetter, 1);
+				duk_set_magic(c, -1, index);
+
+				duk_def_prop(c, -5,
+							 DUK_DEFPROP_HAVE_GETTER |
+								 DUK_DEFPROP_HAVE_SETTER |
+								 DUK_DEFPROP_FORCE |
+								 DUK_DEFPROP_HAVE_ENUMERABLE |
+								 DUK_DEFPROP_HAVE_CONFIGURABLE);
+			}
+
+			// Pop enum
+			duk_pop(c);
+
+			propertyListByID.shrink_to_fit();
+		}
+		void JSScript::PrepareEvents(Ref<Scriptable> scriptable)
+		{
+			assert(context != nullptr);
+			assert(scriptable != nullptr);
+
+			// Clear events
+			scriptable->ClearEvents();
+
+			duk_context *c = context.get();
+
+			duk_get_global_lstring(c, "events", 6);
+
+			// Iterate over every property in 'events'
+			duk_enum(c, -1, 0);
+			while (duk_next(c, -1, 0))
+			{
+				size_t nameLength;
+				const char *nameStr = duk_to_lstring(c, -1, &nameLength);
+				std::string name = std::string(nameStr, nameLength);
+
+				// Read type
+				duk_get_prop(c, -3);
+
+				size_t callbackLength;
+				const char *callbackStr = duk_to_lstring(c, -1, &callbackLength);
+				std::string callback = std::string(callbackStr, callbackLength);
+
+				// Add event
+				Ref<home::Event> event = scriptable->AddEvent(name, callback);
+
+				// Pop type
+				duk_pop(c);
+			}
+
+			// Pop enum
+			duk_pop(c);
+		}
+
+		bool JSScript::Prepare(Ref<Scriptable> scriptable)
+		{
+			assert(scriptable != nullptr);
+
 			// Check if compilation stage is needed
 			size_t c = source->GetChecksum();
 			if (c != checksum || context == nullptr)
 			{
-				context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr), [](duk_context* context) -> void { duk_destroy_heap(context); });
+				context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr), [](duk_context *context) -> void
+										   { duk_destroy_heap(context); });
 				if (context == nullptr)
 				{
 					checksum = 0;
@@ -140,14 +217,19 @@ namespace server
 				}
 
 				// Prepare context
-				if (duk_safe_call(context.get(), JSScript::PrepareSafe, this, 0, 0) != 0)
+				JSPrepareTuple tuple = {boost::reinterpret_pointer_cast<JSScript>(shared_from_this()), scriptable};
+				if (duk_safe_call(context.get(), JSScript::PrepareSafe, (void *)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
 				{
 					//TODO Error message duk_safe_to_string(context, -1);
+					LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(context.get(), -1)));
 
 					context = nullptr;
 					checksum = 0;
+
 					return false;
 				}
+				else
+					duk_pop(context.get());
 
 				// Set checksum to prevent recompilation
 				checksum = c;
@@ -156,18 +238,23 @@ namespace server
 			return true;
 		}
 
-		duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
+		struct JSInvokeTuple
 		{
-			JSScript* script = (JSScript*)duk_get_user_data(context);
+			std::string event;
+		};
 
-			const std::string* event = (const std::string*)udata;
+		duk_ret_t JSScript::InvokeSafe(duk_context *context, void *udata)
+		{
+			JSScript *script = (JSScript *)duk_get_user_data(context);
+
+			auto &[event] = *(JSInvokeTuple *)udata;
 
 			// Get events object
 			if (!duk_get_global_lstring(context, "events", 6))
 				return DUK_RET_ERROR;
 
 			// Get event function
-			if (!duk_get_prop_lstring(context, -1, event->data(), event->size()))
+			if (!duk_get_prop_lstring(context, -1, event.data(), event.size()))
 				return DUK_RET_ERROR;
 
 			// Prepare timout
@@ -180,9 +267,9 @@ namespace server
 			return DUK_EXEC_SUCCESS;
 		}
 
-		duk_ret_t JSScript::PropertyGetter(duk_context* context)
+		duk_ret_t JSScript::PropertyGetter(duk_context *context)
 		{
-			JSScript* script = (JSScript*)duk_get_user_data(context);
+			JSScript *script = (JSScript *)duk_get_user_data(context);
 			uint32_t index = duk_get_current_magic(context);
 
 			if (index < script->propertyListByID.size())
@@ -245,9 +332,9 @@ namespace server
 			duk_push_null(context);
 			return 1;
 		}
-		duk_ret_t JSScript::PropertySetter(duk_context* context)
+		duk_ret_t JSScript::PropertySetter(duk_context *context)
 		{
-			JSScript* script = (JSScript*)duk_get_user_data(context);
+			JSScript *script = (JSScript *)duk_get_user_data(context);
 			uint32_t index = duk_get_current_magic(context);
 
 			if (index < script->propertyListByID.size() && duk_get_top(context) == 1)
@@ -281,7 +368,7 @@ namespace server
 				case home::PropertyType::kStringType:
 				{
 					size_t length;
-					const char* string = duk_to_lstring(context, -1, &length);
+					const char *string = duk_to_lstring(context, -1, &length);
 					property->SetString(std::string(string, length));
 					duk_pop(context);
 
@@ -297,7 +384,7 @@ namespace server
 					duk_get_prop_lstring(context, -2, "port", 4);
 
 					size_t hostLength;
-					const char* host = duk_to_lstring(context, -2, &hostLength);
+					const char *host = duk_to_lstring(context, -2, &hostLength);
 
 					home::Endpoint endpoint;
 					endpoint.host = std::string(host, hostLength);
@@ -337,23 +424,26 @@ namespace server
 			return 0;
 		}
 
-		bool JSScript::Invoke(const std::string& event)
+		bool JSScript::Invoke(const std::string &event)
 		{
 			if (context != nullptr)
 			{
-				if (duk_safe_call(context.get(), JSScript::InvokeSafe, (void*)&event, 0, 0) != 0)
+				JSInvokeTuple tuple = {event};
+				if (duk_safe_call(context.get(), JSScript::InvokeSafe, (void *)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
 				{
 					//TODO Error message duk_safe_to_string(context, -1);
+					LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(context.get(), -1)));
 
-					context = nullptr;
+					duk_pop(context.get());
 					return false;
 				}
+				else
+					duk_pop(context.get());
 
 				return true;
 			}
 			else
 				return false;
-
 		}
 	}
 }

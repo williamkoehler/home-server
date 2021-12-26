@@ -202,7 +202,9 @@ namespace server
 
 	void DeviceController::TakeSnapshot()
 	{
-		boost::lock_guard lock(mutex);
+		boost::lock(mutex, interfaceMutex);
+		boost::lock_guard lock(mutex, boost::adopt_lock);
+		boost::lock_guard lock2(interfaceMutex, boost::adopt_lock);
 
 		rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
 

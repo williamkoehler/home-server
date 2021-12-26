@@ -4,18 +4,23 @@
 
 namespace server
 {
-	Action::Action(const std::string& name, identifier_t actionID, Ref<Script> script, Ref<Room> room)
+	Action::Action(const std::string &name, identifier_t actionID, Ref<Script> script, Ref<Room> room)
 		: name(name), actionID(actionID), script(std::move(script)), room(std::move(room))
 	{
 	}
 	Action::~Action()
 	{
 	}
-	Ref<Action> Action::Create(const std::string& name, identifier_t actionID, Ref<Script> script, Ref<Room> room)
+	Ref<Action> Action::Create(const std::string &name, identifier_t actionID, Ref<Script> script, Ref<Room> room)
 	{
 		assert(script != nullptr);
 
 		Ref<Action> action = boost::make_shared<Action>(name, actionID, std::move(script), std::move(room));
+
+		if (action != nullptr)
+		{
+			action->Update();
+		}
 
 		return action;
 	}
@@ -25,7 +30,7 @@ namespace server
 		boost::lock_guard lock(mutex);
 		return name;
 	}
-	bool Action::SetName(const std::string& v)
+	bool Action::SetName(const std::string &v)
 	{
 		boost::lock_guard lock(mutex);
 		if (Database::GetInstance()->UpdateActionPropName(shared_from_this(), name, v))
@@ -60,7 +65,7 @@ namespace server
 	}
 
 	//! Interface: Attributes
-	bool Action::AddAttribute(const std::string& id, const char* json)
+	bool Action::AddAttribute(const std::string &id, const char *json)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -82,21 +87,52 @@ namespace server
 
 		return false;
 	}
-	bool Action::RemoveAttribute(const std::string& id)
+	bool Action::RemoveAttribute(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		return attributeList.erase(id);
 	}
+	void Action::ClearAttributes()
+	{
+		boost::lock_guard lock(interfaceMutex);
+
+		attributeList.clear();
+	}
 
 	//! Interface: Properites
-	Ref<home::Property> Action::AddProperty(const std::string& id, Ref<home::Property> property)
+	Ref<home::Property> Action::AddProperty(const std::string &id, home::PropertyType type)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		// Check existance
-		if (!propertyList.contains(id) && property != nullptr)
+		if (!propertyList.contains(id))
 		{
+
+			// Create property instance
+			Ref<home::Property> property = nullptr;
+			switch (type)
+			{
+			case home::PropertyType::kBooleanType:
+				property = home::BooleanProperty::Create();
+				break;
+			case home::PropertyType::kIntegerType:
+				property = home::IntegerProperty::Create();
+				break;
+			case home::PropertyType::kNumberType:
+				property = home::NumberProperty::Create();
+				break;
+			case home::PropertyType::kStringType:
+				property = home::StringProperty::Create();
+				break;
+			case home::PropertyType::kEndpointType:
+				property = home::EndpointProperty::Create();
+				break;
+			case home::PropertyType::kColorType:
+				property = home::ColorProperty::Create();
+				break;
+			}
+
 			// Add property to list
 			if (property != nullptr)
 			{
@@ -107,22 +143,28 @@ namespace server
 
 		return nullptr;
 	}
-	bool Action::RemoveProperty(const std::string& id)
+	bool Action::RemoveProperty(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		return propertyList.erase(id);
 	}
+	void Action::ClearProperties()
+	{
+		boost::lock_guard lock(interfaceMutex);
+
+		propertyList.clear();
+	}
 
 	//! Interface: Events
-	Ref<home::Event> Action::AddEvent(const std::string& id, const std::string& callback)
+	Ref<home::Event> Action::AddEvent(const std::string &id, const std::string &callback)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		// Check existance
 		if (!eventList.contains(id))
 		{
-			// Create timer instance
+			// Create event instance
 			Ref<Event> event = boost::make_shared<Event>(shared_from_this(), callback);
 
 			// Add timer to list
@@ -135,14 +177,20 @@ namespace server
 
 		return nullptr;
 	}
-	bool Action::RemoveEvent(const std::string& id)
+	bool Action::RemoveEvent(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		return eventList.erase(id);
 	}
+	void Action::ClearEvents()
+	{
+		boost::lock_guard lock(interfaceMutex);
 
-	void Action::Invoke(const std::string& e)
+		eventList.clear();
+	}
+
+	void Action::Invoke(const std::string &e)
 	{
 		boost::lock_guard lock(interfaceMutex);
 		const robin_hood::unordered_node_map<std::string, Ref<Event>>::iterator it = eventList.find(e);
@@ -151,16 +199,14 @@ namespace server
 		{
 			// Post job
 			Ref<Event> event = it->second;
-			Home::GetInstance()->GetService()->post([this, event]() -> void
-			{
-				if (event != nullptr)
-					event->Invoke();
-			});
+			boost::asio::post(
+				*Home::GetInstance()->GetService(), 
+				boost::bind(&Event::Invoke, event));
 		}
 	}
 
 	//! Interface: Timers
-	Ref<home::Timer> Action::AddTimer(const std::string& id, const std::string& callback)
+	Ref<home::Timer> Action::AddTimer(const std::string &id, const std::string &callback)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -180,7 +226,7 @@ namespace server
 
 		return nullptr;
 	}
-	bool Action::RemoveTimer(const std::string& id)
+	bool Action::RemoveTimer(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -197,12 +243,33 @@ namespace server
 		else
 			return false;
 	}
+	void Action::ClearTimers()
+	{
+		boost::lock_guard lock(interfaceMutex);
+
+		timerList.clear();
+	}
+
+	void Action::Update()
+	{
+		boost::asio::post(
+			*Home::GetInstance()->GetService(),
+			boost::bind(&server::Script::Prepare, script, boost::reinterpret_pointer_cast<Scriptable>(shared_from_this())));
+		// 	[=]()
+		// 		->void
+		// {
+		// 	printf("Hello World!\n");
+		// 	script->Prepare(boost::reinterpret_pointer_cast<Scriptable>(shared_from_this()));
+		// });
+	}
 
 	void Action::TakeSnapshot()
 	{
-		boost::lock_guard lock(mutex);
+		boost::lock(mutex, interfaceMutex);
+		boost::lock_guard lock(mutex, boost::adopt_lock);
+		boost::lock_guard lock2(interfaceMutex, boost::adopt_lock);
 
-		rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
+		rapidjson::Document::AllocatorType &allocator = snapshot.GetAllocator();
 
 		snapshot.SetNull();
 		allocator.Clear();

@@ -8,6 +8,6 @@ cd boost/boost_1_75_0
 ./bootstrap.sh
 
 # Install boost
-./b2 install
+./b2 install threading=multi link=shared
 
 echo "Your ready to go!"

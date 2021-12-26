@@ -5,4 +5,5 @@ test/
 .idea/
 **/lib
 *.json
+*.log
 /dependencies/libgit2

@@ -30,14 +30,14 @@ namespace server
 			Ref<Device> device;
 			size_t interval;
 			boost::asio::deadline_timer timer;
-			home::TimerCallback<home::Device>* callback;
+			home::TimerCallback<home::Device> *callback;
 
-			void TimerCallback(const boost::system::error_code& err);
+			void TimerCallback(const boost::system::error_code &err);
 
 		public:
 			friend class DeviceController;
 
-			Timer(Ref<Device> device, home::TimerCallback<home::Device>* callback);
+			Timer(Ref<Device> device, home::TimerCallback<home::Device> *callback);
 			~Timer();
 
 			virtual void Start(size_t interval) override;
@@ -54,10 +54,10 @@ namespace server
 			friend class DeviceController;
 
 			Ref<Device> device;
-			home::EventCallback<home::Device>* callback;
+			home::EventCallback<home::Device> *callback;
 
 		public:
-			Event(Ref<Device> device, home::EventCallback<home::Device>* callback);
+			Event(Ref<Device> device, home::EventCallback<home::Device> *callback);
 			~Event();
 
 			virtual void Invoke() override;
@@ -77,17 +77,17 @@ namespace server
 		robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 		robin_hood::unordered_node_map<std::string, Ref<Timer>> timerList;
 
-		virtual bool AddAttribute(const std::string& id, const char* json) override;
-		virtual bool RemoveAttribute(const std::string& id) override;
+		virtual bool AddAttribute(const std::string &id, const char *json) override;
+		virtual bool RemoveAttribute(const std::string &id) override;
 
-		virtual Ref<home::Property> AddProperty(const std::string& id, Ref<home::Property> property) override;
-		virtual bool RemoveProperty(const std::string& id) override;
+		virtual Ref<home::Property> AddProperty(const std::string &id, Ref<home::Property> property) override;
+		virtual bool RemoveProperty(const std::string &id) override;
 
-		virtual Ref<home::Event> AddEvent(const std::string& id, home::EventCallback<home::Device>* callback) override;
-		virtual bool RemoveEvent(const std::string& id) override;
+		virtual Ref<home::Event> AddEvent(const std::string &id, home::EventCallback<home::Device> *callback) override;
+		virtual bool RemoveEvent(const std::string &id) override;
 
-		virtual Ref<home::Timer> AddTimer(const std::string& id, home::TimerCallback<home::Device>* callback) override;
-		virtual bool RemoveTimer(const std::string& id) override;
+		virtual Ref<home::Timer> AddTimer(const std::string &id, home::TimerCallback<home::Device> *callback) override;
+		virtual bool RemoveTimer(const std::string &id) override;
 
 		// Cache for properties
 		rapidjson::Document snapshot;
@@ -99,9 +99,9 @@ namespace server
 		virtual Ref<home::DeviceController> GetController() override;
 
 	public:
-		Device(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room);
+		Device(const std::string &name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room);
 		~Device();
-		static Ref<Device> Create(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room);
+		static Ref<Device> Create(const std::string &name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room);
 
 		/// @brief Get device name
 		/// @return Device name
@@ -109,7 +109,7 @@ namespace server
 
 		/// @brief Set device name
 		/// @param v New device name
-		bool SetName(const std::string& v);
+		bool SetName(const std::string &v);
 
 		inline identifier_t GetDeviceID() { return deviceID; }
 
@@ -138,9 +138,12 @@ namespace server
 		/// @brief Initialize plugin
 		void Initialize();
 
+		/// @brief Update device plugin
+		void Update();
+
 		/// @brief Invoke plugin event
 		/// @param event Event name
-		void Invoke(const std::string& event);
+		void Invoke(const std::string &event);
 
 		/// @brief Take property snapshot
 		void TakeSnapshot();

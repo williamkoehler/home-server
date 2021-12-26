@@ -131,6 +131,11 @@ namespace server
 		/// @param event Eveent name
 		void TakeSnapshot();
 
+		/// @brief Update device controller plugin
+		void Update();
+
+		/// @brief Invoke plugin event
+		/// @param event Event name
 		void Invoke(const std::string& event);
 
 		/// @brief Teraminate plugin

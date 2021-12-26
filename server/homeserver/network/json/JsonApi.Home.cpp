@@ -30,7 +30,7 @@ namespace server
 			// Reserve memory
 			deviceListJson.Reserve(home->deviceList.size(), allocator);
 
-			for (auto [id, device] : home->deviceList)
+			for (auto& [id, device] : home->deviceList)
 			{
 				assert(device != nullptr);
 
@@ -68,7 +68,7 @@ namespace server
 			// Reserve memory
 			actionListJson.Reserve(home->actionList.size(), allocator);
 
-			for (auto [id, action] : home->actionList)
+			for (auto& [id, action] : home->actionList)
 			{
 				assert(action != nullptr);
 
@@ -87,7 +87,7 @@ namespace server
 			// Reserve memory
 			roomListJson.Reserve(home->roomList.size(), allocator);
 
-			for (auto [id, room] : home->roomList)
+			for (auto& [id, room] : home->roomList)
 			{
 				assert(room != nullptr);
 

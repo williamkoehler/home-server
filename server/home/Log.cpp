@@ -16,7 +16,7 @@ Log::Log()
 #endif
 
 	logger = new spdlog::logger("server", sinkList.begin(), sinkList.end());
-	logger->set_pattern("%^%l %Y-%d-%m %T (%s %#): %v%$");
+	logger->set_pattern("%^%l %Y-%d-%m %T: %v (%s %#)%$");
 	logger->flush_on(spdlog::level::level_enum::err);
 }
 Log::~Log()

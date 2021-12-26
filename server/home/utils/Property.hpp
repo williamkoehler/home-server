@@ -77,7 +77,7 @@ namespace home
 	class IntegerProperty : public Property
 	{
 	private:
-		boost::atomic_int64_t value;
+		int64_t value;
 
 	public:
 		static Ref<IntegerProperty> Create();

@@ -11,6 +11,6 @@ apt install -y cmake
 apt install -y ninja-build
 
 # Install necessary packages
-apt install -y wget libc6-dev libssl-dev libsqlite3-dev libcurl4-openssl-dev
+apt install -y wget libc6-dev libsqlite3-dev libcurl4-openssl-dev libicu-dev
 
 echo "Your ready to go!"

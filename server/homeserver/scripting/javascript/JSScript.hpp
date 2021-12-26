@@ -28,6 +28,9 @@ namespace server
 
 			// Duktape safe call
 			static duk_ret_t PrepareSafe(duk_context* context, void* udata);
+			void PrepareEvents(Ref<Scriptable> scriptable);
+			void PrepareProperties(Ref<Scriptable> scriptable);
+
 			static duk_ret_t InvokeSafe(duk_context* context, void* udata);
 
 			static duk_ret_t PropertyGetter(duk_context* context);
@@ -50,7 +53,7 @@ namespace server
 				return elapsedTime > maxTime;
 			}
 
-			virtual bool Prepare() override;
+			virtual bool Prepare(Ref<Scriptable> scriptable) override;
 
 			virtual bool Invoke(const std::string& event) override;
 		};

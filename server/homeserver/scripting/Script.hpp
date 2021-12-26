@@ -1,10 +1,7 @@
 #pragma once
 #include "../common.hpp"
 #include "ScriptSource.hpp"
-#include <utils/Property.hpp>
-#include <utils/Timer.hpp>
-#include <utils/Event.hpp>
-
+#include "Scriptable.hpp"
 namespace server
 {
 	class JsonApi;
@@ -17,10 +14,6 @@ namespace server
 		Ref<ScriptSource> source;
 		uint64_t checksum;
 
-		robin_hood::unordered_node_map<std::string, Ref<home::Property>> propertyList;
-		robin_hood::unordered_node_map<std::string, Ref<home::Timer>> timerList;
-		robin_hood::unordered_node_map<std::string, Ref<home::Event>> eventList;
-
 	public:
 		Script(Ref<ScriptSource> source);
 		~Script();
@@ -29,7 +22,7 @@ namespace server
 
 		/// @brief Compile script if necessary
 		/// @return Successfulness
-		virtual bool Prepare() = 0;
+		virtual bool Prepare(Ref<Scriptable> scriptable) = 0;
 
 		/// @brief Invoke script event
 		/// @param event Event name

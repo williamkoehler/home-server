@@ -1,5 +1,4 @@
 #include "NetworkManager.hpp"
-#include "io/WebPageFiles.hpp"
 #include "io/DynamicResources.hpp"
 #include "BeaconListener.hpp"
 #include "HTTPSession.hpp"
@@ -28,8 +27,6 @@ namespace server
 
 		Ref<NetworkManager> networkManager = boost::make_shared<NetworkManager>(service);
 		instanceNetworkManager = networkManager;
-
-		WebPageFiles::LoadWebPage("www");
 
 		// Initialize dynamic resources
 		networkManager->dynamicResources = DynamicResources::Create();

@@ -36,7 +36,19 @@ namespace server
 		try
 		{
 			// Start service
-			home->service = boost::make_shared<boost::asio::io_service>(1);
+			home->service = boost::make_shared<boost::asio::io_service>(2);
+			if (home->service == nullptr)
+			{
+				LOG_ERROR("Creating home service");
+				return nullptr;
+			}
+
+			home->work = boost::make_shared<boost::asio::io_service::work>(*home->service.get());
+			if (home->work == nullptr)
+			{
+				LOG_ERROR("Creating home service");
+				return nullptr;
+			}
 
 			// Load from database
 			{
@@ -44,39 +56,55 @@ namespace server
 				assert(database != nullptr);
 
 				// Load rooms
-				database->LoadRooms(
-					boost::bind(&Home::LoadRoom, home,
-						boost::placeholders::_1,
-						boost::placeholders::_2,
-						boost::placeholders::_3));
+				if (!database->LoadRooms(
+						boost::bind(&Home::LoadRoom, home,
+									boost::placeholders::_1,
+									boost::placeholders::_2,
+									boost::placeholders::_3)))
+				{
+					LOG_ERROR("Loading rooms");
+					return nullptr;
+				}
 
 				// Load device controllers
-				database->LoadDeviceControllers(
-					boost::bind(&Home::LoadDeviceController, home,
-						boost::placeholders::_1,
-						boost::placeholders::_2,
-						boost::placeholders::_3,
-						boost::placeholders::_4,
-						boost::placeholders::_5));
+				if (!database->LoadDeviceControllers(
+						boost::bind(&Home::LoadDeviceController, home,
+									boost::placeholders::_1,
+									boost::placeholders::_2,
+									boost::placeholders::_3,
+									boost::placeholders::_4,
+									boost::placeholders::_5)))
+				{
+					LOG_ERROR("Loading device controllers");
+					return nullptr;
+				}
 
 				// Load devices
-				database->LoadDevices(
-					boost::bind(&Home::LoadDevice, home,
-						boost::placeholders::_1,
-						boost::placeholders::_2,
-						boost::placeholders::_3,
-						boost::placeholders::_4,
-						boost::placeholders::_5,
-						boost::placeholders::_6));
+				if (!database->LoadDevices(
+						boost::bind(&Home::LoadDevice, home,
+									boost::placeholders::_1,
+									boost::placeholders::_2,
+									boost::placeholders::_3,
+									boost::placeholders::_4,
+									boost::placeholders::_5,
+									boost::placeholders::_6)))
+				{
+					LOG_ERROR("Loading devices");
+					return nullptr;
+				}
 
 				// Load actions
-				database->LoadActions(
-					boost::bind(&Home::LoadAction, home,
-						boost::placeholders::_1,
-						boost::placeholders::_2,
-						boost::placeholders::_3,
-						boost::placeholders::_4,
-						boost::placeholders::_5));
+				if (!database->LoadActions(
+						boost::bind(&Home::LoadAction, home,
+									boost::placeholders::_1,
+									boost::placeholders::_2,
+									boost::placeholders::_3,
+									boost::placeholders::_4,
+									boost::placeholders::_5)))
+				{
+					LOG_ERROR("Loading actions");
+					return nullptr;
+				}
 			}
 		}
 		catch (std::exception)
@@ -101,7 +129,7 @@ namespace server
 	}
 
 	//! Room
-	bool Home::LoadRoom(identifier_t roomID, const std::string& name, const std::string& type)
+	bool Home::LoadRoom(identifier_t roomID, const std::string &name, const std::string &type)
 	{
 		Ref<Room> room = Room::Create(name, roomID, type);
 
@@ -114,7 +142,7 @@ namespace server
 		else
 			return false;
 	}
-	Ref<Room> Home::AddRoom(const std::string& name, const std::string& type, rapidjson::Value& json)
+	Ref<Room> Home::AddRoom(const std::string &name, const std::string &type, rapidjson::Value &json)
 	{
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
@@ -161,7 +189,7 @@ namespace server
 	{
 		boost::lock_guard lock(mutex);
 
-		if(roomList.erase(roomID))
+		if (roomList.erase(roomID))
 		{
 			Ref<Database> database = Database::GetInstance();
 			assert(database != nullptr);
@@ -171,11 +199,11 @@ namespace server
 			return true;
 		}
 		else
-		return false;
+			return false;
 	}
 
 	//! Device
-	bool Home::LoadDevice(identifier_t deviceID, const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string& data)
+	bool Home::LoadDevice(identifier_t deviceID, const std::string &name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, const std::string &data)
 	{
 		// Get device plugin
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
@@ -208,7 +236,7 @@ namespace server
 		else
 			return false;
 	}
-	Ref<Device> Home::AddDevice(const std::string& name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, rapidjson::Value& json)
+	Ref<Device> Home::AddDevice(const std::string &name, identifier_t pluginID, identifier_t controllerID, identifier_t roomID, rapidjson::Value &json)
 	{
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
@@ -292,7 +320,7 @@ namespace server
 	}
 
 	//! DeviceController
-	bool Home::LoadDeviceController(identifier_t controllerID, const std::string& name, identifier_t pluginID, identifier_t roomID, const std::string& data)
+	bool Home::LoadDeviceController(identifier_t controllerID, const std::string &name, identifier_t pluginID, identifier_t roomID, const std::string &data)
 	{
 		// Get device plugin
 		Ref<PluginManager> pluginManager = PluginManager::GetInstance();
@@ -324,7 +352,7 @@ namespace server
 		else
 			return false;
 	}
-	Ref<DeviceController> Home::AddDeviceController(const std::string& name, identifier_t pluginID, identifier_t roomID, rapidjson::Value& json)
+	Ref<DeviceController> Home::AddDeviceController(const std::string &name, identifier_t pluginID, identifier_t roomID, rapidjson::Value &json)
 	{
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
@@ -405,7 +433,7 @@ namespace server
 	}
 
 	//! Action
-	bool Home::LoadAction(identifier_t actionID, const std::string& name, identifier_t sourceID, identifier_t roomID, const std::string& data)
+	bool Home::LoadAction(identifier_t actionID, const std::string &name, identifier_t sourceID, identifier_t roomID, const std::string &data)
 	{
 		// Get script
 		Ref<ScriptManager> scriptManager = ScriptManager::GetInstance();
@@ -434,7 +462,7 @@ namespace server
 		else
 			return false;
 	}
-	Ref<Action> Home::AddAction(const std::string& name, identifier_t sourceID, identifier_t roomID, rapidjson::Value& json)
+	Ref<Action> Home::AddAction(const std::string &name, identifier_t sourceID, identifier_t roomID, rapidjson::Value &json)
 	{
 		Ref<Database> database = Database::GetInstance();
 		assert(database != nullptr);
@@ -515,7 +543,7 @@ namespace server
 			try
 			{
 				service->run();
-				boost::this_thread::sleep_for(boost::chrono::milliseconds(1));
+				boost::this_thread::sleep_for(boost::chrono::milliseconds(5));
 			}
 			catch (std::exception e)
 			{
@@ -525,7 +553,7 @@ namespace server
 		}
 	}
 
-	void Home::Run() 
+	void Home::Run()
 	{
 		// Start worker thread
 		worker = boost::thread(boost::bind(&Home::Worker, shared_from_this()));

@@ -1,5 +1,6 @@
 #include "JSHomeModule.hpp"
 #include "JSScript.hpp"
+#include "JSConstants.hpp"
 #include "../../home/Home.hpp"
 #include "../../home/Room.hpp"
 #include "../../home/Device.hpp"
@@ -9,12 +10,6 @@ namespace server
 {
 	namespace javascript
 	{
-#define ROOM_OBJECT DUK_HIDDEN_SYMBOL("Room")
-#define DEVICE_OBJECT DUK_HIDDEN_SYMBOL("Device")
-#define DEVICECONTROLLER_OBJECT DUK_HIDDEN_SYMBOL("DeviceController")
-
-#define UNIQUE_ID DUK_HIDDEN_SYMBOL("unique_id")
-
 		bool JSHomeModule::Import(duk_context* context)
 		{
 			assert(context != nullptr);
@@ -34,7 +29,7 @@ namespace server
 
 				duk_put_function_list(context, -1, methods);
 
-				// Register prototype and action
+				// Register prototype and constructor
 				duk_put_prop_string(context, -2, "prototype");
 				duk_put_global_string(context, ROOM_OBJECT);
 			}
@@ -54,7 +49,7 @@ namespace server
 
 				duk_put_function_list(context, -1, methods);
 
-				// Register prototype and action
+				// Register prototype and constructor
 				duk_put_prop_string(context, -2, "prototype");
 				duk_put_global_string(context, DEVICE_OBJECT);
 			}
@@ -74,7 +69,7 @@ namespace server
 
 				duk_put_function_list(context, -1, methods);
 
-				// Register prototype and action
+				// Register prototype and constructor
 				duk_put_prop_string(context, -2, "prototype");
 				duk_put_global_string(context, DEVICECONTROLLER_OBJECT);
 			}
@@ -137,9 +132,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [this number]
 			identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 2
-			duk_pop_2(context); // []
-
 			// Get room
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -147,6 +139,9 @@ namespace server
 			Ref<Room> room = home->GetRoom(roomID);
 			if (room == nullptr)
 				return DUK_RET_ERROR;
+
+			// Pop 2
+			duk_pop_2(context); // []
 
 			// Get name
 			std::string name = room->GetName();
@@ -169,9 +164,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [string this number]
 			identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 3
-			duk_pop_3(context); // []
-
 			// Get room
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -182,6 +174,9 @@ namespace server
 
 			// Set name
 			room->SetName(std::string(value, valueLength));
+
+			// Pop 3
+			duk_pop_3(context); // []
 
 			return 0;
 		}
@@ -254,9 +249,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [this number]
 			identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 2
-			duk_pop_2(context); // []
-
 			// Get device
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -264,6 +256,9 @@ namespace server
 			Ref<Device> device = home->GetDevice(deviceID);
 			if (device == nullptr)
 				return DUK_RET_ERROR;
+
+			// Pop 2
+			duk_pop_2(context); // []
 
 			// Get name
 			std::string name = device->GetName();
@@ -286,9 +281,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [string this number]
 			identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 3
-			duk_pop_3(context); // []
-
 			// Get device
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -299,6 +291,9 @@ namespace server
 
 			// Set name
 			device->SetName(std::string(value, valueLength));
+
+			// Pop 3
+			duk_pop_3(context); // []
 
 			return 0;
 		}
@@ -371,9 +366,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [this number]
 			identifier_t controllerID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 2
-			duk_pop_2(context); // []
-
 			// Get device
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -381,6 +373,9 @@ namespace server
 			Ref<DeviceController> controller = home->GetDeviceController(controllerID);
 			if (controller == nullptr)
 				return DUK_RET_ERROR;
+
+			// Pop 2
+			duk_pop_2(context); // []
 
 			// Get name
 			std::string name = controller->GetName();
@@ -403,9 +398,6 @@ namespace server
 			duk_get_prop_string(context, -1, UNIQUE_ID); // [string this number]
 			identifier_t controllerID = (identifier_t)duk_get_uint(context, -1);
 
-			// Pop 3
-			duk_pop_3(context); // []
-
 			// Get device
 			Ref<Home> home = Home::GetInstance();
 			assert(home != nullptr);
@@ -416,6 +408,9 @@ namespace server
 
 			// Set name
 			controller->SetName(std::string(value, valueLength));
+
+			// Pop 3
+			duk_pop_3(context); // []
 
 			return 0;
 		}

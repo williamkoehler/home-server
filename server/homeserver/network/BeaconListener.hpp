@@ -10,6 +10,7 @@ namespace server
 		boost::asio::strand<ssl_socket_t::executor_type> strand;
 
 		std::string nameCopy = "";
+		std::string externalUrlCopy = "";
 		udp_socket_t listener;
 		boost::array<char, 50> buffer;
 		boost::asio::ip::udp::endpoint remoteEnpoint;

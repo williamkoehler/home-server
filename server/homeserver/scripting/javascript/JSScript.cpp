@@ -12,6 +12,24 @@ extern "C"
 	}
 }
 
+duk_ret_t duk_print(duk_context *context)
+{
+	std::stringstream ss;
+
+	size_t count = duk_get_top(context);
+	for (size_t index = 0; index < count; index++)
+	{
+		size_t valueLength;
+		const char *valueStr = duk_safe_to_lstring(context, index, &valueLength);
+
+		ss << std::string_view(valueStr, valueLength);
+	}
+
+	LOG_INFO("Duktape Log: {0}", ss.str());
+
+	return 0;
+}
+
 namespace server
 {
 	namespace javascript
@@ -48,6 +66,21 @@ namespace server
 			duk_put_global_lstring(context, "properties", 10);
 
 			// Import modules
+			{
+				// Push global object
+				duk_push_global_object(context);
+
+				// Register methods
+				static const duk_function_list_entry methods[] = {
+					{"print", duk_print, DUK_VARARGS},
+					{nullptr, nullptr, 0}};
+
+				duk_put_function_list(context, -1, methods);
+
+				// Pop global object
+				duk_pop(context);
+			}
+
 			//script->ImportModules();
 
 			// Load script source
@@ -149,6 +182,7 @@ namespace server
 				duk_push_c_function(c, JSScript::PropertySetter, 1);
 				duk_set_magic(c, -1, index);
 
+				// Set property getter and setter
 				duk_def_prop(c, -5,
 							 DUK_DEFPROP_HAVE_GETTER |
 								 DUK_DEFPROP_HAVE_SETTER |
@@ -250,11 +284,7 @@ namespace server
 			auto &[event] = *(JSInvokeTuple *)udata;
 
 			// Get events object
-			if (!duk_get_global_lstring(context, "events", 6))
-				return DUK_RET_ERROR;
-
-			// Get event function
-			if (!duk_get_prop_lstring(context, -1, event.data(), event.size()))
+			if (!duk_get_global_lstring(context, event.data(), event.size()))
 				return DUK_RET_ERROR;
 
 			// Prepare timout

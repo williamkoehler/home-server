@@ -1,0 +1,7 @@
+#pragma once
+
+#define ROOM_OBJECT DUK_HIDDEN_SYMBOL("Room")
+#define DEVICE_OBJECT DUK_HIDDEN_SYMBOL("Device")
+#define DEVICECONTROLLER_OBJECT DUK_HIDDEN_SYMBOL("DeviceController")
+
+#define UNIQUE_ID DUK_HIDDEN_SYMBOL("unique_id")

@@ -25,6 +25,7 @@ namespace server
 		robin_hood::unordered_node_map<identifier_t, Ref<Action>> actionList;
 
 		Ref<boost::asio::io_service> service = nullptr;
+		Ref<boost::asio::io_service::work> work = nullptr;
 		boost::thread worker;
 
 		void Worker();

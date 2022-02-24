@@ -35,8 +35,18 @@ namespace server
             name.assign(nameIt->value.GetString(), nameIt->value.GetStringLength());
         else
         {
-            name = "My Home Automation server";
-            LOG_WARNING("Missing 'name' in 'core-info.json'. Name will be set to 'My Home Automation server v{0}'.", SERVER_VERSION);
+            name = "My Home Automation server v" SERVER_VERSION;
+            LOG_WARNING("Missing 'name' in 'core-info.json'. Name will be set to '{0}'.", name);
+        }
+
+// Load web server external url
+        rapidjson::Value::MemberIterator externalUrlIt = document.FindMember("external-url");
+        if (externalUrlIt != document.MemberEnd() && externalUrlIt->value.IsUint())
+            externalUrl = externalUrlIt->value.GetUint();
+        else
+        {
+            externalUrl = "127.0.0.1:433";
+            LOG_WARNING("Missing 'external-url' in 'core-info.json'. External Url will be set to default '{0}'.", externalUrl);
         }
 
         //Load web server port
@@ -46,7 +56,7 @@ namespace server
         else
         {
             port = 443;
-            LOG_WARNING("Missing 'port' in 'core-info.json'. Port will be set to default '443'.");
+            LOG_WARNING("Missing 'port' in 'core-info.json'. Port will be set to default '{0}'.", port);
         }
 
         //Load web server address

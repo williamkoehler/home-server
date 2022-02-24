@@ -1,6 +1,5 @@
 #include "HTTPSession.hpp"
 #include "../Core.hpp"
-#include "io/WebPageFiles.hpp"
 #include "../user/UserManager.hpp"
 #include "../home/Home.hpp"
 #include "../home/Room.hpp"
@@ -10,19 +9,15 @@
 #include "WSSession.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 
-#define ERROR404 \
-	"<html>" \
-	"<style>div{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}h1{text-align:center;font-family:sans-serif;}</style>" \
-	"<body><div><h1>error 404<br><br>Woops. Looks like this page doesn't exist.<br>This message only shows up when 'index.html' doesn't exist.</h1></div></body>" \
-	"</html>"
-
 namespace server
 {
 	HTTPSession::HTTPSession(Ref<ssl_socket_t> socket)
 		: strand(socket->get_executor()), socket(socket)
-	{ }
+	{
+	}
 	HTTPSession::~HTTPSession()
-	{ }
+	{
+	}
 
 	void HTTPSession::Run()
 	{
@@ -81,8 +76,8 @@ namespace server
 				else
 					response->set(boost::beast::http::field::content_type, contentType);
 
-				boost::beast::http::buffer_body::value_type& buf = response->body();
-				buf.data = (void*)responseBuffer.GetString();
+				boost::beast::http::buffer_body::value_type &buf = response->body();
+				buf.data = (void *)responseBuffer.GetString();
 				buf.size = responseBuffer.GetSize();
 				buf.more = false;
 
@@ -92,7 +87,7 @@ namespace server
 
 				//Send response
 				boost::beast::http::async_write(*socket, *response,
-					boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteBuffer, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
+												boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteBuffer, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
 			}
 			else if (strncmp(target.data(), "/auth", 5) == 0)
 			{
@@ -140,7 +135,7 @@ namespace server
 					{
 						std::vector<uint8_t> decoded = cppcodec::base64_rfc4648::decode(authorization.data(), authorization.size());
 
-						std::string_view basic = std::string_view((const char*)decoded.data(), decoded.size());
+						std::string_view basic = std::string_view((const char *)decoded.data(), decoded.size());
 
 						size_t seperator = basic.find(':');
 						if (seperator == std::string_view::npos)
@@ -154,7 +149,7 @@ namespace server
 
 						token = UserManager::GetInstance()->GenerateToken(name, password);
 					}
-					catch (std::exception) 
+					catch (std::exception)
 					{
 						WriteError("Invalid authorization field. Please call /api/help for more details.");
 						return;
@@ -168,7 +163,7 @@ namespace server
 				response->keep_alive(request.keep_alive());
 				response->set(boost::beast::http::field::server, "HomeAutomation Server");
 				response->set(boost::beast::http::field::content_type, "application/json");
-				std::string& body = response->body();
+				std::string &body = response->body();
 				body.reserve(12 + token.size());
 				body += "{\"token\":\"";
 				body += token;
@@ -178,7 +173,7 @@ namespace server
 
 				//Send response
 				boost::beast::http::async_write(*socket, *response,
-					boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
+												boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
 			}
 			else if (strncmp(target.data(), "/ws", 3) == 0)
 			{
@@ -213,14 +208,14 @@ namespace server
 				response->keep_alive(request.keep_alive());
 				response->set(boost::beast::http::field::server, "HomeAutomation Server");
 				response->set(boost::beast::http::field::content_type, "application/json");
-				std::string& body = response->body();
+				std::string &body = response->body();
 				body.reserve(38);
 				body += "{\"pong\":\"57494c4c49414d4bd6484c4552\"}";
 				response->prepare_payload();
 
 				//Send response
 				boost::beast::http::async_write(*socket, *response,
-					boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
+												boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
 			}
 			else if (strncmp(target.data(), "/help", 5) == 0)
 			{
@@ -243,70 +238,14 @@ namespace server
 
 				//Send response
 				boost::beast::http::async_write(*socket, *response,
-					boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
+												boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
 			}
 			else
 			{
-				if (request.method() == boost::beast::http::verb::get)
-				{
-					WebPageFile* file = nullptr;
+				buffer.consume(size);
 
-					if (target.size() == 1)
-						file = WebPageFiles::GetFile("/index.html");
-					else
-					{
-						file = WebPageFiles::GetFile(target.data());
-
-						if (file == nullptr) //Serve index.html
-							file = WebPageFiles::GetFile("/index.html");
-					}
-
-					buffer.consume(size);
-
-					if (file == nullptr)
-					{
-						boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>> response = boost::make_shared<boost::beast::http::response<boost::beast::http::string_body>>();
-						response->result(boost::beast::http::status::not_found);
-						response->version(request.version());
-						response->keep_alive(false);
-						response->set(boost::beast::http::field::server, "HomeAutomation Server");
-						response->set(boost::beast::http::field::content_type, "text/html");
-						response->body() += ERROR404;
-
-						response->prepare_payload();
-
-						boost::beast::http::async_write(*socket, *response, boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
-						return;
-					}
-
-					//Create response
-					boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response = boost::make_shared<boost::beast::http::response<boost::beast::http::buffer_body>>();
-					response->result(boost::beast::http::status::ok);
-					response->version(request.version());
-					response->keep_alive(request.keep_alive());
-					response->set(boost::beast::http::field::server, "HomeAutomation Server");
-					response->set(boost::beast::http::field::content_type, GetMimeFromFileType(file->fileType));
-
-					boost::beast::http::buffer_body::value_type& body = response->body();
-					body.size = file->size;
-					body.data = file->data;
-					body.more = false;
-
-					response->prepare_payload();
-
-					//Send response
-					boost::beast::http::async_write(*socket, *response,
-						boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteBuffer, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, response)));
-				}
-				else
-				{
-					buffer.consume(size);
-
-					WriteError("Invalid method.");
-					return;
-				}
+				WriteError("Invalid method.");
 			}
-
 		}
 		catch (std::exception e)
 		{
@@ -340,7 +279,9 @@ namespace server
 
 				userID = UserManager::GetInstance()->VerifyToken(decodedToken);
 			}
-			catch (std::exception) {}
+			catch (std::exception)
+			{
+			}
 
 			return UserManager::GetInstance()->GetUser(userID);
 		}
@@ -354,7 +295,7 @@ namespace server
 			{
 				std::vector<uint8_t> decoded = cppcodec::base64_rfc4648::decode(authorization.data(), authorization.size());
 
-				std::string_view basic = std::string_view((const char*)decoded.data(), decoded.size());
+				std::string_view basic = std::string_view((const char *)decoded.data(), decoded.size());
 
 				size_t seperator = basic.find(':');
 				if (seperator == std::string_view::npos)
@@ -368,14 +309,16 @@ namespace server
 
 				return UserManager::GetInstance()->GetUserByPassword(name, password);
 			}
-			catch (std::exception) {}
+			catch (std::exception)
+			{
+			}
 		}
 
 		// Write error
 		WriteError("Invalid authorization field. Please call /api/help for more details.");
 		return nullptr;
 	}
-	void HTTPSession::WriteError(const char* error)
+	void HTTPSession::WriteError(const char *error)
 	{
 		boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response = boost::make_shared<boost::beast::http::response<boost::beast::http::buffer_body>>();
 		response->result(boost::beast::http::status::bad_request);
@@ -392,8 +335,8 @@ namespace server
 		rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(responseBuffer);
 		responseDocument.Accept(writer);
 
-		boost::beast::http::buffer_body::value_type& buf = response->body();
-		buf.data = (void*)responseBuffer.GetString();
+		boost::beast::http::buffer_body::value_type &buf = response->body();
+		buf.data = (void *)responseBuffer.GetString();
 		buf.size = responseBuffer.GetSize();
 		buf.more = false;
 

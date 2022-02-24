@@ -23,19 +23,25 @@ namespace server
 		boost::atomic_bool running = false;
 		boost::shared_mutex mutex;
 
-		//Server
 		std::string name = "error-no-name";
-		uint16_t port = 443;
+
+		// Networking
+		std::string externalUrl;
 		std::string address = "0.0.0.0";
+		uint16_t port = 443;
+
+		// Threading
 		size_t threadCount = 1;
+		boost::thread_group threads;
+		Ref<boost::asio::io_service> service = nullptr;
+		Ref<boost::asio::io_service::work> work = nullptr;
+
+		// Components
 		Ref<Database> database = nullptr;
+		Ref<NetworkManager> networkManager = nullptr;
 		Ref<UserManager> userManager = nullptr;
 		Ref<ScriptManager> scriptManager = nullptr;
 		Ref<Home> home = nullptr;
-		Ref<NetworkManager> networkManager = nullptr;
-
-		Ref<boost::asio::io_service> service = nullptr;
-		boost::thread_group threads;
 
 		void Worker();
 
@@ -51,11 +57,12 @@ namespace server
 
 		inline bool IsRunning() const { return running; }
 
-		inline std::string GetName()
-		{
-			boost::shared_lock_guard lock(mutex);
-			return name;
-		}
+		inline const std::string& GetName() { return name; }
+
+		// Networking
+		inline const std::string& GetAddress() { return address; } 
+		inline uint16_t GetPort() { return port; }
+		inline const std::string& GetExternalUrl() { return externalUrl; }
 
 		inline Ref<boost::asio::io_service> GetService() const { return service; }
 

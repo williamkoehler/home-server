@@ -8,7 +8,7 @@ namespace home
 
 	class Event
 	{
-	protected:
+	public:
 		/// @brief Invoke event callback
 		virtual void Invoke() = 0;
 	};

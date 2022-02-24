@@ -24,6 +24,8 @@ namespace server
 		home = nullptr;
 		scriptManager = nullptr;
 		userManager = nullptr;
+		networkManager = nullptr;
+		database = nullptr;
 
 		running = false;
 
@@ -107,19 +109,8 @@ namespace server
 		for (size_t i = 1; i < threadCount; i++)
 			threads.create_thread(boost::bind(&Core::Worker, shared_from_this()));
 
-		while (running)
-		{
-			try
-			{
-				service->run();
-				boost::this_thread::sleep_for(boost::chrono::milliseconds(200));
-			}
-			catch (const std::exception& e)
-			{
-				printf("Ooops!!! Something bad happend");
-				LOG_ERROR("Exception not catched:\n{0}", std::string(e.what()));
-			}
-		}
+		// Start worker thread
+		Worker();
 
 		service->stop();
 

@@ -110,7 +110,7 @@ namespace server
 		{
 
 			// Create property instance
-			Ref<home::Property> property = nullptr;
+			Ref<home::Property> property;
 			switch (type)
 			{
 			case home::PropertyType::kBooleanType:
@@ -130,6 +130,9 @@ namespace server
 				break;
 			case home::PropertyType::kColorType:
 				property = home::ColorProperty::Create();
+				break;
+			default:
+				property = nullptr;
 				break;
 			}
 
@@ -200,7 +203,7 @@ namespace server
 			// Post job
 			Ref<Event> event = it->second;
 			boost::asio::post(
-				*Home::GetInstance()->GetService(), 
+				*Home::GetInstance()->GetService(),
 				boost::bind(&Event::Invoke, event));
 		}
 	}
@@ -255,12 +258,6 @@ namespace server
 		boost::asio::post(
 			*Home::GetInstance()->GetService(),
 			boost::bind(&server::Script::Prepare, script, boost::reinterpret_pointer_cast<Scriptable>(shared_from_this())));
-		// 	[=]()
-		// 		->void
-		// {
-		// 	printf("Hello World!\n");
-		// 	script->Prepare(boost::reinterpret_pointer_cast<Scriptable>(shared_from_this()));
-		// });
 	}
 
 	void Action::TakeSnapshot()

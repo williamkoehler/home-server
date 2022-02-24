@@ -20,7 +20,7 @@ namespace server
 		if (connection != nullptr)
 		{
 			sqlite3_close(connection);
-			connection != nullptr;
+			connection = nullptr;
 		}
 	}
 	Ref<Database> Database::Create(const std::string& db)

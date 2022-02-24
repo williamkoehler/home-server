@@ -14,7 +14,18 @@ namespace server
 			/// @param context Duktape context
 			/// @param actionID Action unique id
 			/// @return Successfulness
-			static bool Import(duk_context* context, identifier_t actionID);
+			static bool Import(duk_context *context, identifier_t actionID);
+		};
+
+		class JSActionSelf
+		{
+		private:
+			friend class JSActionModule;
+
+			static duk_ret_t IsValid(duk_context *context);
+
+			static duk_ret_t GetName(duk_context *context);
+			static duk_ret_t SetName(duk_context *context);
 		};
 	}
 }

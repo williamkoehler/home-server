@@ -9,6 +9,7 @@ namespace server
 	BeaconListener::BeaconListener()
 		: strand(Core::GetInstance()->GetService()->get_executor()),
 		nameCopy(Core::GetInstance()->GetName()),
+		externalUrlCopy(Core::GetInstance()->GetExternalUrl()),
 		buffer(),
 		listener(*Core::GetInstance()->GetService(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025))
 	{
@@ -43,11 +44,7 @@ namespace server
 		if (!ec || ec == boost::asio::error::message_size)
 		{
 			uint8_t digest[SHA256_DIGEST_LENGTH] = "";
-
-			SHA256_CTX context;
-			SHA256_Init(&context);
-			SHA256_Update(&context, buffer.data(), strlen(buffer.data()));
-			SHA256_Final(digest, &context);
+			SHA256((const unsigned char*)buffer.data(), strlen(buffer.data()), digest);
 
 			rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
 
@@ -57,6 +54,8 @@ namespace server
 			document.AddMember("key", rapidjson::Value(key.data(), key.size(), allocator), allocator);
 
 			document.AddMember("name", rapidjson::Value(nameCopy.data(), nameCopy.size(), allocator), allocator);
+
+			document.AddMember("ext", rapidjson::Value(externalUrlCopy.data(), externalUrlCopy.size(), allocator), allocator);
 
 			Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
 			rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);

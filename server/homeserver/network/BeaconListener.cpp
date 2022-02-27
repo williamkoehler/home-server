@@ -9,10 +9,10 @@ namespace server
 	BeaconListener::BeaconListener()
 		: strand(Core::GetInstance()->GetService()->get_executor()),
 		nameCopy(Core::GetInstance()->GetName()),
-		externalUrlCopy(Core::GetInstance()->GetExternalUrl()),
 		buffer(),
 		listener(*Core::GetInstance()->GetService(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025))
 	{
+		externalUrlCopy = Core::GetInstance()->GetExternalAddress() + ":" + std::to_string(Core::GetInstance()->GetExternalPort());
 	}
 	BeaconListener::~BeaconListener()
 	{

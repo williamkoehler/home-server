@@ -6,6 +6,14 @@ namespace home
 	template<class Type = void, class Self = void>
 	using TimerCallback = bool(Self*, Ref<Type>);
 
+	// Union to allow pointer conversion from method pointer to function pointer
+	template<class Type = void, class Self = void>
+	union TimerCallbackConversion
+	{
+		bool (Self::*method)(Ref<Type>);
+		TimerCallback<Type, Self>* function;
+	};
+
 	class Timer
 	{
 	protected:

@@ -29,7 +29,7 @@ namespace server
             throw std::runtime_error("Read file 'core-info.json'");
         }
 
-        //Load server name
+        // Load server name
         rapidjson::Value::MemberIterator nameIt = document.FindMember("name");
         if (nameIt != document.MemberEnd() && nameIt->value.IsString())
             name.assign(nameIt->value.GetString(), nameIt->value.GetStringLength());
@@ -39,27 +39,7 @@ namespace server
             LOG_WARNING("Missing 'name' in 'core-info.json'. Name will be set to '{0}'.", name);
         }
 
-// Load web server external url
-        rapidjson::Value::MemberIterator externalUrlIt = document.FindMember("external-url");
-        if (externalUrlIt != document.MemberEnd() && externalUrlIt->value.IsUint())
-            externalUrl = externalUrlIt->value.GetUint();
-        else
-        {
-            externalUrl = "127.0.0.1:433";
-            LOG_WARNING("Missing 'external-url' in 'core-info.json'. External Url will be set to default '{0}'.", externalUrl);
-        }
-
-        //Load web server port
-        rapidjson::Value::MemberIterator portIt = document.FindMember("port");
-        if (portIt != document.MemberEnd() && portIt->value.IsUint())
-            port = portIt->value.GetUint();
-        else
-        {
-            port = 443;
-            LOG_WARNING("Missing 'port' in 'core-info.json'. Port will be set to default '{0}'.", port);
-        }
-
-        //Load web server address
+        // Load web server address
         rapidjson::Value::MemberIterator addressIt = document.FindMember("address");
         if (addressIt != document.MemberEnd() && addressIt->value.IsString())
             address = std::string(addressIt->value.GetString(), addressIt->value.GetStringLength());
@@ -69,9 +49,39 @@ namespace server
             LOG_WARNING("Missing 'address' in 'core-info.json'. Address will be set to default '0.0.0.0'.");
         }
 
+        // Load web server port
+        rapidjson::Value::MemberIterator portIt = document.FindMember("port");
+        if (portIt != document.MemberEnd() && portIt->value.IsUint())
+            port = portIt->value.GetUint();
+        else
+        {
+            port = 443;
+            LOG_WARNING("Missing 'port' in 'core-info.json'. Port will be set to default '{0}'.", port);
+        }
+
         LOG_INFO("Server address is {0}:{1}", address, port);
 
-        //Load thread counts
+        // Load web server external address
+        rapidjson::Value::MemberIterator externalAddressIt = document.FindMember("external-address");
+        if (externalAddressIt != document.MemberEnd() && externalAddressIt->value.IsString())
+            externalAddress = std::string(externalAddressIt->value.GetString(), externalAddressIt->value.GetStringLength());
+        else
+        {
+            externalAddress = "";
+            LOG_WARNING("Missing 'external-address' in 'core-info.json'.");
+        }
+
+        // Load web server external address
+        rapidjson::Value::MemberIterator externalPortIt = document.FindMember("external-port");
+        if (externalPortIt != document.MemberEnd() && externalPortIt->value.IsUint())
+            externalPort = externalPortIt->value.GetUint();
+        else
+        {
+            externalPort = port;
+            LOG_WARNING("Missing 'external-port' in 'core-info.json'.");
+        }
+
+        // Load thread counts
         rapidjson::Value::MemberIterator additionalThreadCountIt = document.FindMember("additional-thread-count");
         if (additionalThreadCountIt != document.MemberEnd() && additionalThreadCountIt->value.IsUint())
             threadCount = std::max(additionalThreadCountIt->value.GetUint() + 1, 1u);
@@ -88,7 +98,7 @@ namespace server
 
         LOG_INFO("Using {0} main thread(s).", threadCount);
 
-        //Load EMail
+        // Load EMail
         rapidjson::Value::MemberIterator emailIt = document.FindMember("email-service");
         if (emailIt != document.MemberEnd() && emailIt->value.IsObject())
         {
@@ -127,7 +137,7 @@ namespace server
 
         LOG_INFO("Saving default core information to 'core-info.json'");
 
-        //Create json
+        // Create json
         rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
 
         rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
@@ -153,7 +163,7 @@ namespace server
             document.AddMember("email-service", emailServiceJson, allocator);
         }
 
-        //Save to file
+        // Save to file
         FILE *file = fopen("core-info.json", "w");
         if (file == nullptr)
         {

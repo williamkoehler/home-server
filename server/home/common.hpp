@@ -3,7 +3,7 @@
 #include <string>
 #include <ostream>
 
-typedef int64_t identifier_t;
+typedef uint32_t identifier_t;
 
 #include "Log.hpp"
 

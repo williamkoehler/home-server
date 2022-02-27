@@ -120,7 +120,7 @@ namespace server
 					if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 						return;
 
-					Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+					Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 					if (device != nullptr)
 						DecodeJsonDevice(device, *deviceIt);
 				}
@@ -139,7 +139,7 @@ namespace server
 					if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint())
 						return;
 
-					Ref<DeviceController> controller = home->GetDeviceController(controllerIDIt->value.GetUint64());
+					Ref<DeviceController> controller = home->GetDeviceController(controllerIDIt->value.GetUint());
 					if (controller != nullptr)
 						DecodeJsonDeviceController(controller, *deviceControllerIt);
 				}
@@ -158,7 +158,7 @@ namespace server
 					if (roomIDIt == input.MemberEnd() || !roomIDIt->value.IsUint())
 						return;
 
-					Ref<Room> room = home->GetRoom(roomIDIt->value.GetUint64());
+					Ref<Room> room = home->GetRoom(roomIDIt->value.GetUint());
 					if (room != nullptr)
 						DecodeJsonRoom(room, *roomIt);
 				}
@@ -246,8 +246,8 @@ namespace server
 			controller->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
 
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
-		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint64())
-			controller->SetRoom(home->GetRoom(roomIDIt->value.GetUint64()));
+		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
+			controller->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
 	void JsonApi::BuildJsonDeviceControllerState(Ref<DeviceController> controller, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
 	{
@@ -384,12 +384,12 @@ namespace server
 			device->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
 
 		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
-		if (controllerIDIt != input.MemberEnd() && controllerIDIt->value.IsUint64())
+		if (controllerIDIt != input.MemberEnd() && controllerIDIt->value.IsUint())
 			device->SetController(home->GetDeviceController(controllerIDIt->value.GetInt64()));
 
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
-		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint64())
-			device->SetRoom(home->GetRoom(roomIDIt->value.GetUint64()));
+		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
+			device->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
 	void JsonApi::BuildJsonDeviceState(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
 	{
@@ -522,8 +522,8 @@ namespace server
 			action->SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
 
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
-		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint64())
-			action->SetRoom(home->GetRoom(roomIDIt->value.GetUint64()));
+		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
+			action->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
 	void JsonApi::BuildJsonActionState(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
 	{

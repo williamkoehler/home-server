@@ -12,21 +12,21 @@ namespace server
 {
 	WSSession::WSSession(Ref<ssl_socket_t> socket, Ref<User> user)
 		: strand(socket->get_executor()), socket(boost::make_shared<websocket_t>(std::move(*socket))), user(user)
-	{ }
+	{
+	}
 	WSSession::~WSSession()
-	{ }
+	{
+	}
 
-	void WSSession::Run(boost::beast::http::request<boost::beast::http::string_body>& request)
+	void WSSession::Run(boost::beast::http::request<boost::beast::http::string_body> &request)
 	{
 		socket->next_layer().next_layer().expires_after(std::chrono::seconds(12));
 		socket->set_option(
 			boost::beast::websocket::stream_base::decorator(
-				[](boost::beast::websocket::response_type& response) -> void
+				[](boost::beast::websocket::response_type &response) -> void
 				{
 					response.set(boost::beast::http::field::server, Core::GetInstance()->GetName());
-				}
-			)
-		);
+				}));
 		socket->async_accept(request, boost::asio::bind_executor(strand, boost::bind(&WSSession::OnAccept, shared_from_this(), boost::placeholders::_1)));
 	}
 
@@ -37,7 +37,7 @@ namespace server
 
 		socket->next_layer().next_layer().expires_never();
 
-		//Add ws to publish list
+		// Add ws to publish list
 		{
 			Ref<NetworkManager> networkManager = NetworkManager::GetInstance();
 			boost::lock_guard lock(networkManager->mutex);
@@ -65,9 +65,9 @@ namespace server
 		}
 
 		buffer.reserve(buffer.size() + 1);
-		char* data = static_cast<char*>(buffer.data().data());
+		char *data = static_cast<char *>(buffer.data().data());
 		data[buffer.size()] = '\0';
-		rapidjson::StringStream stream = rapidjson::StringStream(static_cast<const char*>(buffer.data().data()));
+		rapidjson::StringStream stream = rapidjson::StringStream(static_cast<const char *>(buffer.data().data()));
 
 		rapidjson::Document requestDocument;
 		requestDocument.ParseStream(stream);
@@ -82,7 +82,7 @@ namespace server
 
 		rapidjson::Value::MemberIterator messageIDIt = requestDocument.FindMember("msgid");
 		rapidjson::Value::MemberIterator messageIt = requestDocument.FindMember("msg");
-		if (messageIDIt == requestDocument.MemberEnd() || !messageIDIt->value.IsUint64() ||
+		if (messageIDIt == requestDocument.MemberEnd() || !messageIDIt->value.IsUint() ||
 			messageIt == requestDocument.MemberEnd() || !messageIt->value.IsString())
 		{
 			DoWSShutdown(boost::beast::websocket::close_code::bad_payload, "Invalid JSON");
@@ -91,103 +91,103 @@ namespace server
 
 		rapidjson::Document responseDocument = rapidjson::Document(rapidjson::kObjectType);
 
-		if (ProcessJsonApi(messageIDIt->value.GetUint64(), std::string(messageIt->value.GetString(), messageIt->value.GetStringLength()), requestDocument, responseDocument))
+		if (ProcessJsonApi(messageIDIt->value.GetUint(), std::string(messageIt->value.GetString(), messageIt->value.GetStringLength()), requestDocument, responseDocument))
 			Send(responseDocument);
 
-		//Wait for data
+		// Wait for data
 		socket->async_read(buffer, boost::asio::bind_executor(strand, boost::bind(&WSSession::OnRead, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2)));
 	}
 
-	typedef void(WSMethod)(const Ref<User>&, rapidjson::Document&, rapidjson::Document&, ApiContext&);
-	static const boost::unordered::unordered_map<std::string, WSMethod*> methodList = {
+	typedef void(WSMethod)(const Ref<User> &, rapidjson::Document &, rapidjson::Document &, ApiContext &);
+	static const boost::unordered::unordered_map<std::string, WSMethod *> methodList = {
 		// Settings
-		{ "get-settings", JsonApi::ProcessJsonGetSettingsMessageWS },
-		{ "set-settings", JsonApi::ProcessJsonSetSettingsMessageWS },
+		{"get-settings", JsonApi::ProcessJsonGetSettingsMessageWS},
+		{"set-settings", JsonApi::ProcessJsonSetSettingsMessageWS},
 
 		// User
-		{ "get-users", JsonApi::ProcessJsonGetUsersMessageWS },
+		{"get-users", JsonApi::ProcessJsonGetUsersMessageWS},
 
 		// Plugins
-		{ "get-plugins", JsonApi::ProcessJsonGetPluginsMessageWS },
+		{"get-plugins", JsonApi::ProcessJsonGetPluginsMessageWS},
 
 		// Scripting
-		{ "get-scriptsources", JsonApi::ProcessJsonGetScriptSourcesMessageWS },
+		{"get-scriptsources", JsonApi::ProcessJsonGetScriptSourcesMessageWS},
 
-		{ "add-scriptsource", JsonApi::ProcessJsonAddScriptSourceMessageWS },
+		{"add-scriptsource", JsonApi::ProcessJsonAddScriptSourceMessageWS},
 
-		{ "get-scriptsource", JsonApi::ProcessJsonGetScriptSourceMessageWS },
-		{ "get-scriptsource?data", JsonApi::ProcessJsonGetScriptSourceDataMessageWS },
+		{"get-scriptsource", JsonApi::ProcessJsonGetScriptSourceMessageWS},
+		{"get-scriptsource?data", JsonApi::ProcessJsonGetScriptSourceDataMessageWS},
 
-		{ "set-scriptsource", JsonApi::ProcessJsonSetScriptSourceMessageWS },
-		{ "set-scriptsource?data", JsonApi::ProcessJsonSetScriptSourceDataMessageWS },
+		{"set-scriptsource", JsonApi::ProcessJsonSetScriptSourceMessageWS},
+		{"set-scriptsource?data", JsonApi::ProcessJsonSetScriptSourceDataMessageWS},
 
-		{ "rem-scriptsource", JsonApi::ProcessJsonRemoveScriptSourceMessageWS },
+		{"rem-scriptsource", JsonApi::ProcessJsonRemoveScriptSourceMessageWS},
 
 		// Home
-		{ "get-home", JsonApi::ProcessJsonGetHomeMessageWS },
-		{ "set-home", JsonApi::ProcessJsonSetHomeMessageWS },
+		{"get-home", JsonApi::ProcessJsonGetHomeMessageWS},
+		{"set-home", JsonApi::ProcessJsonSetHomeMessageWS},
 
 		// Room
-		{ "add-room", JsonApi::ProcessJsonAddRoomMessageWS },
+		{"add-room", JsonApi::ProcessJsonAddRoomMessageWS},
 
-		{ "get-room", JsonApi::ProcessJsonGetRoomMessageWS },
-		{ "set-room", JsonApi::ProcessJsonSetRoomMessageWS },
+		{"get-room", JsonApi::ProcessJsonGetRoomMessageWS},
+		{"set-room", JsonApi::ProcessJsonSetRoomMessageWS},
 
-		{ "rem-room", JsonApi::ProcessJsonRemoveRoomMessageWS },
+		{"rem-room", JsonApi::ProcessJsonRemoveRoomMessageWS},
 
 		// Device
-		{ "add-device", JsonApi::ProcessJsonAddDeviceMessageWS },
+		{"add-device", JsonApi::ProcessJsonAddDeviceMessageWS},
 
-		{ "inv-device", JsonApi::ProcessJsonInvokeDeviceEventMessageWS },
+		{"inv-device", JsonApi::ProcessJsonInvokeDeviceEventMessageWS},
 
-		{ "get-device", JsonApi::ProcessJsonGetDeviceMessageWS },
-		{ "get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS },
-		{ "get-devices?state", JsonApi::ProcessJsonGetDeviceStatesMessageWS },
+		{"get-device", JsonApi::ProcessJsonGetDeviceMessageWS},
+		{"get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS},
+		{"get-devices?state", JsonApi::ProcessJsonGetDeviceStatesMessageWS},
 
-		{ "set-device", JsonApi::ProcessJsonSetDeviceMessageWS },
-		{ "set-device?state", JsonApi::ProcessJsonSetDeviceStateMessageWS },
+		{"set-device", JsonApi::ProcessJsonSetDeviceMessageWS},
+		{"set-device?state", JsonApi::ProcessJsonSetDeviceStateMessageWS},
 
-		{ "rem-device", JsonApi::ProcessJsonRemoveDeviceMessageWS },
+		{"rem-device", JsonApi::ProcessJsonRemoveDeviceMessageWS},
 
 		// DeviceController
-		{ "add-devicecontroller", JsonApi::ProcessJsonAddDeviceControllerMessageWS },
+		{"add-devicecontroller", JsonApi::ProcessJsonAddDeviceControllerMessageWS},
 
-		{ "inv-devicecontroller", JsonApi::ProcessJsonInvokeDeviceControllerEventMessageWS },
+		{"inv-devicecontroller", JsonApi::ProcessJsonInvokeDeviceControllerEventMessageWS},
 
-		{ "get-devicecontroller", JsonApi::ProcessJsonGetDeviceControllerMessageWS },
-		{ "get-devicecontroller?state", JsonApi::ProcessJsonGetDeviceControllerStateMessageWS },
-		{ "get-devicecontrollers?state", JsonApi::ProcessJsonGetDeviceControllerStatesMessageWS },
+		{"get-devicecontroller", JsonApi::ProcessJsonGetDeviceControllerMessageWS},
+		{"get-devicecontroller?state", JsonApi::ProcessJsonGetDeviceControllerStateMessageWS},
+		{"get-devicecontrollers?state", JsonApi::ProcessJsonGetDeviceControllerStatesMessageWS},
 
-		{ "set-devicecontroller", JsonApi::ProcessJsonSetDeviceControllerMessageWS },
-		{ "set-devicecontroller?state", JsonApi::ProcessJsonSetDeviceControllerStateMessageWS },
+		{"set-devicecontroller", JsonApi::ProcessJsonSetDeviceControllerMessageWS},
+		{"set-devicecontroller?state", JsonApi::ProcessJsonSetDeviceControllerStateMessageWS},
 
-		{ "rem-devicecontroller", JsonApi::ProcessJsonRemoveDeviceControllerMessageWS },
+		{"rem-devicecontroller", JsonApi::ProcessJsonRemoveDeviceControllerMessageWS},
 
 		// Action
-		{ "add-action", JsonApi::ProcessJsonAddActionMessageWS },
+		{"add-action", JsonApi::ProcessJsonAddActionMessageWS},
 
-		{ "inv-action", JsonApi::ProcessJsonInvokeActionEventMessageWS },
+		{"inv-action", JsonApi::ProcessJsonInvokeActionEventMessageWS},
 
-		{ "get-action", JsonApi::ProcessJsonGetActionMessageWS },
-		{ "get-action?state", JsonApi::ProcessJsonGetActionStateMessageWS },
-		{ "get-actions?state", JsonApi::ProcessJsonGetActionStatesMessageWS},
+		{"get-action", JsonApi::ProcessJsonGetActionMessageWS},
+		{"get-action?state", JsonApi::ProcessJsonGetActionStateMessageWS},
+		{"get-actions?state", JsonApi::ProcessJsonGetActionStatesMessageWS},
 
-		{ "set-action", JsonApi::ProcessJsonSetActionMessageWS },
-		{ "set-action?state", JsonApi::ProcessJsonSetActionStateMessageWS },
+		{"set-action", JsonApi::ProcessJsonSetActionMessageWS},
+		{"set-action?state", JsonApi::ProcessJsonSetActionStateMessageWS},
 
-		{ "rem-action", JsonApi::ProcessJsonRemoveActionMessageWS },
+		{"rem-action", JsonApi::ProcessJsonRemoveActionMessageWS},
 	};
 
-	bool WSSession::ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input, rapidjson::Document& output)
+	bool WSSession::ProcessJsonApi(size_t id, const std::string &msg, rapidjson::Document &input, rapidjson::Document &output)
 	{
-		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+		rapidjson::Document::AllocatorType &allocator = output.GetAllocator();
 
 		rapidjson::Value logsJson = rapidjson::Value(rapidjson::kArrayType);
 
 		ApiContext context(logsJson, allocator);
 
 		// Call websocket message
-		boost::unordered::unordered_map<std::string, WSMethod*>::const_iterator it = methodList.find(msg);
+		boost::unordered::unordered_map<std::string, WSMethod *>::const_iterator it = methodList.find(msg);
 		if (it != methodList.end())
 			it->second(user, input, output, context);
 		else
@@ -198,11 +198,13 @@ namespace server
 
 		output.AddMember("logs", logsJson, allocator);
 		output.AddMember("error", context.GetError(), allocator);
+		output.AddMember("msgid", rapidjson::Value(id), allocator);
+		output.AddMember("msg", rapidjson::Value(context.GetError() == ApiError::kError_NoError ? "ack" : "nack", allocator), allocator);
 
 		return true;
 	}
 
-	void WSSession::Send(rapidjson::Document& document)
+	void WSSession::Send(rapidjson::Document &document)
 	{
 		Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
 		rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);
@@ -219,11 +221,11 @@ namespace server
 				boost::asio::bind_executor(strand, boost::bind(&WSSession::OnWrite, shared_from_this(), boost::placeholders::_1, boost::placeholders::_2, message)));
 		}
 	}
-	void WSSession::Send(rapidjson::StringBuffer& buffer)
+	void WSSession::Send(rapidjson::StringBuffer &buffer)
 	{
 		Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
 		message->Push(buffer.GetSize());
-		memcpy((void*)message->GetString(), buffer.GetString(), buffer.GetSize());
+		memcpy((void *)message->GetString(), buffer.GetString(), buffer.GetSize());
 
 		boost::lock_guard lock(queueMutex);
 
@@ -269,9 +271,9 @@ namespace server
 		}
 	}
 
-	void WSSession::DoWSShutdown(boost::beast::websocket::close_code code, const char* reason)
+	void WSSession::DoWSShutdown(boost::beast::websocket::close_code code, const char *reason)
 	{
-		//Shutdown
+		// Shutdown
 		socket->next_layer().next_layer().expires_after(std::chrono::seconds(6));
 		socket->async_close(boost::beast::websocket::close_reason(code, reason), boost::asio::bind_executor(strand, boost::bind(&WSSession::DoSSLShutdown, shared_from_this(), boost::placeholders::_1)));
 	}
@@ -280,7 +282,7 @@ namespace server
 		if (error)
 			return;
 
-		//Shutdown
+		// Shutdown
 		socket->next_layer().next_layer().expires_after(std::chrono::seconds(6));
 		socket->next_layer().async_shutdown(boost::asio::bind_executor(strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
 	}

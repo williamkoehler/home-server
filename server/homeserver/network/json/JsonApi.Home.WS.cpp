@@ -21,7 +21,7 @@ namespace server
 		// Build response
 		rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-		size_t timestamp = (timestampIt != input.MemberEnd() && timestampIt->value.IsUint64()) ? timestampIt->value.GetUint64() : 0;
+		size_t timestamp = (timestampIt != input.MemberEnd() && timestampIt->value.IsUint()) ? timestampIt->value.GetUint() : 0;
 
 		BuildJsonHome(output, allocator, timestamp);
 	}
@@ -194,8 +194,8 @@ namespace server
 		rapidjson::Value::MemberIterator pluginIDIt = input.FindMember("pluginid");
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
 		if (nameIt == input.MemberEnd() || !nameIt->value.IsString() ||
-			pluginIDIt == input.MemberEnd() || !pluginIDIt->value.IsUint64() ||
-			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
+			pluginIDIt == input.MemberEnd() || !pluginIDIt->value.IsUint() ||
+			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
 		{
 			context.Error("Missing name, pluginid and/or roomid");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -212,8 +212,8 @@ namespace server
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 		Ref<DeviceController> controller = home->AddDeviceController(
 			nameIt->value.GetString(),
-			pluginIDIt->value.GetUint64(),
-			roomIDIt->value.IsUint64() ? roomIDIt->value.GetUint64() : 0,
+			pluginIDIt->value.GetUint(),
+			roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0,
 			json);
 		if (controller == nullptr)
 		{
@@ -238,7 +238,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("id");
-		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint64())
+		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint())
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
 			return;
@@ -251,7 +251,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Remove device
-		if (!home->RemoveDeviceController(controllerIDIt->value.GetUint64()))
+		if (!home->RemoveDeviceController(controllerIDIt->value.GetUint()))
 		{
 			//! Error failed to remove device controller
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -265,7 +265,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("id");
-		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint64())
+		if (controllerIDIt == input.MemberEnd() || !controllerIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -280,7 +280,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device controller
-		Ref<DeviceController> controller = home->GetDeviceController(controllerIDIt->value.GetUint64());
+		Ref<DeviceController> controller = home->GetDeviceController(controllerIDIt->value.GetUint());
 		if (controller == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -296,7 +296,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -310,7 +310,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
+		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint());
 		if (controller == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -328,7 +328,7 @@ namespace server
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
 		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64() ||
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() ||
 			eventIt == input.MemberEnd() || !eventIt->value.IsString())
 		{
 			context.Error("Missing id and/or event");
@@ -344,7 +344,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
+		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint());
 		if (controller == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -361,7 +361,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -376,7 +376,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
+		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint());
 		if (controller == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -392,7 +392,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -406,7 +406,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint64());
+		Ref<DeviceController> controller = home->GetDeviceController(deviceIDIt->value.GetUint());
 		if (controller == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -466,9 +466,9 @@ namespace server
 		rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
 		if (nameIt == input.MemberEnd() || !nameIt->value.IsString() ||
-			pluginIDIt == input.MemberEnd() || !pluginIDIt->value.IsUint64() ||
-			controllerIDIt == input.MemberEnd() || (!controllerIDIt->value.IsUint64() && !controllerIDIt->value.IsNull()) ||
-			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
+			pluginIDIt == input.MemberEnd() || !pluginIDIt->value.IsUint() ||
+			controllerIDIt == input.MemberEnd() || (!controllerIDIt->value.IsUint() && !controllerIDIt->value.IsNull()) ||
+			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
 		{
 			context.Error("Missing name, pluginid, controllerid, and/or roomid");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -485,9 +485,9 @@ namespace server
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 		Ref<Device> device = home->AddDevice(
 			nameIt->value.GetString(),
-			pluginIDIt->value.GetUint64(),
-			controllerIDIt->value.IsUint64() ? controllerIDIt->value.GetUint64() : 0,
-			roomIDIt->value.IsUint64() ? roomIDIt->value.GetUint64() : 0,
+			pluginIDIt->value.GetUint(),
+			controllerIDIt->value.IsUint() ? controllerIDIt->value.GetUint() : 0,
+			roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0,
 			json);
 		if (device == nullptr)
 		{
@@ -512,7 +512,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -526,7 +526,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Remove device
-		if (!home->RemoveDevice(deviceIDIt->value.GetUint64()))
+		if (!home->RemoveDevice(deviceIDIt->value.GetUint()))
 		{
 			//! Error failed to remove device
 			context.Error(ApiError::kError_InternalError);
@@ -540,7 +540,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -554,7 +554,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 		if (device == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -570,7 +570,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -584,7 +584,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 		if (device == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -602,7 +602,7 @@ namespace server
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
 		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64() ||
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() ||
 			eventIt == input.MemberEnd() || !eventIt->value.IsString())
 		{
 			context.Error("Missing id and/or event");
@@ -617,7 +617,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 		if (device == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -634,7 +634,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -648,7 +648,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 		if (device == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -664,7 +664,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint64())
+		if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -678,7 +678,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint64());
+		Ref<Device> device = home->GetDevice(deviceIDIt->value.GetUint());
 		if (device == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -737,8 +737,8 @@ namespace server
 		rapidjson::Value::MemberIterator sourceIDIt = input.FindMember("sourceid");
 		rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
 		if (nameIt == input.MemberEnd() || !nameIt->value.IsString() ||
-			sourceIDIt == input.MemberEnd() || !sourceIDIt->value.IsUint64() ||
-			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint64() && !roomIDIt->value.IsNull()))
+			sourceIDIt == input.MemberEnd() || !sourceIDIt->value.IsUint() ||
+			roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
 		{
 			context.Error("Missing name, sourceid, and/or roomid");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -755,8 +755,8 @@ namespace server
 		rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 		Ref<Action> action = home->AddAction(
 			nameIt->value.GetString(),
-			sourceIDIt->value.GetUint64(),
-			roomIDIt->value.IsUint64() ? roomIDIt->value.GetUint64() : 0,
+			sourceIDIt->value.GetUint(),
+			roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0,
 			json);
 		if (action == nullptr)
 		{
@@ -781,7 +781,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -795,7 +795,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Remove action
-		if (!home->RemoveAction(actionIDIt->value.GetUint64()))
+		if (!home->RemoveAction(actionIDIt->value.GetUint()))
 		{
 			//! Error failed to remove action
 			context.Error(ApiError::kError_InternalError);
@@ -809,7 +809,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -823,7 +823,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get action
-		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint());
 		if (action == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -839,7 +839,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -853,7 +853,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get action
-		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint());
 		if (action == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -871,7 +871,7 @@ namespace server
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
 		rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64() ||
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint() ||
 			eventIt == input.MemberEnd() || !eventIt->value.IsString())
 		{
 			context.Error("Missing id and/or event");
@@ -886,7 +886,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get action
-		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint());
 		if (action == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -903,7 +903,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -917,7 +917,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get device
-		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint());
 		if (action == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);
@@ -933,7 +933,7 @@ namespace server
 
 		// Process request
 		rapidjson::Value::MemberIterator actionIDIt = input.FindMember("id");
-		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint64())
+		if (actionIDIt == input.MemberEnd() || !actionIDIt->value.IsUint())
 		{
 			context.Error("Missing id");
 			context.Error(ApiError::kError_InvalidArguments);
@@ -947,7 +947,7 @@ namespace server
 		assert(home != nullptr);
 
 		// Get action
-		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint64());
+		Ref<Action> action = home->GetAction(actionIDIt->value.GetUint());
 		if (action == nullptr)
 		{
 			context.Error(ApiError::kError_InvalidIdentifier);

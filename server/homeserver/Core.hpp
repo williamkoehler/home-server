@@ -26,7 +26,8 @@ namespace server
 		std::string name = "error-no-name";
 
 		// Networking
-		std::string externalUrl;
+		std::string externalAddress;
+		uint16_t externalPort;
 		std::string address = "0.0.0.0";
 		uint16_t port = 443;
 
@@ -57,12 +58,13 @@ namespace server
 
 		inline bool IsRunning() const { return running; }
 
-		inline const std::string& GetName() { return name; }
+		inline const std::string &GetName() { return name; }
 
 		// Networking
-		inline const std::string& GetAddress() { return address; } 
+		inline const std::string &GetAddress() { return address; }
 		inline uint16_t GetPort() { return port; }
-		inline const std::string& GetExternalUrl() { return externalUrl; }
+		inline const std::string &GetExternalAddress() { return externalAddress; }
+		inline uint16_t GetExternalPort() { return externalPort; }
 
 		inline Ref<boost::asio::io_service> GetService() const { return service; }
 
@@ -74,4 +76,3 @@ namespace server
 
 	std::string GetServerName();
 }
-

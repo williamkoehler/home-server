@@ -1,7 +1,9 @@
 # Home.
 
-![Home](/icon.png?raw=true "Home.")
-
+<p align="center">
+  <img src="/icon.png" />
+</p>
+  
 **Home.** is a open source central home automation server for Linux. It is supposed to be run on low-end devices (like RPis). At this point in time not everything is implemented and **it is not supposed to be used in the current state**.
 
 ## Getting Started

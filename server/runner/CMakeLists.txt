@@ -10,3 +10,6 @@ target_include_directories(runner
 target_link_libraries(runner
     homeserver
 )
+
+# Add top level plugin dependencies
+add_dependencies(runner debugplugin)

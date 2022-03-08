@@ -276,54 +276,11 @@ namespace server
 		snapshot.MemberReserve(propertyList.size(), allocator);
 		for (robin_hood::pair<const std::string, Ref<home::Property>> pair : propertyList)
 		{
-			switch (pair.second->GetType())
-			{
-			case home::PropertyType::kBooleanType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetBoolean()), allocator);
-				break;
-			case home::PropertyType::kIntegerType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetInteger()), allocator);
-				break;
-			case home::PropertyType::kNumberType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetNumber()), allocator);
-				break;
-			case home::PropertyType::kStringType:
-			{
-				std::string value = pair.second->GetString();
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(value.data(), value.size(), allocator), allocator);
-				break;
-			}
-			case home::PropertyType::kEndpointType:
-			{
-				home::Endpoint endpoint = pair.second->GetEndpoint();
-
-				rapidjson::Value endpointJson = rapidjson::Value(rapidjson::kObjectType);
-
-				endpointJson.AddMember("class_", rapidjson::Value("endpoint"), allocator);
-				endpointJson.AddMember("host", rapidjson::Value(endpoint.host.data(), endpoint.host.size(), allocator), allocator);
-				endpointJson.AddMember("port", rapidjson::Value(endpoint.port), allocator);
-
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), endpointJson, allocator);
-				break;
-			}
-			case home::PropertyType::kColorType:
-			{
-				home::Color color = pair.second->GetColor();
-
-				rapidjson::Value endpointJson = rapidjson::Value(rapidjson::kObjectType);
-
-				endpointJson.AddMember("class_", rapidjson::Value("color"), allocator);
-				endpointJson.AddMember("r", rapidjson::Value(color.red), allocator);
-				endpointJson.AddMember("g", rapidjson::Value(color.green), allocator);
-				endpointJson.AddMember("b", rapidjson::Value(color.blue), allocator);
-
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), endpointJson, allocator);
-				break;
-			}
-			default:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(rapidjson::kNullType), allocator);
-				break;
-			}
+			// Add property
+			snapshot.AddMember(
+				rapidjson::Value(pair.first.data(), pair.first.size(), allocator),
+				pair.second->ToJson(allocator),
+				allocator);
 		}
 	}
 }

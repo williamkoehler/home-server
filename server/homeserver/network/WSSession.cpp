@@ -106,6 +106,8 @@ namespace server
 
 		// User
 		{"get-users", JsonApi::ProcessJsonGetUsersMessageWS},
+		{"add-user", JsonApi::ProcessJsonAddUserMessageWS},
+		{"rem-user", JsonApi::ProcessJsonRemoveUserMessageWS},
 
 		// Plugins
 		{"get-plugins", JsonApi::ProcessJsonGetPluginsMessageWS},

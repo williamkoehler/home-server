@@ -5,14 +5,14 @@
 
 namespace server
 {
-	Device::Device(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room)
+	Device::Device(const std::string &name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room)
 		: name(name), deviceID(deviceID), plugin(std::move(plugin)), controller(std::move(controller)), room(std::move(room))
 	{
 	}
 	Device::~Device()
 	{
 	}
-	Ref<Device> Device::Create(const std::string& name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room)
+	Ref<Device> Device::Create(const std::string &name, identifier_t deviceID, Ref<home::DevicePlugin> plugin, Ref<DeviceController> controller, Ref<Room> room)
 	{
 		assert(plugin != nullptr);
 
@@ -32,7 +32,7 @@ namespace server
 		boost::lock_guard lock(mutex);
 		return name;
 	}
-	bool Device::SetName(const std::string& v)
+	bool Device::SetName(const std::string &v)
 	{
 		boost::lock_guard lock(mutex);
 		if (Database::GetInstance()->UpdateDevicePropName(shared_from_this(), name, v))
@@ -54,13 +54,13 @@ namespace server
 		boost::lock_guard lock(mutex);
 		if (Database::GetInstance()->UpdateDevicePropDeviceController(shared_from_this(), controller, v))
 		{
-			//if (controller != nullptr)
-				//controller->RemoveDevice(shared_from_this());
+			// if (controller != nullptr)
+			// controller->RemoveDevice(shared_from_this());
 
 			controller = v;
 
-			//if (room != nullptr)
-				//room->AddDevice(shared_from_this());
+			// if (room != nullptr)
+			// room->AddDevice(shared_from_this());
 			return true;
 		}
 		return false;
@@ -89,7 +89,7 @@ namespace server
 	}
 
 	//! Interface: Attributes
-	bool Device::AddAttribute(const std::string& id, const char* json)
+	bool Device::AddAttribute(const std::string &id, const char *json)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -111,7 +111,7 @@ namespace server
 
 		return false;
 	}
-	bool Device::RemoveAttribute(const std::string& id)
+	bool Device::RemoveAttribute(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -119,7 +119,7 @@ namespace server
 	}
 
 	//! Interface: Properites
-	Ref<home::Property> Device::AddProperty(const std::string& id, Ref<home::Property> property)
+	Ref<home::Property> Device::AddProperty(const std::string &id, Ref<home::Property> property)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -136,7 +136,7 @@ namespace server
 
 		return nullptr;
 	}
-	bool Device::RemoveProperty(const std::string& id)
+	bool Device::RemoveProperty(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -144,7 +144,7 @@ namespace server
 	}
 
 	//! Interface: Events
-	Ref<home::Event> Device::AddEvent(const std::string& id, home::EventCallback<home::Device>* callback)
+	Ref<home::Event> Device::AddEvent(const std::string &id, home::EventCallback<home::Device> *callback)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -164,14 +164,14 @@ namespace server
 
 		return nullptr;
 	}
-	bool Device::RemoveEvent(const std::string& id)
+	bool Device::RemoveEvent(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
 		return eventList.erase(id);
 	}
 
-	void Device::Invoke(const std::string& e)
+	void Device::Invoke(const std::string &e)
 	{
 		boost::lock_guard lock(interfaceMutex);
 		const robin_hood::unordered_node_map<std::string, Ref<Event>>::iterator it = eventList.find(e);
@@ -181,15 +181,14 @@ namespace server
 			// Post job
 			Ref<Event> event = it->second;
 			Home::GetInstance()->GetService()->post([this, event]() -> void
-			{
+													{
 				if (event != nullptr)
-					event->Invoke();
-			});
+					event->Invoke(); });
 		}
 	}
 
 	//! Interface: Timers
-	Ref<home::Timer> Device::AddTimer(const std::string& id, home::TimerCallback<home::Device>* callback)
+	Ref<home::Timer> Device::AddTimer(const std::string &id, home::TimerCallback<home::Device> *callback)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -209,7 +208,7 @@ namespace server
 
 		return nullptr;
 	}
-	bool Device::RemoveTimer(const std::string& id)
+	bool Device::RemoveTimer(const std::string &id)
 	{
 		boost::lock_guard lock(interfaceMutex);
 
@@ -228,7 +227,8 @@ namespace server
 	}
 
 	void Device::Update()
-	{ }
+	{
+	}
 
 	void Device::Initialize()
 	{
@@ -249,7 +249,7 @@ namespace server
 		boost::lock_guard lock(mutex, boost::adopt_lock);
 		boost::lock_guard lock2(interfaceMutex, boost::adopt_lock);
 
-		rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
+		rapidjson::Document::AllocatorType &allocator = snapshot.GetAllocator();
 
 		snapshot.SetNull();
 		allocator.Clear();
@@ -259,54 +259,11 @@ namespace server
 		snapshot.MemberReserve(propertyList.size(), allocator);
 		for (robin_hood::pair<const std::string, Ref<home::Property>> pair : propertyList)
 		{
-			switch (pair.second->GetType())
-			{
-			case home::PropertyType::kBooleanType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetBoolean()), allocator);
-				break;
-			case home::PropertyType::kIntegerType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetInteger()), allocator);
-				break;
-			case home::PropertyType::kNumberType:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(pair.second->GetNumber()), allocator);
-				break;
-			case home::PropertyType::kStringType:
-			{
-				std::string value = pair.second->GetString();
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(value.data(), value.size(), allocator), allocator);
-				break;
-			}
-			case home::PropertyType::kEndpointType:
-			{
-				home::Endpoint endpoint = pair.second->GetEndpoint();
-
-				rapidjson::Value endpointJson = rapidjson::Value(rapidjson::kObjectType);
-
-				endpointJson.AddMember("class_", rapidjson::Value("endpoint"), allocator);
-				endpointJson.AddMember("host", rapidjson::Value(endpoint.host.data(), endpoint.host.size(), allocator), allocator);
-				endpointJson.AddMember("port", rapidjson::Value(endpoint.port), allocator);
-
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), endpointJson, allocator);
-				break;
-			}
-			case home::PropertyType::kColorType:
-			{
-				home::Color color = pair.second->GetColor();
-
-				rapidjson::Value endpointJson = rapidjson::Value(rapidjson::kObjectType);
-
-				endpointJson.AddMember("class_", rapidjson::Value("color"), allocator);
-				endpointJson.AddMember("r", rapidjson::Value(color.red), allocator);
-				endpointJson.AddMember("g", rapidjson::Value(color.green), allocator);
-				endpointJson.AddMember("b", rapidjson::Value(color.blue), allocator);
-
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), endpointJson, allocator);
-				break;
-			}
-			default:
-				snapshot.AddMember(rapidjson::Value(pair.first.data(), pair.first.size(), allocator), rapidjson::Value(rapidjson::kNullType), allocator);
-				break;
-			}
+			// Add property
+			snapshot.AddMember(
+				rapidjson::Value(pair.first.data(), pair.first.size(), allocator), 
+				pair.second->ToJson(allocator), 
+				allocator);
 		}
 	}
 

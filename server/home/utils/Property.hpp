@@ -42,15 +42,17 @@ namespace home
 		virtual int64_t GetInteger() { return 0; }
 		virtual double GetNumber() { return 0.0; }
 		virtual std::string GetString() { return ""; }
-		virtual Endpoint GetEndpoint() { return { "", 0 }; }
-		virtual Color GetColor() { return { 0, 0, 0}; }
+		virtual Endpoint GetEndpoint() { return {"", 0}; }
+		virtual Color GetColor() { return {0, 0, 0}; }
 
-		virtual void SetBoolean(bool value) { }
-		virtual void SetInteger(int64_t value) { }
-		virtual void SetNumber(double value) { }
-		virtual void SetString(const std::string& value) { }
-		virtual void SetEndpoint(const Endpoint& endpoint) { }
-		virtual void SetColor(const Color& color) { }
+		virtual void SetBoolean(bool value) {}
+		virtual void SetInteger(int64_t value) {}
+		virtual void SetNumber(double value) {}
+		virtual void SetString(const std::string &value) {}
+		virtual void SetEndpoint(const Endpoint &endpoint) {}
+		virtual void SetColor(const Color &color) {}
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) { return rapidjson::Value(rapidjson::kNullType); }
 	};
 
 	class NullProperty : public Property
@@ -72,6 +74,8 @@ namespace home
 		virtual PropertyType GetType() const override;
 		virtual bool GetBoolean() override;
 		virtual void SetBoolean(bool v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 
 	class IntegerProperty : public Property
@@ -85,6 +89,8 @@ namespace home
 		virtual PropertyType GetType() const override;
 		virtual int64_t GetInteger() override;
 		virtual void SetInteger(int64_t v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 
 	class NumberProperty : public Property
@@ -98,6 +104,8 @@ namespace home
 		virtual PropertyType GetType() const override;
 		virtual double GetNumber() override;
 		virtual void SetNumber(double v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 
 	class StringProperty : public Property
@@ -110,7 +118,9 @@ namespace home
 
 		virtual PropertyType GetType() const override;
 		virtual std::string GetString() override;
-		virtual void SetString(const std::string& v) override;
+		virtual void SetString(const std::string &v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 
 	class EndpointProperty : public Property
@@ -123,7 +133,9 @@ namespace home
 
 		virtual PropertyType GetType() const override;
 		virtual Endpoint GetEndpoint() override;
-		virtual void SetEndpoint(const Endpoint& v) override;
+		virtual void SetEndpoint(const Endpoint &v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 
 	class ColorProperty : public Property
@@ -136,6 +148,8 @@ namespace home
 
 		virtual PropertyType GetType() const override;
 		virtual Color GetColor() override;
-		virtual void SetColor(const Color& v) override;
+		virtual void SetColor(const Color &v) override;
+
+		virtual rapidjson::Value ToJson(rapidjson::Document::AllocatorType &allocator) override;
 	};
 }

@@ -10,7 +10,7 @@
 namespace server
 {
 	// Home
-	void JsonApi::BuildJsonHome(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, size_t timestamp)
+	void JsonApi::BuildJsonHome(rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator, size_t timestamp)
 	{
 		assert(output.IsObject());
 
@@ -30,7 +30,7 @@ namespace server
 			// Reserve memory
 			deviceListJson.Reserve(home->deviceList.size(), allocator);
 
-			for (auto& [id, device] : home->deviceList)
+			for (auto &[id, device] : home->deviceList)
 			{
 				assert(device != nullptr);
 
@@ -68,7 +68,7 @@ namespace server
 			// Reserve memory
 			actionListJson.Reserve(home->actionList.size(), allocator);
 
-			for (auto& [id, action] : home->actionList)
+			for (auto &[id, action] : home->actionList)
 			{
 				assert(action != nullptr);
 
@@ -87,7 +87,7 @@ namespace server
 			// Reserve memory
 			roomListJson.Reserve(home->roomList.size(), allocator);
 
-			for (auto& [id, room] : home->roomList)
+			for (auto &[id, room] : home->roomList)
 			{
 				assert(room != nullptr);
 
@@ -101,7 +101,7 @@ namespace server
 			output.AddMember("rooms", roomListJson, allocator);
 		}
 	}
-	void JsonApi::DecodeJsonHome(rapidjson::Value& input)
+	void JsonApi::DecodeJsonHome(rapidjson::Value &input)
 	{
 		assert(input.IsObject());
 
@@ -166,7 +166,7 @@ namespace server
 		}
 	}
 
-	void JsonApi::BuildJsonRoom(Ref<Room> room, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonRoom(Ref<Room> room, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(room != nullptr);
 		assert(output.IsObject());
@@ -178,30 +178,30 @@ namespace server
 		output.AddMember("type", rapidjson::Value(room->type.c_str(), room->type.size()), allocator);
 
 		// Build devices
-		boost::container::set<identifier_t>& deviceList = room->deviceList;
+		boost::container::set<identifier_t> &deviceList = room->deviceList;
 
 		// Reserve memory
 		rapidjson::Value devicesJson = rapidjson::Value(rapidjson::kArrayType);
 		devicesJson.Reserve(deviceList.size(), allocator);
 
-		for (identifier_t& deviceID : deviceList)
+		for (identifier_t &deviceID : deviceList)
 			devicesJson.PushBack(rapidjson::Value(deviceID), allocator);
 
 		output.AddMember("devices", devicesJson, allocator);
 
 		// Build devicecontrollers
-		boost::container::set<identifier_t>& deviceControllerList = room->deviceControllerList;
+		boost::container::set<identifier_t> &deviceControllerList = room->deviceControllerList;
 
 		// Reserve memory
 		rapidjson::Value devicecontrollersJson = rapidjson::Value(rapidjson::kArrayType);
 		devicecontrollersJson.Reserve(deviceList.size(), allocator);
 
-		for (identifier_t& controllerID : deviceControllerList)
+		for (identifier_t &controllerID : deviceControllerList)
 			devicecontrollersJson.PushBack(rapidjson::Value(controllerID), allocator);
 
 		output.AddMember("devicecontrollers", devicecontrollersJson, allocator);
 	}
-	void JsonApi::DecodeJsonRoom(Ref<Room> room, rapidjson::Value& input)
+	void JsonApi::DecodeJsonRoom(Ref<Room> room, rapidjson::Value &input)
 	{
 		assert(room != nullptr);
 		assert(input.IsObject());
@@ -216,7 +216,7 @@ namespace server
 			room->SetType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength()));
 	}
 
-	void JsonApi::BuildJsonDeviceController(Ref<DeviceController> controller, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonDeviceController(Ref<DeviceController> controller, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(controller != nullptr);
 		assert(output.IsObject());
@@ -224,15 +224,29 @@ namespace server
 		// Lock
 		boost::shared_lock_guard lock(controller->mutex);
 
+		output.MemberReserve(5, allocator);
+
 		// Build properties
 		output.AddMember("name", rapidjson::Value(controller->name.c_str(), controller->name.size()), allocator);
 		output.AddMember("id", rapidjson::Value(controller->controllerID), allocator);
 		output.AddMember("pluginid", rapidjson::Value(controller->GetPluginID()), allocator);
 		output.AddMember("roomid",
-			controller->room != nullptr ?
-			rapidjson::Value(controller->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+						 controller->room != nullptr ? rapidjson::Value(controller->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+
+		// Attributes
+		rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+
+		// Reserve memory
+		attributesJson.MemberReserve(controller->attributeList.size(), allocator);
+
+		for (auto &[id, attribute] : controller->attributeList)
+			attributesJson.AddMember(
+				rapidjson::Value(id.data(), id.size(), allocator),
+				rapidjson::Value(attribute, allocator, true), allocator);
+
+		output.AddMember("attributes", attributesJson, allocator);
 	}
-	void JsonApi::DecodeJsonDeviceController(Ref<DeviceController> controller, rapidjson::Value& input)
+	void JsonApi::DecodeJsonDeviceController(Ref<DeviceController> controller, rapidjson::Value &input)
 	{
 		assert(controller != nullptr);
 		assert(input.IsObject());
@@ -249,7 +263,7 @@ namespace server
 		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
 			controller->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
-	void JsonApi::BuildJsonDeviceControllerState(Ref<DeviceController> controller, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonDeviceControllerState(Ref<DeviceController> controller, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(controller != nullptr);
 		assert(output.IsObject());
@@ -261,7 +275,7 @@ namespace server
 		output.AddMember("id", rapidjson::Value(controller->controllerID), allocator);
 		output.AddMember("state", rapidjson::Value(controller->snapshot, allocator), allocator);
 	}
-	void JsonApi::DecodeJsonDeviceControllerState(Ref<DeviceController> controller, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::DecodeJsonDeviceControllerState(Ref<DeviceController> controller, rapidjson::Value &input, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(controller != nullptr);
 		assert(input.IsObject());
@@ -314,7 +328,7 @@ namespace server
 										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
 									{
 										// Set endpoint
-										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+										it->second->SetEndpoint(home::Endpoint{std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint()});
 									}
 									break;
 								}
@@ -329,7 +343,7 @@ namespace server
 										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
 									{
 										// Set color
-										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+										it->second->SetColor(home::Color{(uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint()});
 									}
 									break;
 								}
@@ -351,7 +365,7 @@ namespace server
 		}
 	}
 
-	void JsonApi::BuildJsonDevice(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonDevice(Ref<Device> device, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(device != nullptr);
 		assert(output.IsObject());
@@ -359,18 +373,31 @@ namespace server
 		// Lock
 		boost::shared_lock_guard lock(device->mutex);
 
+		output.MemberReserve(6, allocator);
+
 		// Build properties
 		output.AddMember("name", rapidjson::Value(device->name.c_str(), device->name.size()), allocator);
 		output.AddMember("id", rapidjson::Value(device->deviceID), allocator);
 		output.AddMember("pluginid", rapidjson::Value(device->GetPluginID()), allocator);
 		output.AddMember("controllerid",
-			device->controller != nullptr ?
-			rapidjson::Value(device->controller->GetDeviceControllerID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+						 device->controller != nullptr ? rapidjson::Value(device->controller->GetDeviceControllerID()) : rapidjson::Value(rapidjson::kNullType), allocator);
 		output.AddMember("roomid",
-			device->room != nullptr ?
-			rapidjson::Value(device->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+						 device->room != nullptr ? rapidjson::Value(device->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+
+		// Attributes
+		rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+
+		// Reserve memory
+		attributesJson.MemberReserve(device->attributeList.size(), allocator);
+
+		for (auto &[id, attribute] : device->attributeList)
+			attributesJson.AddMember(
+				rapidjson::Value(id.data(), id.size(), allocator),
+				rapidjson::Value(attribute, allocator, true), allocator);
+
+		output.AddMember("attributes", attributesJson, allocator);
 	}
-	void JsonApi::DecodeJsonDevice(Ref<Device> device, rapidjson::Value& input)
+	void JsonApi::DecodeJsonDevice(Ref<Device> device, rapidjson::Value &input)
 	{
 		assert(device != nullptr);
 		assert(input.IsObject());
@@ -391,7 +418,7 @@ namespace server
 		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
 			device->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
-	void JsonApi::BuildJsonDeviceState(Ref<Device> device, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonDeviceState(Ref<Device> device, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(device != nullptr);
 		assert(output.IsObject());
@@ -403,7 +430,7 @@ namespace server
 		output.AddMember("id", rapidjson::Value(device->deviceID), allocator);
 		output.AddMember("state", rapidjson::Value(device->snapshot, allocator), allocator);
 	}
-	void JsonApi::DecodeJsonDeviceState(Ref<Device> device, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::DecodeJsonDeviceState(Ref<Device> device, rapidjson::Value &input, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(device != nullptr);
 		assert(input.IsObject());
@@ -455,7 +482,7 @@ namespace server
 										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
 									{
 										// Set endpoint
-										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+										it->second->SetEndpoint(home::Endpoint{std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint()});
 									}
 									break;
 								}
@@ -470,7 +497,7 @@ namespace server
 										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
 									{
 										// Set color
-										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+										it->second->SetColor(home::Color{(uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint()});
 									}
 									break;
 								}
@@ -492,7 +519,7 @@ namespace server
 		}
 	}
 
-	void JsonApi::BuildJsonAction(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonAction(Ref<Action> action, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(action != nullptr);
 		assert(output.IsObject());
@@ -500,15 +527,29 @@ namespace server
 		// Lock
 		boost::shared_lock_guard lock(action->mutex);
 
+		output.MemberReserve(5, allocator);
+
 		// Build properties
 		output.AddMember("name", rapidjson::Value(action->name.c_str(), action->name.size()), allocator);
 		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
 		output.AddMember("sourceid", rapidjson::Value(action->GetScriptSourceID()), allocator);
 		output.AddMember("roomid",
-			action->room != nullptr ?
-			rapidjson::Value(action->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+						 action->room != nullptr ? rapidjson::Value(action->room->GetRoomID()) : rapidjson::Value(rapidjson::kNullType), allocator);
+
+		// Attributes
+		rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+
+		// Reserve memory
+		attributesJson.MemberReserve(action->attributeList.size(), allocator);
+
+		for (auto &[id, attribute] : action->attributeList)
+			attributesJson.AddMember(
+				rapidjson::Value(id.data(), id.size(), allocator),
+				rapidjson::Value(attribute, allocator, true), allocator);
+
+		output.AddMember("attributes", attributesJson, allocator);
 	}
-	void JsonApi::DecodeJsonAction(Ref<Action> action, rapidjson::Value& input)
+	void JsonApi::DecodeJsonAction(Ref<Action> action, rapidjson::Value &input)
 	{
 		assert(action != nullptr);
 		assert(input.IsObject());
@@ -525,7 +566,7 @@ namespace server
 		if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())
 			action->SetRoom(home->GetRoom(roomIDIt->value.GetUint()));
 	}
-	void JsonApi::BuildJsonActionState(Ref<Action> action, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::BuildJsonActionState(Ref<Action> action, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(action != nullptr);
 		assert(output.IsObject());
@@ -537,7 +578,7 @@ namespace server
 		output.AddMember("id", rapidjson::Value(action->actionID), allocator);
 		output.AddMember("state", rapidjson::Value(action->snapshot, allocator), allocator);
 	}
-	void JsonApi::DecodeJsonActionState(Ref<Action> action, rapidjson::Value& input, rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+	void JsonApi::DecodeJsonActionState(Ref<Action> action, rapidjson::Value &input, rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator)
 	{
 		assert(action != nullptr);
 		assert(input.IsObject());
@@ -589,7 +630,7 @@ namespace server
 										portIt != propertyIt->value.MemberEnd() && portIt->value.IsUint())
 									{
 										// Set endpoint
-										it->second->SetEndpoint(home::Endpoint{ std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint() });
+										it->second->SetEndpoint(home::Endpoint{std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()), (uint16_t)portIt->value.GetUint()});
 									}
 									break;
 								}
@@ -604,7 +645,7 @@ namespace server
 										blueIt != propertyIt->value.MemberEnd() && blueIt->value.IsUint())
 									{
 										// Set color
-										it->second->SetColor(home::Color{ (uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint() });
+										it->second->SetColor(home::Color{(uint8_t)redIt->value.GetUint(), (uint8_t)greenIt->value.GetUint(), (uint8_t)blueIt->value.GetUint()});
 									}
 									break;
 								}

@@ -6,26 +6,29 @@ const id_t DIMMABLE = 2;
 bool DebugLight::Initialize(Ref<home::Device> device)
 {
 	device->AddAttribute("visuals",
-		R"([)"
-		R"(    {)"
-		R"(        "name": "State",)"
-		R"(        "type": "light-switch",)"
-		R"(        "value": {)"
-		R"(            "type": "bool",)"
-		R"(		    "id": 1)"
-		R"(        })"
-		R"(    })"
-		R"(])");
+R"([
+  {
+    "type": "light-switch",
+    "name": "State",
+    "property": "power"
+  },
+  {
+	  "type": "text-field",
+	  "name": "Text Field",
+	  "property": "text"
+  }
+])");
 
 	device->AddProperty("power", home::BooleanProperty::Create());
 	device->AddProperty("color", home::ColorProperty::Create());
 	device->AddProperty("address", home::EndpointProperty::Create());
+	device->AddProperty("text", home::StringProperty::Create());
 
 	device->AddEvent<DebugLight>("disco", &DebugLight::Disco);
 
 	Ref<home::Timer> timer = device->AddTimer<DebugLight>("disco", &DebugLight::Disco);
 	if (timer != nullptr)
-		timer->Start(10);
+		timer->Start(30);
 
 	return true;
 }

@@ -1,8 +1,9 @@
 #pragma once
-#include "../../common.hpp"
 #include "../../../homeserver/home/Room.hpp"
+#include "../../common.hpp"
 
-Ref<server::Room> MockRoom(identifier_t id = 1, const std::string& name = "unknown room", const std::string& type = "no type")
+Ref<server::Room> MockRoom(identifier_t id = 1, const std::string& name = "unknown room",
+                           const std::string& type = "no type")
 {
-	return server::Room::Create(name, id, type);
+    return server::Room::Create(name, id, type);
 }

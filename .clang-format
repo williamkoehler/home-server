@@ -1,0 +1,9 @@
+---
+BasedOnStyle: Microsoft
+NamespaceIndentation: All
+FixNamespaceComments: false
+PointerAlignment: Left
+IndentWidth: 4
+AlwaysBreakTemplateDeclarations: Yes
+
+...

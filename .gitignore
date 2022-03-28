@@ -3,6 +3,7 @@ build/
 test/
 .vs/
 .idea/
+.cache/
 **/lib
 *.json
 *.log

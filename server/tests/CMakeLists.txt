@@ -4,39 +4,35 @@ if(${ENABLE_TESTS})
     # All test files
     set(TEST_SOURCES
 
-        # Database
-        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestTables.cpp"
-        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestRooms.cpp"
-        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestControllers.cpp"
-        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestDevices.cpp"
-        "${PROJECT_SOURCE_DIR}/server/tests/homeserver/database/TestUsers.cpp"
+        # Home.Threading
+        "${PROJECT_SOURCE_DIR}/server/tests/home-threading/TestWorker.cpp"
     )
 
     # Add one test for each test file
     foreach(testfile ${TEST_SOURCES})
-        string(REPLACE ".cpp" "" testname ${testfile})
-        string(REPLACE "${PROJECT_SOURCE_DIR}/server/tests/" "" testname ${testname})
-        message(STATUS "Found " ${testname})
-        string(REPLACE "/" "-" exename ${testname})
+        string(REGEX REPLACE ".cpp\$" "" exename ${testfile})
+        string(REGEX REPLACE "^${PROJECT_SOURCE_DIR}/server/tests/" "" exename ${exename})
+        string(REPLACE "/" "" exename ${exename})
+        string(REGEX REPLACE "([A-Z])" "-\\1" exename ${exename})
+        string(TOLOWER ${exename} exename)
+        message(STATUS "Found " ${exename})
+        string(REPLACE "-" "_" testname ${exename})
 
-        add_executable(${exename} ${testfile} "common.hpp")
+        add_executable(${testname} ${testfile} "common.hpp")
+        set_target_properties(${testname} PROPERTIES OUTPUT_NAME ${exename})
     
         # Add necessary libraries
-        target_include_directories(${exename}
+        target_include_directories(${testname}
             PUBLIC
-            "${PROJECT_SOURCE_DIR}/server/home"
-            "${PROJECT_SOURCE_DIR}/server/homeserver"
-            "${PROJECT_SOURCE_DIR}/server/plugins"
             "${PROJECT_SOURCE_DIR}/dependencies"
+            "${PROJECT_SOURCE_DIR}/server"
             ${OPENSSL_INCLUDE_DIR}
             ${Boost_INCLUDE_DIRS}
             ${SQLite3_INCLUDE_DIRS}
         )
-        target_link_libraries(${exename}
-            HOME
-            HOMESERVER
-            XXHASH
-            LIBQUICKMAIL
+        target_link_libraries(${testname}
+            home_common
+            home_threading
             dl
             ${CMAKE_THREAD_LIBS_INIT}
             ${OPENSSL_LIBRARIES}
@@ -44,6 +40,6 @@ if(${ENABLE_TESTS})
             ${SQLite3_LIBRARIES}
         )
 
-        add_test(NAME ${testname} COMMAND $<TARGET_FILE:${exename}>)
+        add_test(NAME ${testname} COMMAND $<TARGET_FILE:${testname}>)
     endforeach(testfile ${TEST_SOURCES})
 endif()

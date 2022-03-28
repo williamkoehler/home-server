@@ -1,7 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <iostream>
 #include <string.h>
-#include <cstdint>
 #ifdef _WIN32
 typedef intptr_t ssize_t;
 #endif
@@ -18,7 +18,7 @@ typedef intptr_t ssize_t;
 
 enum ModbusExceptions
 {
-    //Modbus
+    // Modbus
     IllegalFunction = 0x01,
     IllegalAddress = 0x02,
     IllegalValue = 0x03,
@@ -34,44 +34,47 @@ enum ModbusExceptions
 
 class MODBUS_EXPORT Modbus
 {
-private:
+  private:
     std::string host;
     uint16_t port;
     int sock;
     uint16_t msgID;
     uint8_t slaveID;
 
-    void BuildRequest(uint8_t *msg, uint16_t address, uint8_t function);
+    void BuildRequest(uint8_t* msg, uint16_t address, uint8_t function);
 
     uint16_t SendReadRequest(uint16_t address, uint16_t amount, uint8_t function);
-    uint16_t SendWriteRequest(uint16_t address, uint16_t amount, uint8_t function, uint16_t *value);
+    uint16_t SendWriteRequest(uint16_t address, uint16_t amount, uint8_t function, uint16_t* value);
 
-    ssize_t SendRequest(uint8_t *msg, int length);
-    ssize_t ReceiveResponse(uint8_t *buffer, uint16_t transactionID);
+    ssize_t SendRequest(uint8_t* msg, int length);
+    ssize_t ReceiveResponse(uint8_t* buffer, uint16_t transactionID);
 
-    uint8_t HandleError(uint8_t *msg, uint8_t function);
+    uint8_t HandleError(uint8_t* msg, uint8_t function);
 
-public:
+  public:
     Modbus();
-    ~Modbus();
+    virtual ~Modbus();
 
-    inline bool IsConnected() { return sock != 0; }
+    inline bool IsConnected()
+    {
+        return sock != 0;
+    }
 
     void SetEndpoint(std::string host, uint16_t port);
     bool Connect();
-         
+
     void SetSlaveID(uint8_t id);
-         
-    uint8_t ReadHoldingRegisters(uint16_t address, uint16_t amount, uint16_t *buffer);
-    uint8_t ReadInputRegisters(uint16_t address, uint16_t amount, uint16_t *buffer);
+
+    uint8_t ReadHoldingRegisters(uint16_t address, uint16_t amount, uint16_t* buffer);
+    uint8_t ReadInputRegisters(uint16_t address, uint16_t amount, uint16_t* buffer);
     uint8_t ReadCoils(uint16_t address, uint16_t amount, bool* buffer);
     uint8_t ReadInputBits(uint16_t address, uint16_t amount, bool* buffer);
-    
+
     uint8_t WriteCoil(uint16_t address, bool to_write);
     uint8_t WriteRegister(uint16_t address, uint16_t value);
-    uint8_t WriteCoils(uint16_t address, uint16_t amount, bool* value );
-    uint8_t WriteRegisters(uint16_t address, uint16_t amount, uint16_t *value);
-    
+    uint8_t WriteCoils(uint16_t address, uint16_t amount, bool* value);
+    uint8_t WriteRegisters(uint16_t address, uint16_t amount, uint16_t* value);
+
     void Close();
 
     const char* GetException(uint8_t exception);

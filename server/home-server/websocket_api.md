@@ -1,0 +1,109 @@
+# WebSocket Api
+
+The websocket api is the main api used to communicate with the server. It allows fast response time and live change.
+
+## Connection
+
+The connection is estabilished using the `\ws` url. 
+Additionally a `Autorization` header field must be passed to authenticate, either with a simple Basic Auth or a Bearer token. The bearer can be generated using the HTTP Api.
+
+## Request
+
+Every request must contain a two important fields:
+- `msgid`: A number with will be sent in the response (allows for multiple request to be sent at the same time)
+- `msg`: A string which tells the server which method to used to process the request
+
+## Response
+
+Every response (to a request) allways contain the following fields:
+- `msgid`: The same message id used in the request
+- `log`: A list of strings containing logs
+- `error`: The error code that resultet from the method (0 = no error)
+
+## Methods
+
+📓 Note:
+- **\<value desc: value type\>** describe the content of a value and its type
+- Fields with a **?** are not necessary or can be omited
+
+### Settings
+
+#### Method `get-settings`
+
+##### Request
+
+##### Response
+```json
+{
+	"core": {
+		"name": <server name: string>
+	},
+	"email": {
+		"recipients": [
+			<... email recipients: string>
+		]
+	}
+}
+```
+
+#### Method `set-settings`
+
+##### Request ⚠️ Only administrators
+```json
+{
+}
+```
+
+##### Response
+```json
+{
+	"core"?: {
+		"name"?: "<server name>"
+	},
+	"email"?: {
+		"recipients": [
+			<... email recipients: string>
+		]
+	}
+}
+```
+
+### User
+#### Method `get-users`
+
+### Plugins
+#### Method `get-plugins`
+
+### Scripting
+#### Method `get-scriptsources`
+
+#### Method `add-scriptsource`
+#### Method `rem-scriptsource`
+
+#### Method `get-scriptsource`
+#### Method `set-scriptsource`
+
+#### Method `get-scriptsource?data`
+#### Method `set-scriptsource?data`
+
+### Home
+#### Method `get-home`
+#### Method `set-home`
+
+### Room
+#### Method `add-room`
+#### Method `rem-room`
+
+#### Method `get-room`
+#### Method `set-room`
+
+### Thing
+#### Method `add-thing`
+#### Method `rem-thing`
+
+#### Method `get-thing`
+#### Method `set-thing`
+
+#### Method `get-things?state`
+#### Method `get-thing?state`
+#### Method `set-thing?state`

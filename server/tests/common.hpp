@@ -1,6 +1,5 @@
 #pragma once
-#include "../homeserver/common.hpp"
-#include "../homeserver/Core.hpp"
+#include <home-common/common.hpp>
 
 // Boost Tests
 #define BOOST_TEST_DYN_LINK

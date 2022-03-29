@@ -60,10 +60,10 @@ namespace server
                 if (sqlite3_exec(
                         database->connection,
                         R"(create table if not exists devices)"
-                        R"((id integer not null primary key, name text, scriptsourceid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references things (id), foreign key (roomid) references rooms (id)))",
+                        R"((id integer not null primary key, name text, scriptsourceid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references devices (id), foreign key (roomid) references rooms (id)))",
                         nullptr, nullptr, &err) != SQLITE_OK)
                 {
-                    LOG_ERROR("Failing to create 'things' table.\n{0}", err);
+                    LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
                     return nullptr;
                 }
             }
@@ -626,7 +626,7 @@ namespace server
             // Check values
             if (sqlite3_column_type(statement, 1) == SQLITE_NULL || sqlite3_column_type(statement, 5) == SQLITE_NULL)
             {
-                LOG_ERROR("Failing to load invalid thing {0}", id);
+                LOG_ERROR("Failing to load invalid device {0}", id);
                 continue;
             }
 
@@ -645,7 +645,7 @@ namespace server
             // Check values
             if (name == nullptr || data == nullptr)
             {
-                LOG_ERROR("Failing to load invalid thing properties {0}", id);
+                LOG_ERROR("Failing to load invalid device properties {0}", id);
                 continue;
             }
 
@@ -668,7 +668,7 @@ namespace server
         if (sqlite3_prepare_v2(
                 connection,
                 R"(insert into devices values)"
-                R"(((select ifnull((select id+1 from things where (id+1) not in (select id from things) order by id asc limit 1), 1)),)"
+                R"(((select ifnull((select id+1 from devices where (id+1) not in (select id from devices) order by id asc limit 1), 1)),)"
                 R"(null, 0, null, null, "{}"))",
                 -1, &statement, nullptr) != SQLITE_OK)
         {
@@ -679,7 +679,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to insert thing into 'things' table.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to insert device into 'devices' table.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }
@@ -720,7 +720,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update thing.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to update device.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -754,7 +754,41 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update thing name.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to update device name.\n{0}", sqlite3_errmsg(connection));
+            sqlite3_finalize(statement);
+            return false;
+        }
+
+        sqlite3_finalize(statement);
+
+        return true;
+    }bool SQLiteDatabase::UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue)
+    {
+        // Lock main mutex
+        boost::lock_guard lock(mutex);
+
+        // Insert into database
+        sqlite3_stmt* statement;
+
+        if (sqlite3_prepare_v2(connection, R"(update devices set scriptsourceid = ? where id = ?)", -1, &statement,
+                               nullptr) != SQLITE_OK)
+        {
+            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            sqlite3_finalize(statement);
+            return false;
+        }
+
+        if (sqlite3_bind_int64(statement, 1, newValue) != SQLITE_OK ||
+            sqlite3_bind_int64(statement, 2, id) != SQLITE_OK)
+        {
+            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            sqlite3_finalize(statement);
+            return false;
+        }
+
+        if (sqlite3_step(statement) != SQLITE_DONE)
+        {
+            LOG_ERROR("Failing to update device script source.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -789,7 +823,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update thing controller.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to update device controller.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -824,7 +858,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update thing room.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to update device room.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -858,7 +892,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to remove thing from 'things' table.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to remove device from 'devices' table.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -884,7 +918,7 @@ namespace server
 
         if (sqlite3_step(statement) != SQLITE_ROW)
         {
-            LOG_ERROR("Failing to count things.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failing to count devices.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }

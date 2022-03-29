@@ -104,6 +104,6 @@ Every response (to a request) allways contain the following fields:
 #### Method `get-thing`
 #### Method `set-thing`
 
-#### Method `get-things?state`
+#### Method `get-devices?state`
 #### Method `get-thing?state`
 #### Method `set-thing?state`

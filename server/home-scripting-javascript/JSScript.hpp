@@ -70,11 +70,11 @@ namespace server
                 /// @return Successful
                 virtual bool Initialize() override;
 
-                /// @brief Invoke duktape event (should only be used by timer and event)
+                /// @brief Invoke event
                 ///
                 /// @param event Event
                 /// @return Successfulness
-                bool InvokeImpl(const std::string& event);
+                virtual bool Invoke(const std::string& event) override;
 
                 /// @brief Terminate script
                 ///

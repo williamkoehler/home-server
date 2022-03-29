@@ -1,7 +1,5 @@
 #include "NativeScript.hpp"
 #include "NativeScriptSource.hpp"
-#include "utils/NativeEvent.hpp"
-#include "utils/NativeTimer.hpp"
 
 namespace server
 {
@@ -16,7 +14,7 @@ namespace server
             NativeScript::~NativeScript()
             {
             }
-            
+
             bool NativeScript::AddAttribute(const std::string& id, const char* json)
             {
                 // Check existance
@@ -93,18 +91,18 @@ namespace server
                 eventList.clear();
             }
 
-            Ref<Timer> NativeScript::AddTimer(const std::string& id, TimerCallback callback)
+            Ref<Timer> NativeScript::AddTimer(const std::string& id, const std::string& event)
             {
                 // Check existance
-                if (!eventList.contains(id))
+                if (!timerList.contains(id))
                 {
                     // Create timer instance
-                    Ref<NativeTimer> timer = boost::make_shared<NativeTimer>(shared_from_this(), callback);
+                    Ref<Timer> timer = boost::make_shared<Timer>(shared_from_this(), event);
 
                     // Add timer to list
                     if (timer != nullptr)
                     {
-                        eventList[id] = timer;
+                        timerList[id] = timer;
                         return timer;
                     }
                 }
@@ -122,15 +120,60 @@ namespace server
 
             bool NativeScript::Initialize()
             {
-                boost::lock_guard lock(mutex);
+                bool result;
 
-                return InitializeScript();
+                // Terminate script
+                {
+                    boost::lock_guard lock(mutex);
+
+                    result = InitializeScript();
+                }
+
+                // Take snapshot
+                TakeSnapshot();
+
+                return result;
             }
+
+            bool NativeScript::Invoke(const std::string& event)
+            {
+
+                Ref<NativeEvent> r = boost::dynamic_pointer_cast<NativeEvent>(GetEvent(event));
+                if (r != nullptr)
+                {
+                    try
+                    {
+                        // Call C++ Method
+                        ((Script*)this->*r->GetCallback())();
+                    }
+                    catch (std::exception)
+                    {
+                    }
+
+                    // Take snapshot
+                    TakeSnapshot();
+
+                    return true;
+                }
+
+                return false;
+            }
+
             bool NativeScript::Terminate()
             {
-                boost::lock_guard lock(mutex);
+                bool result;
 
-                return TerminateScript();
+                // Terminate script
+                {
+                    boost::lock_guard lock(mutex);
+
+                    result = TerminateScript();
+                }
+
+                // Take snapshot
+                TakeSnapshot();
+
+                return result;
             }
         }
     }

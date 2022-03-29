@@ -1,11 +1,13 @@
 #include "Script.hpp"
+#include "utils/Event.hpp"
+#include "utils/Property.hpp"
+#include "utils/Timer.hpp"
 
 namespace server
 {
     namespace scripting
     {
-        Script::Script(Ref<View> view, Ref<ScriptSource> scriptSource)
-            : view(view), scriptSource(scriptSource)
+        Script::Script(Ref<View> view, Ref<ScriptSource> scriptSource) : view(view), scriptSource(scriptSource)
         {
             assert(view != nullptr);
             assert(scriptSource != nullptr);
@@ -26,21 +28,59 @@ namespace server
             return it->second;
         }
 
-        bool Script::Invoke(const std::string& event)
+        Ref<Event> Script::GetEvent(const std::string& id)
         {
             // Lock main mutex
             boost::lock_guard lock(mutex);
 
-            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(event);
-            if (it != eventList.end())
+            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(id);
+            if (it == eventList.end())
+                return nullptr;
+
+            return it->second;
+        }
+
+        Ref<Timer> Script::GetTimer(const std::string& id)
+        {
+            // Lock main mutex
+            boost::lock_guard lock(mutex);
+
+            const robin_hood::unordered_node_map<std::string, Ref<Timer>>::const_iterator it = timerList.find(id);
+            if (it == timerList.end())
+                return nullptr;
+
+            return it->second;
+        }
+
+        bool Script::PostInvoke(const std::string& event)
+        {
+            GetWorker()->GetContext().post(boost::bind(&Script::Invoke, shared_from_this(), event));
+
+            return true;
+        }
+
+        void Script::TakeSnapshot()
+        {
+            // Lock main and snapshot mutex
+            boost::lock(mutex, snapshotMutex);
+            boost::lock_guard lock2(mutex, boost::adopt_lock);
+            boost::lock_guard lock(snapshotMutex, boost::adopt_lock);
+
+            // Prepare rapidjson snapshot
+            rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
+
+            snapshot.SetNull();
+            allocator.Clear();
+
+            snapshot.SetObject();
+
+            snapshot.MemberReserve(propertyList.size(), allocator);
+            for (auto& [id, property] : propertyList)
             {
-                // Invoke event
-                it->second->PostInvoke();
-
-                return true;
+                // Add property
+                snapshot.AddMember(rapidjson::Value(id.data(), id.size(), allocator), property->JsonGet(allocator),
+                                   allocator);
             }
-
-            return false;
         }
 
         void Script::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -65,16 +105,9 @@ namespace server
         {
             assert(output.IsObject());
 
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
+            boost::lock_guard lock(snapshotMutex);
 
-            output.MemberReserve(propertyList.size(), allocator);
-            for (auto& [id, property] : propertyList)
-            {
-                // Add property
-                output.AddMember(rapidjson::Value(id.data(), id.size(), allocator), property->JsonGet(allocator),
-                                 allocator);
-            }
+            output.CopyFrom(snapshot, allocator, true);
         }
         void Script::JsonSetState(rapidjson::Value& input)
         {

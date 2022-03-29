@@ -1,8 +1,8 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
 #include "utils/JSEvent.hpp"
-#include "utils/JSTimer.hpp"
 #include <home-scripting/utils/Property.hpp>
+#include <home-scripting/utils/Timer.hpp>
 
 extern "C"
 {
@@ -246,12 +246,11 @@ namespace server
                     std::string callback = std::string(callbackStr, callbackLength);
 
                     // Add timer
-                    Ref<Timer> timer = boost::make_shared<JSTimer>(
-                        boost::dynamic_pointer_cast<JSScript>(shared_from_this()), callback);
+                    Ref<Timer> timer = boost::make_shared<Timer>(shared_from_this(), callback);
                     if (timer != nullptr)
                     {
-                        // Insert property
-                        eventList[name] = timer;
+                        // Insert timer
+                        timerList[name] = timer;
                     }
 
                     // Pop type
@@ -475,8 +474,9 @@ namespace server
                 return 0;
             }
 
-            bool JSScript::InvokeImpl(const std::string& event)
+            bool JSScript::Invoke(const std::string& event)
             {
+                return true;
             }
             // bool JSScript::Invoke(Ref<View> sender, const std::string& event)
             // {

@@ -44,13 +44,13 @@ namespace server
                 return scriptSourceList.size();
             }
 
-            Ref<ScriptSource> GetScriptSource(identifier_t sourceID);
+            Ref<ScriptSource> GetScriptSource(identifier_t id);
 
             bool RemoveScriptSource(identifier_t id);
 
             //! Script
 
-            Ref<Script> CreateDeviceScript(identifier_t id);
+            Ref<Script> CreateDeviceScript(identifier_t id, Ref<View> view);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
         };

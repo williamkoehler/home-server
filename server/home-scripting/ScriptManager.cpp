@@ -118,12 +118,12 @@ namespace server
             return scriptSource;
         }
 
-        Ref<ScriptSource> ScriptManager::GetScriptSource(identifier_t sourceID)
+        Ref<ScriptSource> ScriptManager::GetScriptSource(identifier_t id)
         {
             boost::lock_guard lock(mutex);
 
             const boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
-                scriptSourceList.find(sourceID);
+                scriptSourceList.find(id);
             if (it == scriptSourceList.end())
                 return nullptr;
 
@@ -147,10 +147,22 @@ namespace server
                 return false;
         }
 
-        Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id)
+        Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id, Ref<View> view)
         {
-            LOG_CODE_MISSING("Create device script");
-            return nullptr;
+            boost::lock_guard lock(mutex);
+
+            const boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
+                scriptSourceList.find(id);
+            if (it == scriptSourceList.end())
+                return nullptr;
+
+            Ref<ScriptSource> scriptSource = it->second;
+
+            // Verify type
+            if (scriptSource->GetUsage() != ScriptUsage::kDeviceScriptUsage)
+                return nullptr;
+
+            return scriptSource->CreateScript(view);
         }
 
         void ScriptManager::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)

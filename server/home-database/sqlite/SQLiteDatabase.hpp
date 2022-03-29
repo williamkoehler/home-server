@@ -112,6 +112,7 @@ namespace server
 
         virtual bool UpdateDevicePropName(identifier_t id, const std::string& value,
                                           const std::string& newValue) override;
+        virtual bool UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue) override;
         virtual bool UpdateDevicePropController(identifier_t id, identifier_t value, identifier_t newValue) override;
         virtual bool UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue) override;
 

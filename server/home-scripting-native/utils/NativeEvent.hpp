@@ -12,13 +12,12 @@ namespace server
         {
             class NativeScript;
 
-            using EventCallback = bool(Script::*)();
+            using EventCallback = bool (Script::*)();
 
             template <class Caller>
-            struct EventCallbackConversion
-            {
+            union EventCallbackConversion {
+                bool (Caller::*method)();
                 EventCallback function;
-                bool(Caller::*method)();
             };
 
             class NativeEvent : public Event
@@ -29,7 +28,13 @@ namespace server
               public:
                 NativeEvent(Ref<Script> script, EventCallback callback);
 
-                virtual void Invoke() override;
+                /// @brief Get callback pointer
+                ///
+                /// @return Callback method pointer
+                inline EventCallback GetCallback() const
+                {
+                    return callback;
+                }
             };
         }
     }

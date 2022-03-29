@@ -3,28 +3,25 @@
 #include "Home.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
+#include <home-scripting/Script.hpp>
+#include <home-scripting/ScriptManager.hpp>
+#include <home-scripting/ScriptSource.hpp>
 
 namespace server
 {
     namespace main
     {
-        Device::Device(identifier_t id, const std::string& name, Ref<scripting::Script> script, Ref<Device> controller,
-                       Ref<Room> room)
-            : id(id), name(name), controller(std::move(controller)), room(std::move(room))
+        Device::Device(identifier_t id, const std::string& name, Ref<Device> controller, Ref<Room> room)
+            : id(id), name(name), script(nullptr), controller(std::move(controller)), room(std::move(room))
         {
         }
         Device::~Device()
         {
         }
-        Ref<Device> Device::Create(identifier_t id, const std::string& name, Ref<scripting::Script> script,
+        Ref<Device> Device::Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                                    Ref<Device> controller, Ref<Room> room)
         {
-            assert(script != nullptr);
-            assert(controller != nullptr);
-            assert(room != nullptr);
-
-            Ref<Device> device =
-                boost::make_shared<Device>(id, name, std::move(script), std::move(controller), std::move(room));
+            Ref<Device> device = boost::make_shared<Device>(id, name, std::move(controller), std::move(room));
 
             if (device != nullptr)
             {
@@ -36,8 +33,19 @@ namespace server
                     return nullptr;
                 }
 
-                // Take first snapshot
-                device->TakeSnapshot();
+                if (scriptSourceID != 0)
+                {
+                    // Create script
+                    Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+                    assert(scriptManager != nullptr);
+
+                    device->script = scriptManager->CreateDeviceScript(scriptSourceID, device->view);
+                    if (device->script == nullptr)
+                    {
+                        LOG_ERROR("Create device script '{0}'", scriptSourceID);
+                        return nullptr;
+                    }
+                }
             }
 
             return device;
@@ -63,6 +71,49 @@ namespace server
             }
 
             return false;
+        }
+
+        bool Device::SetScriptSourceID(identifier_t scriptSourceID)
+        {
+            boost::lock_guard lock(mutex);
+
+            Ref<Database> database = Database::GetInstance();
+            assert(database != nullptr);
+
+            if (database->UpdateDevicePropScriptSource(id, scriptSourceID))
+            {
+                if (scriptSourceID != 0)
+                {
+                    // Create script
+                    Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
+                    assert(scriptManager != nullptr);
+
+                    script = scriptManager->CreateDeviceScript(scriptSourceID, view);
+                    if (script == nullptr)
+                    {
+                        LOG_ERROR("Create device script '{0}'", scriptSourceID);
+                        return false;
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    script = nullptr;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        identifier_t Device::GetScriptSourceID()
+        {
+            boost::lock_guard lock(mutex);
+
+            if (script != nullptr)
+                return script->GetSourceID();
+
+            return 0;
         }
 
         Ref<Device> Device::GetController()
@@ -147,23 +198,6 @@ namespace server
             script->Terminate();
         }
 
-        void Device::TakeSnapshot()
-        {
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
-            // Prepare rapidjson snapshot
-            rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
-
-            snapshot.SetNull();
-            allocator.Clear();
-
-            snapshot.SetObject();
-
-            // Fill snapshot
-            script->JsonGet(snapshot, allocator);
-        }
-
         void Device::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
@@ -178,7 +212,10 @@ namespace server
 
             output.AddMember("name", rapidjson::Value(name.data(), name.size(), allocator), allocator);
 
-            output.AddMember("scriptsourceid", rapidjson::Value(GetScriptSourceID()), allocator);
+            output.AddMember("scriptsourceid",
+                             script != nullptr ? rapidjson::Value(script->GetSourceID())
+                                               : rapidjson::Value(rapidjson::kNullType),
+                             allocator);
 
             output.AddMember("controllerid",
                              controller != nullptr ? rapidjson::Value(controller->id)
@@ -224,16 +261,19 @@ namespace server
 
             // Build properties
             output.AddMember("id", rapidjson::Value(id), allocator);
-            output.AddMember("state", rapidjson::Value(snapshot, allocator), allocator);
+
+            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
+
+            if (script != nullptr)
+                script->JsonGetState(state, allocator);
+
+            output.AddMember("state", state, allocator);
         }
         void Device::JsonSetState(rapidjson::Value& input)
         {
             assert(input.IsObject());
 
             script->JsonSetState(input);
-
-            // Update snapshot
-            TakeSnapshot();
         }
     }
 }

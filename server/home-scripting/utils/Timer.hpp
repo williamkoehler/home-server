@@ -6,22 +6,21 @@ namespace server
 {
     namespace scripting
     {
-        class Timer : public Event
+        class Timer : public boost::enable_shared_from_this<Timer>
         {
           protected:
+            WeakRef<Script> script;
+
             size_t interval;
             boost::asio::deadline_timer timer;
+
+            std::string event;
 
             void TimerHandler(const boost::system::error_code& err);
 
           public:
-            Timer(Ref<Script> script);
+            Timer(Ref<Script> script, const std::string& event);
             virtual ~Timer();
-
-            virtual EventType GetType() override
-            {
-                return EventType::kTimerEventType;
-            }
 
             /// @brief Start timer
             /// @param interval Interval in seconds

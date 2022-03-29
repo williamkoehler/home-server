@@ -18,7 +18,10 @@ namespace server
               public:
                 JSEvent(Ref<JSScript> script, const std::string& callback);
 
-                virtual void Invoke() override;
+                inline std::string GetCallback() const
+                {
+                    return callback;
+                }
             };
         }
     }

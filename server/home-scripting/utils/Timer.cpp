@@ -1,13 +1,14 @@
 #include "Timer.hpp"
 #include "../Script.hpp"
-#include <boost/smart_ptr/intrusive_ptr.hpp>
 
 namespace server
 {
     namespace scripting
     {
-        Timer::Timer(Ref<Script> script) : Event(script), timer(script->GetWorker()->GetContext())
+        Timer::Timer(Ref<Script> script, const std::string& event)
+            : script(script), timer(script->GetWorker()->GetContext()), event(event)
         {
+            assert(script != nullptr);
         }
         Timer::~Timer()
         {
@@ -17,13 +18,16 @@ namespace server
         {
             if (!err)
             {
-                // Invoke timer
-                Invoke();
+                Ref<Script> r = script.lock();
+
+                if (r != nullptr)
+                {
+                    // Invoke event
+                    r->Invoke(event);
+                }
 
                 timer.expires_from_now(boost::posix_time::seconds(interval));
-                timer.async_wait(boost::bind(&Timer::TimerHandler,
-                                             boost::dynamic_pointer_cast<Timer>(shared_from_this()),
-                                             boost::placeholders::_1));
+                timer.async_wait(boost::bind(&Timer::TimerHandler, shared_from_this(), boost::placeholders::_1));
             }
         }
 
@@ -32,8 +36,7 @@ namespace server
             interval = i;
 
             timer.expires_from_now(boost::posix_time::seconds(interval));
-            timer.async_wait(boost::bind(&Timer::TimerHandler, boost::dynamic_pointer_cast<Timer>(shared_from_this()),
-                                         boost::placeholders::_1));
+            timer.async_wait(boost::bind(&Timer::TimerHandler, shared_from_this(), boost::placeholders::_1));
         }
         void Timer::Stop()
         {

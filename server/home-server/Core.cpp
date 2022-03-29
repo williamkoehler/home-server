@@ -122,6 +122,10 @@ namespace server
 
     void Core::Run()
     {
+        // Start home worker
+        home->Run();
+
+        // Start core worker
         worker->Start(true);
     }
 

@@ -14,38 +14,38 @@ extern "C" Ref<DebugLight> CreateDebugLight(Ref<scripting::View> view, Ref<nativ
 
 bool DebugLight::InitializeScript()
 {
-    //     device.AddAttribute("visuals",
-    //                         R"([
-    //   {
-    //     "type": "light-switch",
-    //     "name": "State",
-    //     "property": "power"
-    //   },
-    //   {
-    // 	  "type": "text-field",
-    // 	  "name": "Text Field",
-    // 	  "property": "text"
-    //   }
-    // ])");
+    AddAttribute("visuals",
+                 R"([
+                        {
+                            "type": "light-switch",
+                            "name": "State",
+                            "property": "power"
+                        },
+                        {
+                            "type": "text-field",
+                            "name": "Text Field",
+                            "property": "text"
+                        }
+                    ])");
 
-    //     power = home::BooleanProperty::Create();
-    //     device.AddProperty("power", power);
+    power = AddProperty("power", BooleanProperty::Create());
 
-    //     device.AddProperty("color", home::ColorProperty::Create());
-    //     device.AddProperty("address", home::EndpointProperty::Create());
-    //     device.AddProperty("text", home::StringProperty::Create());
+    AddProperty("color", ColorProperty::Create());
+    AddProperty("address", EndpointProperty::Create());
+    AddProperty("text", StringProperty::Create());
 
-    //     device.AddEvent<DebugLight>("disco", &DebugLight::Disco);
+    AddEvent<DebugLight>("disco", &DebugLight::Disco);
 
-    //     Ref<home::Timer> timer = device.AddTimer<DebugLight>("disco", &DebugLight::Disco);
-    //     if (timer != nullptr)
-    //         timer->Start(30);
+    Ref<Timer> timer = AddTimer("disco", "disco");
+    if (timer != nullptr)
+        timer->Start(10);
 
     return true;
 }
 
 bool DebugLight::Disco()
 {
+    power->SetBoolean(!power->GetBoolean());
     LOG_INFO("Disco {0}", power->GetBoolean());
     return true;
 }

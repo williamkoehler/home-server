@@ -2,9 +2,6 @@
 #include "Device.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
-#include <home-scripting/Script.hpp>
-#include <home-scripting/ScriptManager.hpp>
-#include <home-scripting/ScriptSource.hpp>
 
 namespace server
 {
@@ -167,24 +164,13 @@ namespace server
         bool Home::LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                               identifier_t controllerID, identifier_t roomID, const std::string_view& data)
         {
-            // Get script source
-            Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
-            assert(scriptManager != nullptr);
-
-            Ref<scripting::Script> script = scriptManager->CreateDeviceScript(scriptSourceID);
-            if (script == nullptr)
-            {
-                LOG_ERROR("Create script '{0}'", scriptSourceID);
-                return false;
-            }
-
             // Get controller and room
             //! We don't care if no room nor controller is found, since it is allowed to be null
             Ref<Device> controller = GetDevice(controllerID);
             Ref<Room> room = GetRoom(roomID);
 
             // Create device
-            Ref<Device> device = Device::Create(id, name, std::move(script), std::move(controller), std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(controller), std::move(room));
 
             // Add device
             if (device != nullptr)
@@ -203,18 +189,6 @@ namespace server
         Ref<Device> Home::AddDevice(const std::string& name, identifier_t scriptSourceID, identifier_t controllerID,
                                     identifier_t roomID, rapidjson::Value& json)
         {
-
-            // Create script
-            Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
-            assert(scriptManager != nullptr);
-
-            Ref<scripting::Script> script = scriptManager->CreateDeviceScript(scriptSourceID);
-            if (script == nullptr)
-            {
-                LOG_ERROR("Create script '{0}'", scriptSourceID);
-                return nullptr;
-            }
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -233,7 +207,7 @@ namespace server
             Ref<Room> room = GetRoom(roomID);
 
             // Create new device
-            Ref<Device> device = Device::Create(id, name, std::move(script), std::move(controller), std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(controller), std::move(room));
 
             // Add device
             if (device != nullptr)

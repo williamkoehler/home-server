@@ -12,17 +12,6 @@ namespace server
             {
                 assert(script != nullptr);
             }
-
-            void JSEvent::Invoke()
-            {
-                Ref<JSScript> r = boost::dynamic_pointer_cast<JSScript>(script.lock());
-
-                if (r != nullptr)
-                {
-                    // Post job
-                    r->GetWorker()->GetContext().post(boost::bind(&JSScript::InvokeImpl, r, callback));
-                }
-            }
         }
     }
 }

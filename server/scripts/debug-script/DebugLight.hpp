@@ -8,7 +8,7 @@ class DebugLight : public server::scripting::native::NativeScript
     // DEVICEPLUGIN_DESCRIPTION(DebugLight, "Debug Light", "Debug light that does not control anything.");
     static Ref<DebugLight> Create(Ref<scripting::View> view, Ref<native::NativeScriptSource> scriptSource);
 
-    Ref<BooleanProperty> power;
+    Ref<Property> power;
 
     virtual bool InitializeScript() override;
 

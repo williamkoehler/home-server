@@ -12,13 +12,5 @@ namespace server
         Event::~Event()
         {
         }
-
-        void Event::PostInvoke()
-        {
-            Ref<Script> r = script.lock();
-
-            if (r != nullptr)
-                r->GetWorker()->GetContext().post(boost::bind(&Event::Invoke, shared_from_this()));
-        }
     }
 }

@@ -17,48 +17,48 @@ namespace server
 
             const identifier_t id;
             std::string name;
-            const Ref<scripting::Script> script;
+            Ref<scripting::Script> script;
 
             Ref<Device> controller;
             Ref<Room> room;
 
-            rapidjson::Document snapshot;
-
             Ref<DeviceView> view;
 
           public:
-            Device(identifier_t id, const std::string& name, Ref<scripting::Script> script, Ref<Device> controller,
-                   Ref<Room> room);
+            Device(identifier_t id, const std::string& name, Ref<Device> controller, Ref<Room> room);
             virtual ~Device();
-            static Ref<Device> Create(identifier_t id, const std::string& name, Ref<scripting::Script> script,
+            static Ref<Device> Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                                       Ref<Device> controller, Ref<Room> room);
 
             /// @brief Get device id
-            /// 
-            /// @return Device id 
+            ///
+            /// @return Device id
             inline identifier_t GetID()
             {
                 return id;
             }
 
             /// @brief Get device name
-            /// 
-            /// @return Device name 
+            ///
+            /// @return Device name
             std::string GetName();
 
             /// @brief Set device name
-            /// 
+            ///
             /// @param v New device name
             /// @return Successfulness
             bool SetName(const std::string& v);
 
+            /// @brief Set script source id
+            /// 
+            /// @param scriptSource Script source id
+            /// @return Successfulness
+            bool SetScriptSourceID(identifier_t scriptSourceID);
+
             /// @brief Get script source id
             ///
             /// @return Script source id
-            identifier_t GetScriptSourceID() const
-            {
-                return script->GetSourceID();
-            }
+            identifier_t GetScriptSourceID();
 
             /// @brief Get controller
             /// @return Controller (can be null)
@@ -79,19 +79,16 @@ namespace server
             bool SetRoom(Ref<Room> v);
 
             /// @brief Get device view
-            /// 
-            /// @return Get device view of this object 
+            ///
+            /// @return Get device view of this object
             Ref<DeviceView> GetView();
-
-            /// @brief Take property snapshot
-            void TakeSnapshot();
 
             /// @brief Initialize script
             ///
             void Initialize();
 
             /// @brief Invoke script event
-            /// 
+            ///
             /// @param event Event name
             void Invoke(const std::string& event);
 

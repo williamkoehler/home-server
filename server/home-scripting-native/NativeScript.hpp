@@ -4,7 +4,6 @@
 #include "utils/NativeEvent.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/utils/Property.hpp>
-#include <home-scripting/utils/Timer.hpp>
 
 namespace server
 {
@@ -19,7 +18,7 @@ namespace server
               private:
                 virtual bool Initialize() override;
 
-                virtual bool Invoke(const std::string& event) override;
+                virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) override;
 
                 virtual bool Terminate() override;
 
@@ -38,17 +37,13 @@ namespace server
                 Ref<Event> AddEvent(const std::string& id, EventCallback callback);
 
                 template <class T>
-                inline Ref<Event> AddEvent(const std::string& id, bool (T::*callback)())
+                inline Ref<Event> AddEvent(const std::string& id, bool (T::*callback)(Ref<EventCaller>))
                 {
                     return AddEvent(id, (EventCallbackConversion<T>{callback}).function);
                 }
 
                 bool RemoveEvent(const std::string& id);
                 void ClearEvents();
-
-                Ref<Timer> AddTimer(const std::string& id, const std::string& event);
-                bool RemoveTimer(const std::string& id);
-                void ClearTimers();
 
                 virtual bool InitializeScript() = 0;
                 virtual bool TerminateScript() = 0;

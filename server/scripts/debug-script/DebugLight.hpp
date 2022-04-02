@@ -1,7 +1,9 @@
 #pragma once
 #include "common.hpp"
+#include <home-scripting/tools/Http.hpp>
+#include <home-scripting/tools/Timer.hpp>
 
-class DebugLight : public server::scripting::native::NativeScript
+class DebugLight : public native::NativeScript
 {
   public:
     DebugLight(Ref<scripting::View> view, Ref<native::NativeScriptSource> scriptSource);
@@ -12,7 +14,7 @@ class DebugLight : public server::scripting::native::NativeScript
 
     virtual bool InitializeScript() override;
 
-    bool Disco();
+    bool Disco(Ref<EventCaller> caller);
 
     virtual bool TerminateScript() override;
 };

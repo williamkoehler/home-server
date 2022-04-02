@@ -12,11 +12,11 @@ namespace server
         {
             class NativeScript;
 
-            using EventCallback = bool (Script::*)();
+            using EventCallback = bool (Script::*)(Ref<EventCaller> caller);
 
             template <class Caller>
             union EventCallbackConversion {
-                bool (Caller::*method)();
+                bool (Caller::*method)(Ref<EventCaller>);
                 EventCallback function;
             };
 

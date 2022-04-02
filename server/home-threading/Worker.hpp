@@ -26,11 +26,11 @@ namespace server
 
             /// @brief IO Context
             ///
-            Ref<boost::asio::io_service> context = nullptr;
+            Ref<boost::asio::io_context> context = nullptr;
 
             /// @brief IO Work
             ///
-            Ref<boost::asio::io_service::work> work = nullptr;
+            Ref<boost::asio::io_context::work> work = nullptr;
 
             void Handler();
 
@@ -39,11 +39,11 @@ namespace server
             virtual ~Worker();
             static Ref<Worker> Create(const std::string& name, size_t threadCount = 1);
 
-            inline boost::asio::io_service& GetContext()
+            inline boost::asio::io_context& GetContext()
             {
                 return *context.get();
             }
-            inline boost::asio::io_service::work GetWork()
+            inline boost::asio::io_context::work GetWork()
             {
                 return *work.get();
             }

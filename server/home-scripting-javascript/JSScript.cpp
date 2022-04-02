@@ -2,7 +2,6 @@
 #include "JSScriptSource.hpp"
 #include "utils/JSEvent.hpp"
 #include <home-scripting/utils/Property.hpp>
-#include <home-scripting/utils/Timer.hpp>
 
 extern "C"
 {
@@ -112,7 +111,6 @@ namespace server
                 script->InitializeAttributes();
                 script->InitializeProperties();
                 script->InitializeEvents();
-                script->InitializeTimers();
 
                 return DUK_EXEC_SUCCESS;
             }
@@ -212,45 +210,6 @@ namespace server
                     {
                         // Insert property
                         eventList[name] = event;
-                    }
-
-                    // Pop type
-                    duk_pop(c);
-                }
-
-                // Pop enum
-                duk_pop(c);
-            }
-            void JSScript::InitializeTimers()
-            {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
-
-                // Get timers object
-                duk_get_global_lstring(c, "timers", 6);
-
-                // Iterate over every property in 'timers'
-                duk_enum(c, -1, 0);
-                while (duk_next(c, -1, 0))
-                {
-                    size_t nameLength;
-                    const char* nameStr = duk_to_lstring(c, -1, &nameLength);
-                    std::string name = std::string(nameStr, nameLength);
-
-                    // Read type
-                    duk_get_prop(c, -3);
-
-                    size_t callbackLength;
-                    const char* callbackStr = duk_to_lstring(c, -1, &callbackLength);
-                    std::string callback = std::string(callbackStr, callbackLength);
-
-                    // Add timer
-                    Ref<Timer> timer = boost::make_shared<Timer>(shared_from_this(), callback);
-                    if (timer != nullptr)
-                    {
-                        // Insert timer
-                        timerList[name] = timer;
                     }
 
                     // Pop type
@@ -474,7 +433,7 @@ namespace server
                 return 0;
             }
 
-            bool JSScript::Invoke(const std::string& event)
+            bool JSScript::Invoke(const std::string& event, Ref<EventCaller> caller)
             {
                 return true;
             }

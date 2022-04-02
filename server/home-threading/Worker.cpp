@@ -19,7 +19,7 @@ namespace server
             if (worker != nullptr)
             {
                 // Initialize context
-                worker->context = boost::make_shared<boost::asio::io_service>(threadCount);
+                worker->context = boost::make_shared<boost::asio::io_context>(threadCount);
                 if (worker->context == nullptr)
                 {
                     LOG_ERROR("Create worker context.");
@@ -27,7 +27,7 @@ namespace server
                 }
 
                 // Initialize notifier
-                worker->work = boost::make_shared<boost::asio::io_service::work>(worker->GetContext());
+                worker->work = boost::make_shared<boost::asio::io_context::work>(worker->GetContext());
                 if (worker->work == nullptr)
                 {
                     LOG_ERROR("Create worker context notifier.");

@@ -39,7 +39,6 @@ namespace server
                 void InitializeAttributes();
                 void InitializeProperties();
                 void InitializeEvents();
-                void InitializeTimers();
 
                 /// @brief Invoke event safely
                 ///
@@ -74,7 +73,7 @@ namespace server
                 ///
                 /// @param event Event
                 /// @return Successfulness
-                virtual bool Invoke(const std::string& event) override;
+                virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) override;
 
                 /// @brief Terminate script
                 ///

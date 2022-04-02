@@ -91,33 +91,6 @@ namespace server
                 eventList.clear();
             }
 
-            Ref<Timer> NativeScript::AddTimer(const std::string& id, const std::string& event)
-            {
-                // Check existance
-                if (!timerList.contains(id))
-                {
-                    // Create timer instance
-                    Ref<Timer> timer = boost::make_shared<Timer>(shared_from_this(), event);
-
-                    // Add timer to list
-                    if (timer != nullptr)
-                    {
-                        timerList[id] = timer;
-                        return timer;
-                    }
-                }
-
-                return nullptr;
-            }
-            bool NativeScript::RemoveTimer(const std::string& id)
-            {
-                return eventList.erase(id);
-            }
-            void NativeScript::ClearTimers()
-            {
-                eventList.clear();
-            }
-
             bool NativeScript::Initialize()
             {
                 bool result;
@@ -135,7 +108,7 @@ namespace server
                 return result;
             }
 
-            bool NativeScript::Invoke(const std::string& event)
+            bool NativeScript::Invoke(const std::string& event, Ref<EventCaller> caller)
             {
 
                 Ref<NativeEvent> r = boost::dynamic_pointer_cast<NativeEvent>(GetEvent(event));
@@ -144,7 +117,7 @@ namespace server
                     try
                     {
                         // Call C++ Method
-                        ((Script*)this->*r->GetCallback())();
+                        ((Script*)this->*r->GetCallback())(caller);
                     }
                     catch (std::exception)
                     {

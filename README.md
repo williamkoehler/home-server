@@ -12,8 +12,8 @@
 
 Some dependencies are needed beforehand:
 - **CMake** version 1.8
-- **boost** version 1.71
-- **OpenSSL** version 1.1.1f
+- **boost** version 1.75
+- **OpenSSL** version 1.1.1m
 - **pthread**
 - **curl**
 - **sqlite3**

@@ -190,7 +190,7 @@ namespace server
 
         void Device::Invoke(const std::string& event)
         {
-            script->Invoke(event);
+            script->Invoke(event, scripting::EventCaller::Create());
         }
 
         void Device::Terminate()

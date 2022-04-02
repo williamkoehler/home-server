@@ -36,17 +36,35 @@ bool DebugLight::InitializeScript()
 
     AddEvent<DebugLight>("disco", &DebugLight::Disco);
 
-    Ref<Timer> timer = AddTimer("disco", "disco");
-    if (timer != nullptr)
-        timer->Start(10);
+    Https::Send(shared_from_this(), "disco", "www.google.com", 443, HttpMethod::kGet, "/");
+
+    Ref<Timer> timer = Timer::Create(shared_from_this(), "disco");
+    timer->Start(5);
 
     return true;
 }
 
-bool DebugLight::Disco()
+bool DebugLight::Disco(Ref<EventCaller> caller)
 {
-    power->SetBoolean(!power->GetBoolean());
-    LOG_INFO("Disco {0}", power->GetBoolean());
+    switch (caller->GetType())
+    {
+    case EventCallerType::kHttpResponseEventCaller: {
+        Ref<HttpConnection> http = boost::dynamic_pointer_cast<HttpConnection>(caller);
+
+        LOG_INFO("{0}", http->GetContent());
+
+        break;
+    }
+    case EventCallerType::kTimerEventCaller: {
+        Ref<Timer> timer = boost::dynamic_pointer_cast<Timer>(caller);
+
+        timer->Stop();
+
+        LOG_INFO("Event called.");
+    }
+    default:
+        break;
+    }
     return true;
 }
 

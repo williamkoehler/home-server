@@ -2,6 +2,7 @@
 #include "ScriptSource.hpp"
 #include "View.hpp"
 #include "common.hpp"
+#include "utils/Event.hpp"
 #include <home-threading/Worker.hpp>
 
 namespace server
@@ -25,7 +26,6 @@ namespace server
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
             robin_hood::unordered_node_map<std::string, Ref<Property>> propertyList;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
-            robin_hood::unordered_node_map<std::string, Ref<Timer>> timerList;
 
             boost::mutex snapshotMutex;
             rapidjson::Document snapshot;
@@ -54,7 +54,6 @@ namespace server
 
             Ref<Property> GetProperty(const std::string& id);
             Ref<Event> GetEvent(const std::string& id);
-            Ref<Timer> GetTimer(const std::string& id);
 
             /// @brief Initialize script (must be called by host thread)
             ///
@@ -65,13 +64,14 @@ namespace server
             ///
             /// @param event Event name
             /// @return Successfulness
-            virtual bool Invoke(const std::string& event) = 0;
+            virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) = 0;
 
             /// @brief Let home worker call script event
             ///
             /// @param event Event name
+            /// @param args Event arguments
             /// @return Successfulness
-            bool PostInvoke(const std::string& event);
+            bool PostInvoke(const std::string& event, Ref<EventCaller> caller);
 
             /// @brief Terminate script (must be called by host thread)
             ///

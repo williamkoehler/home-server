@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
 
-add_subdirectory(toolkit)
-
 add_subdirectory(home-common)
 add_subdirectory(home-threading)
 add_subdirectory(home-database)

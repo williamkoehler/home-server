@@ -1,6 +1,5 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
-#include "utils/JSEvent.hpp"
 #include <home-scripting/utils/Property.hpp>
 
 extern "C"
@@ -192,9 +191,9 @@ namespace server
                 duk_enum(c, -1, 0);
                 while (duk_next(c, -1, 0))
                 {
-                    size_t nameLength;
-                    const char* nameStr = duk_to_lstring(c, -1, &nameLength);
-                    std::string name = std::string(nameStr, nameLength);
+                    size_t idLength;
+                    const char* idStr = duk_to_lstring(c, -1, &idLength);
+                    std::string id = std::string(idStr, idLength);
 
                     // Read type
                     duk_get_prop(c, -3);
@@ -204,13 +203,13 @@ namespace server
                     std::string callback = std::string(callbackStr, callbackLength);
 
                     // Add event
-                    Ref<Event> event = boost::make_shared<JSEvent>(
-                        boost::dynamic_pointer_cast<JSScript>(shared_from_this()), callback);
-                    if (event != nullptr)
-                    {
-                        // Insert property
-                        eventList[name] = event;
-                    }
+                    // Ref<Event> event = Event::Create(id, call)
+                    // if (event != nullptr)
+                    // {
+                    //     // Insert property
+                    //     eventList[name] = event;
+                    // }
+                    // TODO: Implement javascript event creation 
 
                     // Pop type
                     duk_pop(c);
@@ -433,10 +432,6 @@ namespace server
                 return 0;
             }
 
-            bool JSScript::Invoke(const std::string& event, Ref<EventCaller> caller)
-            {
-                return true;
-            }
             // bool JSScript::Invoke(Ref<View> sender, const std::string& event)
             // {
             //     if (context != nullptr)

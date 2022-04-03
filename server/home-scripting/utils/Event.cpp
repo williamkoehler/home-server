@@ -5,18 +5,17 @@ namespace server
 {
     namespace scripting
     {
-        Ref<EventCaller> EventCaller::Create()
+        Event::Event(const std::string& id, EventMethod<> event) : id(id), event(event)
         {
-            static Ref<EventCaller> caller = boost::make_shared<EventCaller>();
-            return caller;
-        }
-
-        Event::Event(Ref<Script> script) : script(script)
-        {
-            assert(script != nullptr);
+            assert(event != nullptr);
         }
         Event::~Event()
         {
+        }
+
+        Ref<Event> Event::Create(const std::string& id, EventMethod<> event)
+        {
+            return boost::make_shared<Event>(id, event);
         }
     }
 }

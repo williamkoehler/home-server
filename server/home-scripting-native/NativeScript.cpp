@@ -64,19 +64,19 @@ namespace server
                 propertyList.clear();
             }
 
-            Ref<Event> NativeScript::AddEvent(const std::string& id, EventCallback callback)
+            Ref<Event> NativeScript::AddEvent(const std::string& id, EventMethod<> event)
             {
                 // Check existance
                 if (!eventList.contains(id))
                 {
                     // Create event instance
-                    Ref<NativeEvent> event = boost::make_shared<NativeEvent>(shared_from_this(), callback);
+                    Ref<Event> e = boost::make_shared<Event>(id, event);
 
                     // Add event to list
-                    if (event != nullptr)
+                    if (e != nullptr)
                     {
-                        eventList[id] = event;
-                        return event;
+                        eventList[id] = e;
+                        return e;
                     }
                 }
 
@@ -106,30 +106,6 @@ namespace server
                 TakeSnapshot();
 
                 return result;
-            }
-
-            bool NativeScript::Invoke(const std::string& event, Ref<EventCaller> caller)
-            {
-
-                Ref<NativeEvent> r = boost::dynamic_pointer_cast<NativeEvent>(GetEvent(event));
-                if (r != nullptr)
-                {
-                    try
-                    {
-                        // Call C++ Method
-                        ((Script*)this->*r->GetCallback())(caller);
-                    }
-                    catch (std::exception)
-                    {
-                    }
-
-                    // Take snapshot
-                    TakeSnapshot();
-
-                    return true;
-                }
-
-                return false;
             }
 
             bool NativeScript::Terminate()

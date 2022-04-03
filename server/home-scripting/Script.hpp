@@ -62,16 +62,16 @@ namespace server
 
             /// @brief Call script event
             ///
-            /// @param event Event name
+            /// @param id Event id
             /// @return Successfulness
-            virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) = 0;
+            bool Invoke(const std::string& id);
 
             /// @brief Let home worker call script event
             ///
-            /// @param event Event name
+            /// @param id Event id
             /// @param args Event arguments
             /// @return Successfulness
-            bool PostInvoke(const std::string& event, Ref<EventCaller> caller);
+            bool PostInvoke(const std::string& id);
 
             /// @brief Terminate script (must be called by host thread)
             ///

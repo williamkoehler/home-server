@@ -6,4 +6,18 @@ PointerAlignment: Left
 IndentWidth: 4
 AlwaysBreakTemplateDeclarations: Yes
 
+BraceWrapping:
+    AfterCaseLabel: yes
+    AfterClass: yes
+    AfterEnum: yes
+    AfterFunction: yes
+    AfterNamespace: yes
+    AfterStruct: yes
+    AfterUnion: yes
+    AfterExternBlock: yes
+    BeforeCatch: yes
+    BeforeElse: yes
+    BeforeLambdaBody: yes
+    BeforeWhile: yes
+
 ...

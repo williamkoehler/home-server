@@ -40,9 +40,34 @@ namespace server
             return it->second;
         }
 
-        bool Script::PostInvoke(const std::string& event, Ref<EventCaller> caller)
+        bool Script::Invoke(const std::string& event)
         {
-            GetWorker()->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), event, caller));
+            // Lock main mutex
+            boost::lock_guard lock(mutex);
+
+            // Find event
+            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(event);
+            if (it != eventList.end())
+            {
+                // Invoke event
+                try
+                {
+                    EventMethod<> event = it->second->GetEvent();
+
+                    if (event != nullptr)
+                        return (this->*event)(it->first);
+                }
+                catch (std::exception)
+                {
+                }
+            }
+
+            return false;
+        }
+        bool Script::PostInvoke(const std::string& event)
+        {
+            // Invoke event
+            GetWorker()->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), event));
 
             return true;
         }

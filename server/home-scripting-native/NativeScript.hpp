@@ -1,8 +1,8 @@
 #pragma once
 #include "LibraryInformations.hpp"
 #include "common.hpp"
-#include "utils/NativeEvent.hpp"
 #include <home-scripting/Script.hpp>
+#include <home-scripting/utils/Event.hpp>
 #include <home-scripting/utils/Property.hpp>
 
 namespace server
@@ -18,8 +18,6 @@ namespace server
               private:
                 virtual bool Initialize() override;
 
-                virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) override;
-
                 virtual bool Terminate() override;
 
               protected:
@@ -34,12 +32,12 @@ namespace server
                 bool RemoveProperty(const std::string& id);
                 void ClearProperties();
 
-                Ref<Event> AddEvent(const std::string& id, EventCallback callback);
+                Ref<Event> AddEvent(const std::string& id, EventMethod<> event);
 
                 template <class T>
-                inline Ref<Event> AddEvent(const std::string& id, bool (T::*callback)(Ref<EventCaller>))
+                inline Ref<Event> AddEvent(const std::string& id, EventMethod<> event)
                 {
-                    return AddEvent(id, (EventCallbackConversion<T>{callback}).function);
+                    return AddEvent(id, EventMethodConversion<T>{event}.f2);
                 }
 
                 bool RemoveEvent(const std::string& id);

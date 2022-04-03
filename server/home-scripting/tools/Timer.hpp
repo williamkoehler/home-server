@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.hpp"
-#include "../utils/Event.hpp"
+#include "Controller.hpp"
 
 namespace server
 {
@@ -8,11 +8,10 @@ namespace server
     {
         class Script;
 
-        class Timer : public EventCaller
+        class Timer : public Controller
         {
           private:
-            WeakRef<Script> script;
-            std::string callback;
+            CallbackMethod<> callback;
             size_t interval;
 
             boost::asio::deadline_timer timer;
@@ -20,13 +19,19 @@ namespace server
             void Handler(boost::system::error_code ec);
 
           public:
-            Timer(Ref<Script> script, const std::string& callback);
+            Timer(Ref<Script> script, CallbackMethod<> callback);
             virtual ~Timer();
-            static Ref<Timer> Create(Ref<Script> script, const std::string& callback);
+            static Ref<Timer> Create(Ref<Script> script, CallbackMethod<> callback);
 
-            virtual EventCallerType GetType() const override
+            template <class T>
+            static inline Ref<Timer> Create(Ref<Script> script, CallbackMethod<T> callback)
             {
-                return EventCallerType::kTimerEventCaller;
+                return Create(script, CallbackMethodConversion<T>{callback}.f2);
+            }
+
+            virtual ControllerType GetType() const override
+            {
+                return ControllerType::kTimerController;
             }
 
             /// @brief Is timer running

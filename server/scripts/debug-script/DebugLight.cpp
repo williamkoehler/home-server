@@ -34,31 +34,29 @@ bool DebugLight::InitializeScript()
     AddProperty("address", EndpointProperty::Create());
     AddProperty("text", StringProperty::Create());
 
-    AddEvent<DebugLight>("disco", &DebugLight::Disco);
-
-    Https::Send(shared_from_this(), "disco", "www.google.com", 443, HttpMethod::kGet, "/");
-
-    Ref<Timer> timer = Timer::Create(shared_from_this(), "disco");
+    Ref<Timer> timer = Timer::Create(shared_from_this(), &DebugLight::Callback);
     timer->Start(5);
 
     return true;
 }
 
-bool DebugLight::Disco(Ref<EventCaller> caller)
+bool DebugLight::Callback(Ref<Controller> controller)
 {
-    switch (caller->GetType())
+    switch (controller->GetType())
     {
-    case EventCallerType::kHttpResponseEventCaller: {
-        Ref<HttpConnection> http = boost::dynamic_pointer_cast<HttpConnection>(caller);
+    case ControllerType::kHttpController:
+    {
+        Ref<HttpController> http = boost::dynamic_pointer_cast<HttpController>(controller);
 
         LOG_INFO("{0}", http->GetContent());
 
         break;
     }
-    case EventCallerType::kTimerEventCaller: {
-        Ref<Timer> timer = boost::dynamic_pointer_cast<Timer>(caller);
+    case ControllerType::kTimerController:
+    {
+        Ref<Timer> timer = boost::dynamic_pointer_cast<Timer>(controller);
 
-        timer->Stop();
+        Https::Get(shared_from_this(), "www.google.com", 443, "/", std::string_view(""), &DebugLight::Callback);
 
         LOG_INFO("Event called.");
     }

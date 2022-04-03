@@ -69,12 +69,6 @@ namespace server
                 /// @return Successful
                 virtual bool Initialize() override;
 
-                /// @brief Invoke event
-                ///
-                /// @param event Event
-                /// @return Successfulness
-                virtual bool Invoke(const std::string& event, Ref<EventCaller> caller) override;
-
                 /// @brief Terminate script
                 ///
                 /// @return Successful

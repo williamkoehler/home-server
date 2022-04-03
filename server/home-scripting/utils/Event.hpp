@@ -8,39 +8,43 @@ namespace server
     {
         class Script;
 
-        enum class EventCallerType
-        {
-            kEmptyEventCaller,
-            kTimerEventCaller,
-            kHttpResponseEventCaller,
-        };
+        template <class T = Script>
+        using EventMethod = bool (T::*)(const std::string& event);
 
-        class EventCaller : public boost::enable_shared_from_this<EventCaller>
+        template <class T>
+        union EventMethodConversion
         {
-          public:
-            /// @brief Create empty event args. 
-            /// Note: Only returns a static reference.
-            ///
-            /// @return Empty event args
-            static Ref<EventCaller> Create();
-
-            /// @brief Get event caller type
-            /// 
-            /// @return Event caller type
-            virtual EventCallerType GetType() const
-            {
-                return EventCallerType::kEmptyEventCaller;
-            };
+            EventMethod<T> f1;
+            EventMethod<> f2;
         };
 
         class Event : public boost::enable_shared_from_this<Event>
         {
           protected:
+            std::string id;
+
             WeakRef<Script> script;
+            EventMethod<> event;
 
           public:
-            Event(Ref<Script> script);
+            Event(const std::string& id, EventMethod<> event);
             virtual ~Event();
+
+            static Ref<Event> Create(const std::string& id, EventMethod<> event);
+
+            template <class T>
+            static inline Ref<Event> Create(const std::string& id, EventMethod<T> event)
+            {
+                return Create(id, EventMethodConversion<T>{event}.f2);
+            }
+
+            /// @brief Get event
+            ///
+            /// @return Event
+            inline EventMethod<> GetEvent() const
+            {
+                return event;
+            }
         };
     }
 }

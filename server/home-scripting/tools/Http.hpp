@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.hpp"
-#include "../utils/Event.hpp"
+#include "Controller.hpp"
 
 namespace server
 {
@@ -102,15 +102,19 @@ namespace server
             kPatch,
         };
 
-        class HttpConnection : public EventCaller
+        class HttpController : public Controller
         {
           protected:
             HttpStatusCode statusCode;
 
+            CallbackMethod<> callback;
+
           public:
-            virtual EventCallerType GetType() const override
+            HttpController(Ref<Script> script, CallbackMethod<> callback);
+
+            virtual ControllerType GetType() const override
             {
-                return EventCallerType::kHttpResponseEventCaller;
+                return ControllerType::kHttpController;
             }
 
             /// @brief Get HTTP status code
@@ -154,34 +158,41 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            static bool Send(Ref<Script> script, const std::string& callback, const std::string& host, uint16_t port,
+            static bool Send(Ref<Script> script, const std::string& host, uint16_t port,
                              HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
-                             const std::string_view& content = std::string_view("", 0));
+                             const std::string_view& content = std::string_view("", 0),
+                             CallbackMethod<> callback = nullptr);
 
             /// @brief Send http get request
             ///
-            /// @param callback Event id
             /// @param target URL Target
             /// @param content Body Content
+            /// @param callback Callback
             /// @return Successfulness
-            inline static bool Get(Ref<Script> script, const std::string& callback, const std::string& host,
-                                   uint16_t port, const std::string& target = "/",
-                                   const std::string_view& content = std::string_view("", 0))
+            template <class T>
+            inline static bool Get(Ref<Script> script, const std::string& host, uint16_t port,
+                                   const std::string& target = "/",
+                                   const std::string_view& content = std::string_view("", 0),
+                                   CallbackMethod<T> callback = nullptr)
             {
-                return Send(script, callback, host, port, HttpMethod::kGet, target, content);
+                return Send(script, host, port, HttpMethod::kGet, target, content,
+                            CallbackMethodConversion<T>{callback}.f2);
             }
 
             /// @brief Send http post request
             ///
-            /// @param callback Event id
             /// @param target URL Target
             /// @param content Body Content
+            /// @param callback Callback
             /// @return Successfulness
-            inline static bool Post(Ref<Script> script, const std::string& callback, const std::string& host,
-                                    uint16_t port, const std::string& target = "/",
-                                    const std::string_view& content = std::string_view("", 0))
+            template <class T>
+            inline static bool Post(Ref<Script> script, const std::string& host, uint16_t port,
+                                    const std::string& target = "/",
+                                    const std::string_view& content = std::string_view("", 0),
+                                    CallbackMethod<T> callback = nullptr)
             {
-                return Send(script, callback, host, port, HttpMethod::kGet, target, content);
+                return Send(script, host, port, HttpMethod::kGet, target, content,
+                            CallbackMethodConversion<T>{callback}.f2);
             }
         };
 
@@ -195,9 +206,10 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            static bool Send(Ref<Script> script, const std::string& callback, const std::string& host, uint16_t port,
+            static bool Send(Ref<Script> script, const std::string& host, uint16_t port,
                              HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
-                             const std::string_view& content = std::string_view("", 0));
+                             const std::string_view& content = std::string_view("", 0),
+                             CallbackMethod<> callback = nullptr);
 
             /// @brief Send https get request
             ///
@@ -205,11 +217,14 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            inline static bool Get(Ref<Script> script, const std::string& callback, const std::string& host,
-                                   uint16_t port, const std::string& target = "/",
-                                   const std::string_view& content = std::string_view("", 0))
+            template <class T>
+            inline static bool Get(Ref<Script> script, const std::string& host, uint16_t port,
+                                   const std::string& target = "/",
+                                   const std::string_view& content = std::string_view("", 0),
+                                   CallbackMethod<T> callback = nullptr)
             {
-                return Send(script, callback, host, port, HttpMethod::kGet, target, content);
+                return Send(script, host, port, HttpMethod::kGet, target, content,
+                            CallbackMethodConversion<T>{callback}.f2);
             }
 
             /// @brief Send https post request
@@ -218,11 +233,14 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            inline static bool Post(Ref<Script> script, const std::string& callback, const std::string& host,
-                                    uint16_t port, const std::string& target = "/",
-                                    const std::string_view& content = std::string_view("", 0))
+            template <class T>
+            inline static bool Post(Ref<Script> script, const std::string& host, uint16_t port,
+                                    const std::string& target = "/",
+                                    const std::string_view& content = std::string_view("", 0),
+                                    CallbackMethod<T> callback = nullptr)
             {
-                return Send(script, callback, host, port, HttpMethod::kGet, target, content);
+                return Send(script, host, port, HttpMethod::kGet, target, content,
+                            CallbackMethodConversion<T>{callback}.f2);
             }
         };
     }

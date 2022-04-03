@@ -5,15 +5,15 @@ namespace server
 {
     namespace scripting
     {
-        Timer::Timer(Ref<Script> script, const std::string& callback)
-            : script(script), callback(callback), timer(script->GetWorker()->GetContext())
+        Timer::Timer(Ref<Script> script, CallbackMethod<> callback)
+            : Controller(script), callback(callback), timer(script->GetWorker()->GetContext())
         {
             assert(script != nullptr);
         }
         Timer::~Timer()
         {
         }
-        Ref<Timer> Timer::Create(Ref<Script> script, const std::string& callback)
+        Ref<Timer> Timer::Create(Ref<Script> script, CallbackMethod<> callback)
         {
             return boost::make_shared<Timer>(script, callback);
         }
@@ -26,8 +26,8 @@ namespace server
 
                 if (r != nullptr)
                 {
-                    // Invoke event
-                    r->Invoke(callback, shared_from_this());
+                    // Invoke callback
+                    (r.get()->*callback)(shared_from_this());
                 }
 
                 if (interval != 0)

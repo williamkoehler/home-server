@@ -188,9 +188,9 @@ namespace server
             script->Initialize();
         }
 
-        void Device::Invoke(const std::string& event)
+        void Device::Invoke(const std::string& id)
         {
-            script->Invoke(event, scripting::EventCaller::Create());
+            script->Invoke(id);
         }
 
         void Device::Terminate()

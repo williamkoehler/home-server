@@ -5,6 +5,11 @@ namespace server
 {
     namespace scripting
     {
+        HttpController::HttpController(Ref<Script> script, CallbackMethod<> callback)
+            : Controller(script), callback(callback)
+        {
+        }
+
         static const boost::beast::http::verb methods[] = {
             boost::beast::http::verb::get,     boost::beast::http::verb::get,     boost::beast::http::verb::head,
             boost::beast::http::verb::post,    boost::beast::http::verb::put,     boost::beast::http::verb::delete_,
@@ -12,18 +17,14 @@ namespace server
             boost::beast::http::verb::patch,
         };
 
-        class HttpConnectionImpl : public HttpConnection
+        class HttpControllerImpl : public HttpController
         {
           private:
-            WeakRef<Script> script;
-
             boost::asio::ip::tcp::resolver resolver;
             boost::beast::tcp_stream stream;
             boost::beast::flat_buffer buffer;
             boost::beast::http::request<boost::beast::http::string_body> request;
             boost::beast::http::response<boost::beast::http::string_body> response;
-
-            std::string callback;
 
             void OnResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
             {
@@ -35,8 +36,8 @@ namespace server
                     // Connect to server
                     stream.async_connect(results,
                                          boost::beast::bind_front_handler(
-                                             &HttpConnectionImpl::OnConnect,
-                                             boost::dynamic_pointer_cast<HttpConnectionImpl>(shared_from_this())));
+                                             &HttpControllerImpl::OnConnect,
+                                             boost::dynamic_pointer_cast<HttpControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -49,7 +50,8 @@ namespace server
                         statusCode = HttpStatusCode::kResolveError;
                         response.body().clear();
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -64,8 +66,8 @@ namespace server
                     boost::beast::http::async_write(
                         stream, request,
                         boost::beast::bind_front_handler(
-                            &HttpConnectionImpl::OnWrite,
-                            boost::dynamic_pointer_cast<HttpConnectionImpl>(shared_from_this())));
+                            &HttpControllerImpl::OnWrite,
+                            boost::dynamic_pointer_cast<HttpControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -78,7 +80,8 @@ namespace server
                         statusCode = HttpStatusCode::kConnectError;
                         response.body().clear();
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -93,8 +96,8 @@ namespace server
                     boost::beast::http::async_read(
                         stream, buffer, response,
                         boost::beast::bind_front_handler(
-                            &HttpConnectionImpl::OnRead,
-                            boost::dynamic_pointer_cast<HttpConnectionImpl>(shared_from_this())));
+                            &HttpControllerImpl::OnRead,
+                            boost::dynamic_pointer_cast<HttpControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -107,7 +110,8 @@ namespace server
                         statusCode = HttpStatusCode::kInternalError;
                         response.body().clear();
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -120,7 +124,9 @@ namespace server
 
                     if (r != nullptr)
                     {
-                        r->Invoke(callback, shared_from_this());
+                        // Invoke callback
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
 
                     // Gracefully close the socket
@@ -146,15 +152,17 @@ namespace server
                         statusCode = HttpStatusCode::kInternalError;
                         response.body().clear();
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
 
           public:
-            HttpConnectionImpl(Ref<Script> script, const std::string& callback)
-                : script(script), resolver(boost::asio::make_strand(script->GetWorker()->GetContext())),
-                  stream(boost::asio::make_strand(script->GetWorker()->GetContext())), callback(callback)
+            HttpControllerImpl(Ref<Script> script, CallbackMethod<> callback)
+                : HttpController(script, callback),
+                  resolver(boost::asio::make_strand(script->GetWorker()->GetContext())),
+                  stream(boost::asio::make_strand(script->GetWorker()->GetContext()))
             {
             }
 
@@ -177,8 +185,8 @@ namespace server
                 // Look up the domain name
                 resolver.async_resolve(host, std::to_string(port),
                                        boost::beast::bind_front_handler(
-                                           &HttpConnectionImpl::OnResolve,
-                                           boost::dynamic_pointer_cast<HttpConnectionImpl>(shared_from_this())));
+                                           &HttpControllerImpl::OnResolve,
+                                           boost::dynamic_pointer_cast<HttpControllerImpl>(shared_from_this())));
             }
 
             virtual std::string_view GetContent() override
@@ -187,16 +195,16 @@ namespace server
             }
         };
 
-        bool Http::Send(Ref<Script> script, const std::string& callback, const std::string& host, uint16_t port,
-                        HttpMethod method, const std::string& target, const std::string_view& content)
+        bool Http::Send(Ref<Script> script, const std::string& host, uint16_t port, HttpMethod method,
+                        const std::string& target, const std::string_view& content, CallbackMethod<> callback)
         {
-            // Create new session
-            Ref<HttpConnectionImpl> session = boost::make_shared<HttpConnectionImpl>(script, callback);
+            // Create new controller
+            Ref<HttpControllerImpl> controller = boost::make_shared<HttpControllerImpl>(script, callback);
 
-            if (session != nullptr)
+            if (controller != nullptr)
             {
                 // Send http request
-                session->Send(host, port, method, target, content);
+                controller->Send(host, port, method, target, content);
 
                 return true;
             }
@@ -209,23 +217,22 @@ namespace server
           public:
             SslContext() : boost::asio::ssl::context(boost::asio::ssl::context::tlsv12_client)
             {
-                set_verify_mode(boost::asio::ssl::verify_none);
+                set_options(boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::no_sslv2 |
+                            boost::asio::ssl::context::no_sslv3 | boost::asio::ssl::context::tlsv12_client);
+                set_default_verify_paths();
             }
         };
 
-        class HttpsConnectionImpl : public HttpConnection
+        static SslContext sslContext = SslContext();
+
+        class HttpsControllerImpl : public HttpController
         {
           public:
-            WeakRef<Script> script;
-
             boost::asio::ip::tcp::resolver resolver;
-            SslContext sslContext;
             boost::beast::ssl_stream<boost::beast::tcp_stream> stream;
             boost::beast::flat_buffer buffer;
             boost::beast::http::request<boost::beast::http::string_body> request;
             boost::beast::http::response<boost::beast::http::string_body> response;
-
-            std::string callback;
 
             void OnResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
             {
@@ -239,8 +246,8 @@ namespace server
                     // Connect to server
                     stream2.async_connect(results,
                                           boost::beast::bind_front_handler(
-                                              &HttpsConnectionImpl::OnConnect,
-                                              boost::dynamic_pointer_cast<HttpsConnectionImpl>(shared_from_this())));
+                                              &HttpsControllerImpl::OnConnect,
+                                              boost::dynamic_pointer_cast<HttpsControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -253,7 +260,8 @@ namespace server
                         statusCode = HttpStatusCode::kResolveError;
                         response.body().assign(ec.message());
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -269,8 +277,8 @@ namespace server
                     // Connect to server
                     stream.async_handshake(boost::asio::ssl::stream_base::client,
                                            boost::beast::bind_front_handler(
-                                               &HttpsConnectionImpl::OnHandshake,
-                                               boost::dynamic_pointer_cast<HttpsConnectionImpl>(shared_from_this())));
+                                               &HttpsControllerImpl::OnHandshake,
+                                               boost::dynamic_pointer_cast<HttpsControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -283,7 +291,8 @@ namespace server
                         statusCode = HttpStatusCode::kResolveError;
                         response.body().assign(ec.message());
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -300,8 +309,8 @@ namespace server
                     boost::beast::http::async_write(
                         stream, request,
                         boost::beast::bind_front_handler(
-                            &HttpsConnectionImpl::OnWrite,
-                            boost::dynamic_pointer_cast<HttpsConnectionImpl>(shared_from_this())));
+                            &HttpsControllerImpl::OnWrite,
+                            boost::dynamic_pointer_cast<HttpsControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -314,7 +323,8 @@ namespace server
                         statusCode = HttpStatusCode::kHandshakeError;
                         response.body().assign(ec.message());
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -331,8 +341,8 @@ namespace server
                     boost::beast::http::async_read(
                         stream, buffer, response,
                         boost::beast::bind_front_handler(
-                            &HttpsConnectionImpl::OnRead,
-                            boost::dynamic_pointer_cast<HttpsConnectionImpl>(shared_from_this())));
+                            &HttpsControllerImpl::OnRead,
+                            boost::dynamic_pointer_cast<HttpsControllerImpl>(shared_from_this())));
                 }
                 else
                 {
@@ -345,7 +355,8 @@ namespace server
                         statusCode = HttpStatusCode::kInternalError;
                         response.body().assign(ec.message());
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
@@ -358,7 +369,9 @@ namespace server
 
                     if (r != nullptr)
                     {
-                        r->Invoke(callback, shared_from_this());
+                        // Invoke callback
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
 
                     // Gracefully close the socket
@@ -384,15 +397,17 @@ namespace server
                         statusCode = HttpStatusCode::kInternalError;
                         response.body().assign(ec.message());
 
-                        r->Invoke(callback, shared_from_this());
+                        if (callback != nullptr)
+                            (r.get()->*callback)(shared_from_this());
                     }
                 }
             }
 
           public:
-            HttpsConnectionImpl(Ref<Script> script, const std::string& callback)
-                : script(script), resolver(boost::asio::make_strand(script->GetWorker()->GetContext())), sslContext(),
-                  stream(boost::asio::make_strand(script->GetWorker()->GetContext()), sslContext), callback(callback)
+            HttpsControllerImpl(Ref<Script> script, CallbackMethod<> callback)
+                : HttpController(script, callback),
+                  resolver(boost::asio::make_strand(script->GetWorker()->GetContext())),
+                  stream(boost::asio::make_strand(script->GetWorker()->GetContext()), sslContext)
             {
             }
 
@@ -415,8 +430,8 @@ namespace server
                 // Look up the domain name
                 resolver.async_resolve(host, std::to_string(port),
                                        boost::beast::bind_front_handler(
-                                           &HttpsConnectionImpl::OnResolve,
-                                           boost::dynamic_pointer_cast<HttpsConnectionImpl>(shared_from_this())));
+                                           &HttpsControllerImpl::OnResolve,
+                                           boost::dynamic_pointer_cast<HttpsControllerImpl>(shared_from_this())));
             }
 
             virtual std::string_view GetContent() override
@@ -425,16 +440,16 @@ namespace server
             }
         };
 
-        bool Https::Send(Ref<Script> script, const std::string& callback, const std::string& host, uint16_t port,
-                         HttpMethod method, const std::string& target, const std::string_view& content)
+        bool Https::Send(Ref<Script> script, const std::string& host, uint16_t port, HttpMethod method,
+                         const std::string& target, const std::string_view& content, CallbackMethod<> callback)
         {
-            // Create new session
-            Ref<HttpsConnectionImpl> session = boost::make_shared<HttpsConnectionImpl>(script, callback);
+            // Create new controller
+            Ref<HttpsControllerImpl> controller = boost::make_shared<HttpsControllerImpl>(script, callback);
 
-            if (session != nullptr)
+            if (controller != nullptr)
             {
                 // Send http request
-                session->Send(host, port, method, target, content);
+                controller->Send(host, port, method, target, content);
 
                 return true;
             }

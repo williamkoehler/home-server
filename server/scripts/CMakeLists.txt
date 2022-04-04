@@ -1,3 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 
-add_subdirectory(debug-script)
+file(GLOB scripts "*")
+foreach(script ${scripts})
+    if(IS_DIRECTORY ${script})
+        message(STATUS "Found " ${script})
+        add_subdirectory(${script})
+    endif()
+endforeach()

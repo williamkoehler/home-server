@@ -34,7 +34,7 @@ namespace server
             void OnShutdown(boost::system::error_code error);
 
           public:
-            WSSession(Ref<ssl_socket_t> socket, Ref<users::User> user);
+            WSSession(Ref<tcp_socket_t> socket, Ref<users::User> user);
             virtual ~WSSession();
 
             void Run(boost::beast::http::request<boost::beast::http::string_body>& request);

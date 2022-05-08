@@ -8,7 +8,7 @@ namespace server
 {
     namespace networking
     {
-        HTTPSession::HTTPSession(Ref<ssl_socket_t> socket) : strand(socket->get_executor()), socket(socket)
+        HTTPSession::HTTPSession(Ref<tcp_socket_t> socket) : strand(socket->get_executor()), socket(socket)
         {
         }
         HTTPSession::~HTTPSession()
@@ -17,7 +17,7 @@ namespace server
 
         void HTTPSession::Run()
         {
-            socket->next_layer().expires_after(std::chrono::seconds(12));
+            socket->expires_after(std::chrono::seconds(12));
             boost::beast::http::async_read(
                 *socket, buffer, request,
                 boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
@@ -141,7 +141,7 @@ namespace server
                             return;
                         }
 
-                        socket->next_layer().expires_never();
+                        socket->expires_never();
 
                         Ref<WSSession> ws = boost::make_shared<WSSession>(socket, user);
                         ws->Run(request);
@@ -245,8 +245,8 @@ namespace server
 
                 try
                 {
-                    std::vector<uint8_t> decoded =
-                        cppcodec::base64_rfc4648::decode<std::vector<uint8_t>>(authorization.data(), authorization.size());
+                    std::vector<uint8_t> decoded = cppcodec::base64_rfc4648::decode<std::vector<uint8_t>>(
+                        authorization.data(), authorization.size());
 
                     std::string_view basic = std::string_view((const char*)decoded.data(), decoded.size());
 
@@ -314,7 +314,7 @@ namespace server
             if (response->keep_alive())
             {
                 request = {};
-                socket->next_layer().expires_after(std::chrono::seconds(12));
+                socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
                     boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
@@ -322,10 +322,11 @@ namespace server
             }
             else
             {
-                // Shutdown
-                socket->next_layer().expires_after(std::chrono::seconds(6));
-                socket->async_shutdown(boost::asio::bind_executor(
-                    strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                // // Shutdown
+                // socket->expires_after(std::chrono::seconds(6));
+                // socket->async_shutdown(boost::asio::bind_executor(
+                //     strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                socket->close();
             }
         }
         void HTTPSession::OnWriteString(
@@ -338,7 +339,7 @@ namespace server
             if (response->keep_alive())
             {
                 request = {};
-                socket->next_layer().expires_after(std::chrono::seconds(12));
+                socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
                     boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
@@ -346,10 +347,11 @@ namespace server
             }
             else
             {
-                // Shutdown
-                socket->next_layer().expires_after(std::chrono::seconds(6));
-                socket->async_shutdown(boost::asio::bind_executor(
-                    strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                // // Shutdown
+                // socket->next_layer().expires_after(std::chrono::seconds(6));
+                // socket->async_shutdown(boost::asio::bind_executor(
+                //     strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                socket->close();
             }
         }
         void HTTPSession::OnWriteBuffer(
@@ -362,7 +364,7 @@ namespace server
             if (response->keep_alive())
             {
                 request = {};
-                socket->next_layer().expires_after(std::chrono::seconds(12));
+                socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
                     boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
@@ -370,10 +372,11 @@ namespace server
             }
             else
             {
-                // Shutdown
-                socket->next_layer().expires_after(std::chrono::seconds(6));
-                socket->async_shutdown(boost::asio::bind_executor(
-                    strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                // // Shutdown
+                // socket->next_layer().expires_after(std::chrono::seconds(6));
+                // socket->async_shutdown(boost::asio::bind_executor(
+                //     strand, boost::bind(&HTTPSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+                socket->close();
             }
         }
 
@@ -382,8 +385,8 @@ namespace server
             if (error)
                 return;
 
-            // At this point the session will close itself
-            socket->next_layer().close();
+            // // At this point the session will close itself
+            // socket->next_layer().close();
         }
     }
 }

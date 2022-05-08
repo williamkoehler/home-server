@@ -6,7 +6,7 @@ namespace server
 {
     namespace networking
     {
-        WSSession::WSSession(Ref<ssl_socket_t> socket, Ref<users::User> user)
+        WSSession::WSSession(Ref<tcp_socket_t> socket, Ref<users::User> user)
             : strand(socket->get_executor()), socket(boost::make_shared<websocket_t>(std::move(*socket))), user(user)
         {
         }
@@ -16,7 +16,7 @@ namespace server
 
         void WSSession::Run(boost::beast::http::request<boost::beast::http::string_body>& request)
         {
-            socket->next_layer().next_layer().expires_after(std::chrono::seconds(12));
+            socket->next_layer().expires_after(std::chrono::seconds(12));
             socket->set_option(boost::beast::websocket::stream_base::decorator(
                 [](boost::beast::websocket::response_type& response) -> void {
                     response.set(boost::beast::http::field::server, "HomeAutomation Server WebSocket");
@@ -31,7 +31,7 @@ namespace server
             if (error)
                 return;
 
-            socket->next_layer().next_layer().expires_never();
+            socket->next_layer().expires_never();
 
             // Add ws to publish list
             {
@@ -253,28 +253,28 @@ namespace server
         void WSSession::DoWSShutdown(boost::beast::websocket::close_code code, const char* reason)
         {
             // Shutdown
-            socket->next_layer().next_layer().expires_after(std::chrono::seconds(6));
+            socket->next_layer().expires_after(std::chrono::seconds(6));
             socket->async_close(
                 boost::beast::websocket::close_reason(code, reason),
                 boost::asio::bind_executor(
-                    strand, boost::bind(&WSSession::DoSSLShutdown, shared_from_this(), boost::placeholders::_1)));
+                    strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
         }
         void WSSession::DoSSLShutdown(boost::system::error_code error)
         {
             if (error)
                 return;
 
-            // Shutdown
-            socket->next_layer().next_layer().expires_after(std::chrono::seconds(6));
-            socket->next_layer().async_shutdown(boost::asio::bind_executor(
-                strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
+            // // Shutdown
+            // socket->next_layer().expires_after(std::chrono::seconds(6));
+            // socket->next_layer().async_shutdown(boost::asio::bind_executor(
+            //     strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
         }
         void WSSession::OnShutdown(boost::system::error_code error)
         {
             if (error)
                 return;
 
-            socket->next_layer().next_layer().close();
+            socket->next_layer().close();
         }
     }
 }

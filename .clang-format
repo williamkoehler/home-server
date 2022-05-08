@@ -4,20 +4,20 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 PointerAlignment: Left
 IndentWidth: 4
-AlwaysBreakTemplateDeclarations: Yes
+AlwaysBreakTemplateDeclarations: true
 
 BraceWrapping:
-    AfterCaseLabel: yes
-    AfterClass: yes
-    AfterEnum: yes
-    AfterFunction: yes
-    AfterNamespace: yes
-    AfterStruct: yes
-    AfterUnion: yes
-    AfterExternBlock: yes
-    BeforeCatch: yes
-    BeforeElse: yes
-    BeforeLambdaBody: yes
-    BeforeWhile: yes
+    AfterCaseLabel: true
+    AfterClass: true
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterStruct: true
+    AfterUnion: true
+    AfterExternBlock: true
+    BeforeCatch: true
+    BeforeElse: true
+    BeforeLambdaBody: true
+    BeforeWhile: true
 
 ...

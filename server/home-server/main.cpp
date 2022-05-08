@@ -72,7 +72,7 @@ int main(int argc, char** argv)
     }
     catch (std::exception e)
     {
-        LOG_ERROR("Ops... something terrible must have happened...\n{0}", e.what());
+        LOG_ERROR("Ops... something terrible must have happened...\n");
 
 #ifndef NDEBUG
         printf("Press a key to close. For more details press D.\n");

@@ -34,24 +34,25 @@ namespace server
 
             boost::system::error_code ec;
 
-            // Initialize ssl/tls context
-            networkManager->context =
-                boost::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tls_server);
-            networkManager->context->use_certificate_file("ssl-cert.pem", boost::asio::ssl::context::file_format::pem,
-                                                          ec);
-            if (ec)
-            {
-                LOG_ERROR("Load certificate from 'ssl-cert.pem' -> '{0}'", ec.message());
-                return nullptr;
-            }
+            // // Initialize ssl/tls context
+            // networkManager->context =
+            //     boost::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tls_server);
+            // networkManager->context->use_certificate_file("ssl-cert.pem",
+            // boost::asio::ssl::context::file_format::pem,
+            //                                               ec);
+            // if (ec)
+            // {
+            //     LOG_ERROR("Load certificate from 'ssl-cert.pem' -> '{0}'", ec.message());
+            //     return nullptr;
+            // }
 
-            networkManager->context->use_private_key_file("ssl-key.pem", boost::asio::ssl::context::file_format::pem,
-                                                          ec);
-            if (ec)
-            {
-                LOG_ERROR("Load private key from 'ssl-key.pem' -> '{0}'", ec.message());
-                return nullptr;
-            }
+            // networkManager->context->use_private_key_file("ssl-key.pem", boost::asio::ssl::context::file_format::pem,
+            //                                               ec);
+            // if (ec)
+            // {
+            //     LOG_ERROR("Load private key from 'ssl-key.pem' -> '{0}'", ec.message());
+            //     return nullptr;
+            // }
 
             // Initialize tcp socket
             networkManager->server =
@@ -98,10 +99,9 @@ namespace server
 
             LOG_INFO("Web server listenning on port {0}", port);
 
-            networkManager->socket =
-                boost::make_shared<ssl_socket_t>(networkManager->worker->GetContext(), networkManager->GetSSLContext());
+            networkManager->socket = boost::make_shared<tcp_socket_t>(networkManager->worker->GetContext());
             networkManager->server->async_accept(
-                networkManager->socket->next_layer().socket(),
+                networkManager->socket->socket(),
                 boost::bind(&NetworkManager::OnAccept, networkManager.get(), boost::placeholders::_1));
 
             // Initialize beacon listener
@@ -121,6 +121,9 @@ namespace server
 
         void NetworkManager::OnAccept(boost::system::error_code err)
         {
+            if (err)
+                return;
+
             // Lock main mutex
             boost::lock_guard lock(mutex);
 
@@ -128,22 +131,48 @@ namespace server
             {
                 if (!err)
                 {
-                    // Start SSL Handshake
-                    socket->async_handshake(
-                        boost::asio::ssl::stream_base::handshake_type::server,
-                        boost::bind(&NetworkManager::OnHandshake, this, boost::placeholders::_1, socket));
+                    Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);
+                    if (httpSession != nullptr)
+                    {
+                        // Run http session
+                        httpSession->Run();
+                    }
+                    else
+                    {
+                        LOG_ERROR("Create http session.");
+                    }
 
                     // Wait for new connection
-                    socket = boost::make_shared<ssl_socket_t>(worker->GetContext(), GetSSLContext());
+                    socket = boost::make_shared<tcp_socket_t>(worker->GetContext());
+                    server->async_accept(socket->socket(),
+                                         boost::bind(&NetworkManager::OnAccept, this, boost::placeholders::_1));
                 }
             }
             catch (std::exception e)
             {
-                LOG_ERROR("Ops... Internal error:\n{0}", e.what());
+                LOG_ERROR("Ops... Internal error...");
             }
 
-            server->async_accept(socket->next_layer().socket(),
-                                 boost::bind(&NetworkManager::OnAccept, this, boost::placeholders::_1));
+            // try
+            // {
+            //     if (!err)
+            //     {
+            //         // Start SSL Handshake
+            //         socket->async_handshake(
+            //             boost::asio::ssl::stream_base::handshake_type::server,
+            //             boost::bind(&NetworkManager::OnHandshake, this, boost::placeholders::_1, socket));
+
+            //         // Wait for new connection
+            //         socket = boost::make_shared<ssl_socket_t>(worker->GetContext(), GetSSLContext());
+            //     }
+            // }
+            // catch (std::exception e)
+            // {
+            //     LOG_ERROR("Ops... Internal error:\n{0}", e.what());
+            // }
+
+            // server->async_accept(socket->next_layer().socket(),
+            //                      boost::bind(&NetworkManager::OnAccept, this, boost::placeholders::_1));
         }
 
         void NetworkManager::OnHandshake(boost::system::error_code error, Ref<ssl_socket_t> socket)
@@ -151,16 +180,16 @@ namespace server
             if (error)
                 return;
 
-            Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);
-            if (httpSession != nullptr)
-            {
-                // Run http session
-                httpSession->Run();
-            }
-            else
-            {
-                LOG_ERROR("Create http session.");
-            }
+            // Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);
+            // if (httpSession != nullptr)
+            // {
+            //     // Run http session
+            //     httpSession->Run();
+            // }
+            // else
+            // {
+            //     LOG_ERROR("Create http session.");
+            // }
         }
 
         void NetworkManager::Broadcast(rapidjson::Document& document)

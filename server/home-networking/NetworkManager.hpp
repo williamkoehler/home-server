@@ -21,9 +21,9 @@ namespace server
 
             Ref<DynamicResources> dynamicResources = nullptr;
 
-            Ref<boost::asio::ssl::context> context = nullptr;
+            // Ref<boost::asio::ssl::context> context = nullptr;
             Ref<boost::asio::ip::tcp::acceptor> server = nullptr;
-            Ref<ssl_socket_t> socket = nullptr;
+            Ref<tcp_socket_t> socket = nullptr;
 
             Ref<BeaconListener> beaconListener = nullptr;
 
@@ -47,10 +47,10 @@ namespace server
                 return worker;
             }
 
-            inline boost::asio::ssl::context& GetSSLContext() const
-            {
-                return *context;
-            }
+            // inline boost::asio::ssl::context& GetSSLContext() const
+            // {
+            //     return *context;
+            // }
 
             void Broadcast(rapidjson::Document& document);
         };

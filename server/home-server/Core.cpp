@@ -22,7 +22,10 @@ namespace server
         networkManager = nullptr;
         database = nullptr;
 
-        worker->Stop();
+        if (worker != nullptr)
+            worker->Stop();
+
+        worker = nullptr;
 
         LOG_INFO("Terminating core server");
     }
@@ -144,7 +147,7 @@ namespace server
         std::ifstream file = std::ifstream(configFile);
         if (!file.is_open())
         {
-            LOG_ERROR("Open config file '{0}'", configFile);
+            LOG_ERROR("Missing config file '{0}'", configFile);
             return false;
         }
 

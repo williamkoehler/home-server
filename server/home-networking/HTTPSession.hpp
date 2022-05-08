@@ -11,7 +11,7 @@ namespace server
           private:
             boost::asio::strand<tcp_socket_t::executor_type> strand;
 
-            Ref<ssl_socket_t> socket;
+            Ref<tcp_socket_t> socket;
             boost::beast::flat_buffer buffer;
             boost::beast::http::request<boost::beast::http::string_body> request;
             rapidjson::StringBuffer responseBuffer;
@@ -34,7 +34,7 @@ namespace server
             void OnShutdown(boost::system::error_code error);
 
           public:
-            HTTPSession(Ref<ssl_socket_t> socket);
+            HTTPSession(Ref<tcp_socket_t> socket);
             virtual ~HTTPSession();
 
             void Run();

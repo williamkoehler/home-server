@@ -42,7 +42,7 @@ namespace server
                 /// @brief Create javascript script source
                 ///
                 /// @param id Script source id
-                /// @param name Script source name
+                /// @param name Script source name (fmt. <library name>/<script name>)
                 /// @param usage Script usage
                 /// @param data Source code
                 /// @return Javascript script source

@@ -10,8 +10,6 @@ namespace server
         class BeaconListener : public boost::enable_shared_from_this<BeaconListener>
         {
           private:
-            boost::asio::strand<ssl_socket_t::executor_type> strand;
-
             std::string nameCopy = "";
             std::string externalUrlCopy = "";
 

@@ -8,8 +8,7 @@ namespace server
         WeakRef<BeaconListener> instanceBeacon;
 
         BeaconListener::BeaconListener(Ref<threading::Worker> worker, const std::string& externalURL)
-            : strand(worker->GetContext().get_executor()), nameCopy("missing in name in BeaconListener.cpp"), buffer(),
-              externalUrlCopy(externalURL),
+            : nameCopy("missing in name in BeaconListener.cpp"), buffer(), externalUrlCopy(externalURL),
               listener(worker->GetContext(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025))
         {
         }
@@ -36,8 +35,7 @@ namespace server
         {
             listener.async_receive_from(
                 boost::asio::buffer(buffer), remoteEnpoint,
-                boost::asio::bind_executor(strand, boost::bind(&BeaconListener::OnReceive, this,
-                                                               boost::placeholders::_1, boost::placeholders::_2)));
+                boost::bind(&BeaconListener::OnReceive, this, boost::placeholders::_1, boost::placeholders::_2));
         }
 
         void BeaconListener::OnReceive(boost::system::error_code ec, size_t size)
@@ -65,9 +63,8 @@ namespace server
                 document.Accept(writer);
 
                 listener.async_send_to(boost::asio::buffer(message->GetString(), message->GetSize()), remoteEnpoint,
-                                       boost::asio::bind_executor(
-                                           strand, boost::bind(&BeaconListener::OnSend, this, boost::placeholders::_1,
-                                                               boost::placeholders::_2, message)));
+                                       boost::bind(&BeaconListener::OnSend, this, boost::placeholders::_1,
+                                                   boost::placeholders::_2, message));
             }
 
             StartReceiving();

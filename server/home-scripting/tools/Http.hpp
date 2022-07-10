@@ -81,7 +81,7 @@ namespace server
             kNotExtended = 510,
             kNetworkAuthenticationRequired = 511,
 
-            // 10xxx Internal Error
+            // 10xx Internal Error
             kInternalError = 1000,
             kResolveError = 1001,
             kConnectError = 1002,

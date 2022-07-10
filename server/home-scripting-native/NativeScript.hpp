@@ -18,8 +18,6 @@ namespace server
               private:
                 virtual bool Initialize() override;
 
-                virtual bool Terminate() override;
-
               protected:
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource);
                 virtual ~NativeScript();
@@ -43,8 +41,7 @@ namespace server
                 bool RemoveEvent(const std::string& id);
                 void ClearEvents();
 
-                virtual bool InitializeScript() = 0;
-                virtual bool TerminateScript() = 0;
+                virtual bool Init() = 0;
             };
 
             using CreateScriptCallback = Ref<NativeScript>(Ref<View> view, Ref<NativeScriptSource> scriptSource);

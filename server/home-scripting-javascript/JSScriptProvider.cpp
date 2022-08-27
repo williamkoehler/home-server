@@ -17,7 +17,11 @@ namespace server
             }
             Ref<ScriptProvider> JSScriptProvider::Create()
             {
-                return boost::make_shared<JSScriptProvider>();
+                Ref<JSScriptProvider> provider = boost::make_shared<JSScriptProvider>();
+
+                LOG_INFO("Initializing javascript script provider.");
+
+                return provider;
             }
 
             Ref<ScriptSource> JSScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,

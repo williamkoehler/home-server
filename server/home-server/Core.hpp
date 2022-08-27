@@ -1,16 +1,16 @@
 #pragma once
 #include "common.hpp"
-#include <home-threading/Worker.hpp>
 #include <home-database/Database.hpp>
-#include <home-scripting/ScriptManager.hpp>
 #include <home-main/Home.hpp>
-#include <home-users/UserManager.hpp>
 #include <home-networking/NetworkManager.hpp>
+#include <home-scripting/ScriptManager.hpp>
+#include <home-threading/Worker.hpp>
+#include <home-users/UserManager.hpp>
 
 namespace server
 {
     /// @brief The core of the server, that manages every part of the server
-    /// 
+    ///
     class Core : public boost::enable_shared_from_this<Core>
     {
       private:
@@ -24,6 +24,9 @@ namespace server
         uint16_t port;
         size_t threadCount;
 
+        // Scripting
+        std::string nativeScriptDirectory;
+
         Ref<threading::Worker> worker;
 
         // Components
@@ -34,7 +37,7 @@ namespace server
         Ref<networking::NetworkManager> networkManager;
 
         /// @brief Load configurations from file
-        /// 
+        ///
         /// @return Successfulness
         bool Load();
 

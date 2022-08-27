@@ -82,6 +82,10 @@ namespace server
 
             if (database->UpdateDevicePropScriptSource(id, scriptSourceID))
             {
+                // Terminate old script
+                if (script != nullptr)
+                    script->Terminate();
+
                 if (scriptSourceID != 0)
                 {
                     // Create script
@@ -94,6 +98,9 @@ namespace server
                         LOG_ERROR("Create device script '{0}'", scriptSourceID);
                         return false;
                     }
+
+                    // Initialize script
+                    script->Initialize();
 
                     return true;
                 }
@@ -185,17 +192,20 @@ namespace server
 
         void Device::Initialize()
         {
-            script->Initialize();
+            if (script != nullptr)
+                script->Initialize();
         }
 
         void Device::Invoke(const std::string& id)
         {
-            script->Invoke(id);
+            if (script != nullptr)
+                script->Invoke(id);
         }
 
         void Device::Terminate()
         {
-            script->Terminate();
+            if (script != nullptr)
+                script->Terminate();
         }
 
         void Device::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -227,7 +237,9 @@ namespace server
 
             // Attributes
             rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
-            script->JsonGet(attributesJson, allocator);
+
+            if (script != nullptr)
+                script->JsonGet(attributesJson, allocator);
 
             output.AddMember("attributes", attributesJson, allocator);
         }
@@ -242,6 +254,10 @@ namespace server
             rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
             if (nameIt != input.MemberEnd() && nameIt->value.IsString())
                 SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
+
+            rapidjson::Value::MemberIterator scriptSourceIDIt = input.FindMember("scriptsourceid");
+            if (scriptSourceIDIt != input.MemberEnd() && scriptSourceIDIt->value.IsUint())
+                SetScriptSourceID(scriptSourceIDIt->value.GetUint());
 
             rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
             if (controllerIDIt != input.MemberEnd() && controllerIDIt->value.IsUint())
@@ -273,7 +289,8 @@ namespace server
         {
             assert(input.IsObject());
 
-            script->JsonSetState(input);
+            if (script != nullptr)
+                script->JsonSetState(input);
         }
     }
 }

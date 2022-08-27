@@ -17,6 +17,7 @@ namespace server
             {
               private:
                 virtual bool Initialize() override;
+                virtual bool Terminate() override;
 
               protected:
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource);

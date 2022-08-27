@@ -6,7 +6,7 @@ namespace server
     namespace scripting
     {
         Timer::Timer(Ref<Script> script, CallbackMethod<> callback)
-            : Controller(script), callback(callback), timer(script->GetWorker()->GetContext())
+            : Controller(script), callback(callback), interval(0), timer(script->GetWorker()->GetContext())
         {
             assert(script != nullptr);
         }

@@ -134,19 +134,17 @@ namespace server
                 {
                     if (boost::beast::websocket::is_upgrade(request))
                     {
+                        // Authenticate user before starting websocket connection
                         Ref<users::User> user = Authenticate();
-                        if (user == nullptr)
+                        if (user != nullptr)
                         {
-                            WriteError("Invalid authentication token.");
-                            return;
+                            socket->expires_never();
+
+                            Ref<WSSession> ws = boost::make_shared<WSSession>(socket, user);
+                            ws->Run(request);
+
+                            buffer.consume(size);
                         }
-
-                        socket->expires_never();
-
-                        Ref<WSSession> ws = boost::make_shared<WSSession>(socket, user);
-                        ws->Run(request);
-
-                        buffer.consume(size);
                     }
                     else
                     {

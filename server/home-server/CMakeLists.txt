@@ -29,7 +29,3 @@ target_link_libraries(home_server
     ${Boost_LIBRARIES}
     ${SQLite3_LIBRARIES}
 )
-
-# add_dependencies(home_server 
-#     debug_script
-# )

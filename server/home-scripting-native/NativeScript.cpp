@@ -95,7 +95,7 @@ namespace server
             {
                 bool result;
 
-                // Terminate script
+                // Initialize script
                 {
                     boost::lock_guard lock(mutex);
 
@@ -106,6 +106,11 @@ namespace server
                 TakeSnapshot();
 
                 return result;
+            }
+
+            bool NativeScript::Terminate()
+            {
+                return true;
             }
         }
     }

@@ -68,8 +68,10 @@ namespace server
 
             // Initialize default script provider
             boost::container::vector<Ref<scripting::ScriptProvider>> scriptProviderList = {
-                scripting::native::NativeScriptProvider::Create(config::GetScriptDirectory().string()), // NativeScript
-                scripting::javascript::JSScriptProvider::Create(),                                      // JavaScript
+                scripting::native::NativeScriptProvider::Create(core->nativeScriptDirectory.empty()
+                                                                    ? config::GetScriptDirectory().string()
+                                                                    : core->nativeScriptDirectory), // NativeScript
+                scripting::javascript::JSScriptProvider::Create(),                                  // JavaScript
             };
             for (Ref<scripting::ScriptProvider> scriptProvider : scriptProviderList)
             {
@@ -218,6 +220,29 @@ namespace server
         if (threadCount == 1)
         {
             LOG_WARNING("No additional worker thread is used. This could cause some slowdowns.");
+        }
+
+        // Load scripting config
+        rapidjson::Value::MemberIterator scriptingIt = document.FindMember("scripting");
+
+        if (scriptingIt != document.MemberEnd() && scriptingIt->value.IsObject())
+        {
+            // Load native script directory
+            rapidjson::Value::MemberIterator nativeScriptDirectoryIt =
+                scriptingIt->value.FindMember("native-script-directory");
+            if (nativeScriptDirectoryIt != document.MemberEnd() && nativeScriptDirectoryIt->value.IsString())
+                nativeScriptDirectory = std::string(nativeScriptDirectoryIt->value.GetString(),
+                                                    nativeScriptDirectoryIt->value.GetStringLength());
+            else
+            {
+                nativeScriptDirectory = "";
+                LOG_WARNING("Missing 'native-script-directory'. Native script directory will be set to default '{0}'.",
+                            config::GetScriptDirectory().string());
+            }
+        }
+        else
+        {
+            LOG_WARNING("Missing 'scripting' sub-config.");
         }
 
         return true;

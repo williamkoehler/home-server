@@ -20,6 +20,8 @@ namespace server
             {
                 Ref<NativeScriptProvider> provider = boost::make_shared<NativeScriptProvider>(path);
 
+                LOG_INFO("Initializing native script provider in '{0}'.", path);
+
                 if (provider != nullptr)
                 {
                     // Load libraries

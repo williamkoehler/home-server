@@ -10,8 +10,8 @@ add_subdirectory(home-scripting-javascript)
 add_subdirectory(home-main)
 add_subdirectory(home-networking)
 
-add_subdirectory(scripts)
-
 add_subdirectory(home-server)
+
+add_subdirectory(scripts)
 
 add_subdirectory(tests)

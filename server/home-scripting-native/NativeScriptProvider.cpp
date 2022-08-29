@@ -89,8 +89,9 @@ namespace server
                                 {
                                     LOG_INFO("Registering library '{0}'", name);
 
-                                    LibraryInformations informations =
-                                        library->get<GetLibraryInformationsCallback>("GetLibraryInformations")();
+                                    //  Get lib informations
+                                    LibraryInformations lib;
+                                    library->get<GetLibraryInformationsCallback>("GetLibraryInformations")(&lib);
 
                                     std::stringstream ss;
 
@@ -100,19 +101,18 @@ namespace server
                                     // Authors: Max Mustermann, ...
                                     // Dependencies: boost, ...
 
-                                    ss << "Library name: " << informations.libraryName << std::endl;
-                                    ss << "Name:         " << informations.name << std::endl;
-                                    ss << "License:      " << informations.license << std::endl;
-                                    ss << "Version:      " << informations.version.major << "."
-                                       << informations.version.minor << "." << informations.version.patch << "."
-                                       << informations.version.revision << std::endl;
-                                    ss << "Authors:      " << boost::join(informations.authors, ", ") << std::endl;
-                                    ss << "Dependencies: " << boost::join(informations.dependencies, ", ") << std::endl;
+                                    ss << "Library name: " << lib.libraryName << std::endl;
+                                    ss << "Name:         " << lib.name << std::endl;
+                                    ss << "License:      " << lib.license << std::endl;
+                                    ss << "Version:      " << lib.version.major << "." << lib.version.minor << "."
+                                       << lib.version.patch << "." << lib.version.revision << std::endl;
+                                    ss << "Authors:      " << boost::join(lib.authors, ", ") << std::endl;
+                                    ss << "Dependencies: " << boost::join(lib.dependencies, ", ") << std::endl;
 
                                     LOG_INFO("Library {0}\n{1}", name, ss.str());
 
-                                    if (!informations.libraryName.empty())
-                                        libraryList[informations.libraryName] = library;
+                                    if (!lib.libraryName.empty())
+                                        libraryList[lib.libraryName] = library;
                                     else
                                     {
                                         LOG_ERROR("Invalid library name. Library '{0}'", name);

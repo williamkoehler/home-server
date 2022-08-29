@@ -27,7 +27,7 @@ namespace server
                 boost::container::vector<std::string> dependencies;
             };
 
-            using GetLibraryInformationsCallback = LibraryInformations();
+            using GetLibraryInformationsCallback = void(LibraryInformations* lib);
         }
     }
 }

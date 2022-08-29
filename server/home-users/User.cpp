@@ -62,7 +62,7 @@ namespace server
             assert(database != nullptr);
 
             // Update database
-            if (database->UpdateUserPropName(id, name, v))
+            if (database->UpdateUserPropName(id, v))
             {
                 // Assign new value
                 name = v;
@@ -131,8 +131,7 @@ namespace server
             assert(database != nullptr);
 
             // Update database
-            if (database->UpdateUserPropAccessLevel(id, StringifyUserAccessLevel(accessLevel),
-                                                    StringifyUserAccessLevel(v)))
+            if (database->UpdateUserPropAccessLevel(id, StringifyUserAccessLevel(v)))
             {
                 // Assign new value
                 accessLevel = v;

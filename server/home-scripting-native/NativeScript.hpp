@@ -45,7 +45,7 @@ namespace server
                 virtual bool Init() = 0;
             };
 
-            using CreateScriptCallback = Ref<NativeScript>(Ref<View> view, Ref<NativeScriptSource> scriptSource);
+            using CreateScriptCallback = void(Ref<View> view, Ref<NativeScriptSource> scriptSource, Ref<NativeScript>* result);
         }
     }
 }

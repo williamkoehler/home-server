@@ -27,7 +27,11 @@ namespace server
 
                 try
                 {
-                    return callback(view, boost::dynamic_pointer_cast<NativeScriptSource>(shared_from_this()));
+                    // Create native script
+                    Ref<NativeScript> result = nullptr;
+                    callback(view, boost::dynamic_pointer_cast<NativeScriptSource>(shared_from_this()), &result);
+
+                    return result;
                 }
                 catch (std::exception e)
                 {

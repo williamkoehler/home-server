@@ -6,6 +6,10 @@ if(${ENABLE_TESTS})
 
         # Home.Threading
         "${PROJECT_SOURCE_DIR}/server/tests/home-threading/TestWorker.cpp"
+
+        # Home.Database
+        "${PROJECT_SOURCE_DIR}/server/tests/home-database/TestDatabase.cpp"
+        "${PROJECT_SOURCE_DIR}/server/tests/home-database/TestDatabase-random.cpp"
     )
 
     # Add one test for each test file
@@ -18,7 +22,7 @@ if(${ENABLE_TESTS})
         message(STATUS "Found " ${exename})
         string(REPLACE "-" "_" testname ${exename})
 
-        add_executable(${testname} ${testfile} "common.hpp")
+        add_executable(${testname} "common.hpp" ${testfile})
         set_target_properties(${testname} PROPERTIES OUTPUT_NAME ${exename})
     
         # Add necessary libraries
@@ -33,6 +37,7 @@ if(${ENABLE_TESTS})
         target_link_libraries(${testname}
             home_common
             home_threading
+            home_database
             dl
             ${CMAKE_THREAD_LIBS_INIT}
             ${OPENSSL_LIBRARIES}

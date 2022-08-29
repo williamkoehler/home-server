@@ -5,12 +5,16 @@ namespace server
 {
     namespace scripting
     {
+        /// @brief Endpoint object (host:port)
+        /// 
         struct Endpoint
         {
             std::string host;
             uint16_t port;
         };
 
+        /// @brief Color object (red;green;blue)
+        /// 
         struct Color
         {
             uint8_t red, green, blue;

@@ -149,9 +149,8 @@ namespace server
         /// @param value Old name (for record)
         /// @param newValue New name
         /// @return Successfulness
-        virtual bool UpdateUserPropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
-        virtual bool UpdateUserPropAccessLevel(identifier_t id, const std::string& value,
-                                               const std::string& newValue) = 0;
+        virtual bool UpdateUserPropName(identifier_t id, const std::string& newValue) = 0;
+        virtual bool UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue) = 0;
         virtual bool UpdateUserPropHash(identifier_t id, uint8_t newValue[SHA256_SIZE]) = 0;
         virtual bool UpdateUserPropSalt(identifier_t id, uint8_t newValue[SALT_SIZE]) = 0;
         virtual bool RemoveUser(identifier_t id) = 0;

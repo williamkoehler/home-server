@@ -113,7 +113,7 @@ namespace server
             if (sqlite3_column_type(statement, 1) == SQLITE_NULL || sqlite3_column_type(statement, 2) == SQLITE_NULL ||
                 sqlite3_column_type(statement, 3) == SQLITE_NULL || sqlite3_column_type(statement, 4) == SQLITE_NULL)
             {
-                LOG_ERROR("Failing to load invalid room {0}");
+                LOG_ERROR("Failing to load invalid script source {0}", id);
                 continue;
             }
 
@@ -1082,7 +1082,7 @@ namespace server
         return true;
     }
 
-    bool SQLiteDatabase::UpdateUserPropName(identifier_t id, const std::string& value, const std::string& newValue)
+    bool SQLiteDatabase::UpdateUserPropName(identifier_t id, const std::string& newValue)
     {
         // Lock main mutex
         boost::lock_guard lock(mutex);
@@ -1117,8 +1117,7 @@ namespace server
 
         return true;
     }
-    bool SQLiteDatabase::UpdateUserPropAccessLevel(identifier_t id, const std::string& value,
-                                                   const std::string& newValue)
+    bool SQLiteDatabase::UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue)
     {
         // Lock main mutex
         boost::lock_guard lock(mutex);

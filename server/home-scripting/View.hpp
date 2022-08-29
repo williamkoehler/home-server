@@ -9,8 +9,9 @@ namespace server
         enum class ViewType
         {
             kUnknownViewType,
-            kDeviceViewType,
+            kHomeViewType,
             kRoomViewType,
+            kDeviceViewType,
         };
 
         class View

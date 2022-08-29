@@ -7,12 +7,14 @@ namespace server
     {
         namespace native
         {
+            /// @brief Script library version (major.minor.patch.revision)
+            /// 
             struct LibraryVersion
             {
-                int major;
-                int minor;
-                int patch;
-                int revision;
+                uint32_t major;
+                uint32_t minor;
+                uint32_t patch;
+                uint32_t revision;
             };
 
             struct LibraryInformations

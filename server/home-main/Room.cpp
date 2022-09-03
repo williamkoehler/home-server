@@ -13,7 +13,6 @@ namespace server
         }
         Room::~Room()
         {
-            deviceList.clear();
         }
         Ref<Room> Room::Create(identifier_t id, const std::string& type, const std::string& name)
         {
@@ -83,26 +82,6 @@ namespace server
             return view;
         }
 
-        //! Device
-        bool Room::AddDevice(Ref<Device> device)
-        {
-            assert(device != nullptr);
-
-            boost::lock_guard lock(mutex);
-
-            // Add device id to list
-            return deviceList.insert(device->GetID()).second;
-        }
-        bool Room::RemoveDevice(Ref<Device> device)
-        {
-            assert(device != nullptr);
-
-            boost::lock_guard lock(mutex);
-
-            // Remove device id from list
-            return deviceList.erase(device->GetID());
-        }
-
         void Room::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
@@ -113,17 +92,6 @@ namespace server
             output.AddMember("id", rapidjson::Value(id), allocator);
             output.AddMember("name", rapidjson::Value(name.c_str(), name.size()), allocator);
             output.AddMember("type", rapidjson::Value(type.data(), type.size()), allocator);
-
-            // Build devices
-
-            // Reserve memory
-            rapidjson::Value devicesJson = rapidjson::Value(rapidjson::kArrayType);
-            devicesJson.Reserve(deviceList.size(), allocator);
-
-            for (identifier_t& deviceID : deviceList)
-                devicesJson.PushBack(rapidjson::Value(deviceID), allocator);
-
-            output.AddMember("devices", devicesJson, allocator);
         }
         void Room::JsonSet(rapidjson::Value& input)
         {

@@ -126,18 +126,19 @@ namespace server
         Ref<Device> Device::GetController()
         {
             boost::shared_lock_guard lock(mutex);
-            return controller;
+            return controller.lock();
         }
         bool Device::SetController(Ref<Device> v)
         {
             boost::lock_guard lock(mutex);
 
-            identifier_t oldControllerID = controller != nullptr ? controller->GetID() : 0;
-            identifier_t newControllerID = v != nullptr ? v->GetID() : 0;
+            Ref<Device> controllerRef = controller.lock();
+            identifier_t oldControllerID = controllerRef != nullptr ? controllerRef->GetID() : 0;
+            identifier_t controllerID = v != nullptr ? v->GetID() : 0;
 
             // Cannot assign itself as controller
             // This would lead to an infinite loop of death ;-)
-            if (id == newControllerID)
+            if (id == controllerID)
                 return false;
 
             // A controller cannot be controlled
@@ -151,7 +152,7 @@ namespace server
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
-            if (database->UpdateDevicePropController(id, oldControllerID, newControllerID))
+            if (database->UpdateDevicePropController(id, oldControllerID, controllerID))
             {
                 controller = v;
                 return true;
@@ -160,28 +161,46 @@ namespace server
             return false;
         }
 
+        identifier_t Device::GetControllerID()
+        {
+            boost::shared_lock_guard lock(mutex);
+
+            Ref<Device> controllerRef = controller.lock();
+            return controllerRef != nullptr ? controllerRef->GetID() : 0;
+        }
+
         Ref<Room> Device::GetRoom()
         {
             boost::shared_lock_guard lock(mutex);
-            return room;
+            return room.lock();
         }
         bool Device::SetRoom(Ref<Room> v)
         {
             boost::lock_guard lock(mutex);
 
-            identifier_t oldRoomID = room != nullptr ? room->GetID() : 0;
-            identifier_t newRoomID = v != nullptr ? v->GetID() : 0;
+            Ref<Room> oldRoomRef = room.lock();
+            identifier_t oldRoomID = oldRoomRef != nullptr ? oldRoomRef->GetID() : 0;
+
+            identifier_t roomID = v != nullptr ? v->GetID() : 0;
 
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
-            if (database->UpdateDevicePropRoom(id, oldRoomID, newRoomID))
+            if (database->UpdateDevicePropRoom(id, oldRoomID, roomID))
             {
                 room = v;
                 return true;
             }
 
             return false;
+        }
+
+        identifier_t Device::GetRoomID()
+        {
+            boost::shared_lock_guard lock(mutex);
+
+            Ref<Room> roomRef = room.lock();
+            return roomRef != nullptr ? roomRef->GetID() : 0;
         }
 
         Ref<DeviceView> Device::GetView()
@@ -227,21 +246,27 @@ namespace server
                                                : rapidjson::Value(rapidjson::kNullType),
                              allocator);
 
+            Ref<Device> controllerRef = controller.lock();
             output.AddMember("controllerid",
-                             controller != nullptr ? rapidjson::Value(controller->id)
-                                                   : rapidjson::Value(rapidjson::kNullType),
+                             controllerRef != nullptr ? rapidjson::Value(controllerRef->id)
+                                                      : rapidjson::Value(rapidjson::kNullType),
                              allocator);
 
-            output.AddMember("roomid", room != nullptr ? rapidjson::Value(id) : rapidjson::Value(rapidjson::kNullType),
+            Ref<Room> roomRef = room.lock();
+            output.AddMember("roomid",
+                             roomRef != nullptr ? rapidjson::Value(roomRef->GetID())
+                                                : rapidjson::Value(rapidjson::kNullType),
                              allocator);
 
-            // Attributes
-            rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+            // Script
+            rapidjson::Value scriptJson = rapidjson::Value(rapidjson::kObjectType);
 
             if (script != nullptr)
-                script->JsonGet(attributesJson, allocator);
+                script->JsonGet(scriptJson, allocator);
+            else
+                scriptJson.SetNull();
 
-            output.AddMember("attributes", attributesJson, allocator);
+            output.AddMember("script", scriptJson, allocator);
         }
         void Device::JsonSet(rapidjson::Value& input)
         {

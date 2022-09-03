@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include <home-threading/Worker.hpp>
+#include <home-scripting/Script.hpp>
 
 namespace server
 {
@@ -103,6 +104,18 @@ namespace server
             /// @param id Device id
             /// @return Device or nullptr
             Ref<Device> GetDevice(identifier_t id);
+
+            /// @brief Get devices from a room
+            ///
+            /// @param room Room (or null to get devices that are not in a room)
+            /// @return Filtered devices
+            boost::container::vector<Ref<Device>> FilterDevicesByRoom(Ref<Room> room);
+
+            /// @brief Get devices that use a specific script
+            ///
+            /// @param room Room (or null to get devices that are not configured)
+            /// @return Filtered devices
+            boost::container::vector<Ref<Device>> FilterDevicesByScript(Ref<scripting::ScriptSource> scriptSource);
 
             /// @brief Remove device using its id
             /// @param id Device id

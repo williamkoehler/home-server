@@ -240,6 +240,48 @@ namespace server
             return it->second;
         }
 
+        boost::container::vector<Ref<Device>> Home::FilterDevicesByRoom(Ref<Room> room)
+        {
+            // Reserve device list
+            boost::container::vector<Ref<Device>> filteredDeviceList = boost::container::vector<Ref<Device>>();
+            filteredDeviceList.reserve(32);
+
+            // Get room id
+            identifier_t roomID = room->GetID();
+
+            // Lock home mutex
+            boost::shared_lock_guard lock(mutex);
+
+            for (auto& [id, device] : deviceList)
+            {
+                if (device->GetRoomID() == roomID)
+                    filteredDeviceList.push_back(device);
+            }
+
+            return filteredDeviceList;
+        }
+
+        boost::container::vector<Ref<Device>> Home::FilterDevicesByScript(Ref<scripting::ScriptSource> scriptSource)
+        {
+            // Reserve device list
+            boost::container::vector<Ref<Device>> filteredDeviceList = boost::container::vector<Ref<Device>>();
+            filteredDeviceList.reserve(32);
+
+            // Get script source id
+            identifier_t scriptSourceID = scriptSource->GetID();
+
+            // Lock home mutex
+            boost::shared_lock_guard lock(mutex);
+
+            for (auto& [id, device] : deviceList)
+            {
+                if (device->GetScriptSourceID() == scriptSourceID)
+                    filteredDeviceList.push_back(device);
+            }
+
+            return filteredDeviceList;
+        }
+
         bool Home::RemoveDevice(identifier_t id)
         {
             boost::lock_guard lock(mutex);

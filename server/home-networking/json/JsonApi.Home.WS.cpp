@@ -181,7 +181,8 @@ namespace server
             rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
             rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
             if (!nameIt->value.IsString() || scriptSourceIDIt == input.MemberEnd() ||
-                !scriptSourceIDIt->value.IsUint() || controllerIDIt == input.MemberEnd() ||
+                (!scriptSourceIDIt->value.IsUint() && !scriptSourceIDIt->value.IsNull()) ||
+                controllerIDIt == input.MemberEnd() ||
                 (!controllerIDIt->value.IsUint() && !controllerIDIt->value.IsNull()) || roomIDIt == input.MemberEnd() ||
                 (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
             {
@@ -198,10 +199,10 @@ namespace server
 
             // Add new device
             rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
-            Ref<main::Device> device =
-                home->AddDevice(nameIt->value.GetString(), scriptSourceIDIt->value.GetUint(),
-                                controllerIDIt->value.IsUint() ? controllerIDIt->value.GetUint() : 0,
-                                roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0, json);
+            Ref<main::Device> device = home->AddDevice(
+                nameIt->value.GetString(), scriptSourceIDIt->value.IsUint() ? scriptSourceIDIt->value.GetUint() : 0,
+                controllerIDIt->value.IsUint() ? controllerIDIt->value.GetUint() : 0,
+                roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0, json);
             if (device == nullptr)
             {
                 //! Error failed to add device

@@ -103,11 +103,15 @@ namespace server
             // Lock main mutex
             boost::lock_guard lock(mutex);
 
-            // Reserve memory
-            output.MemberReserve(attributeList.size(), allocator);
+            // Build script attributes
+            rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+            attributesJson.MemberReserve(attributeList.size(), allocator);
+
             for (auto& [id, attribute] : attributeList)
-                output.AddMember(rapidjson::Value(id.data(), id.size(), allocator),
-                                 rapidjson::Value(attribute, allocator, true), allocator);
+                attributesJson.AddMember(rapidjson::Value(id.data(), id.size(), allocator),
+                                         rapidjson::Value(attribute, allocator, true), allocator);
+
+            output.AddMember("attributes", attributesJson, allocator);
         }
         void Script::JsonSet(rapidjson::Value& input)
         {

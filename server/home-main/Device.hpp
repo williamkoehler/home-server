@@ -19,8 +19,8 @@ namespace server
             std::string name;
             Ref<scripting::Script> script;
 
-            Ref<Device> controller;
-            Ref<Room> room;
+            WeakRef<Device> controller;
+            WeakRef<Room> room;
 
             Ref<DeviceView> view;
 
@@ -50,7 +50,7 @@ namespace server
             bool SetName(const std::string& v);
 
             /// @brief Set script source id
-            /// 
+            ///
             /// @param scriptSource Script source id
             /// @return Successfulness
             bool SetScriptSourceID(identifier_t scriptSourceID);
@@ -69,6 +69,11 @@ namespace server
             /// @return Successfulness
             bool SetController(Ref<Device> v);
 
+            /// @brief Get controller id
+            ///
+            /// @return identifier_t Controller id or zero
+            identifier_t GetControllerID();
+
             /// @brief Get room
             /// @return Room (can be null)
             Ref<Room> GetRoom();
@@ -77,6 +82,11 @@ namespace server
             /// @param v Room (can be null)
             /// @return Successfulness
             bool SetRoom(Ref<Room> v);
+
+            /// @brief Get room id
+            ///
+            /// @return identifier_t Room id or zero
+            identifier_t GetRoomID();
 
             /// @brief Get device view
             ///

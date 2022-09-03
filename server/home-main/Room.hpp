@@ -18,8 +18,6 @@ namespace server
             std::string type;
             std::string name;
 
-            boost::container::set<identifier_t> deviceList;
-
             Ref<RoomView> view;
 
           public:
@@ -61,24 +59,6 @@ namespace server
             /// 
             /// @return Get room view of this object 
             Ref<RoomView> GetView();
-
-            //! Device
-
-            /// @brief Add device to room
-            /// @param device Device
-            bool AddDevice(Ref<Device> device);
-
-            /// @brief Get device count
-            /// @return Device count
-            inline size_t GetDeviceCount()
-            {
-                boost::shared_lock_guard lock(mutex);
-                return deviceList.size();
-            }
-
-            /// @brief Remove device from room
-            /// @param device Device
-            bool RemoveDevice(Ref<Device> device);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

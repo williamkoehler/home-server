@@ -26,8 +26,10 @@ namespace server
 
                 boost::container::vector<Ref<Property>> propertyByIDList;
 
-                // Prepare script timeout
-                void PrepareTimeout(size_t maxTime = 5);
+                /// @brief Prepare script timeout
+                /// 
+                /// @param maxTime Max execution time in milliseconds
+                void PrepareTimeout(size_t maxTime = 5000);
 
                 /// @brief Initialize script safely
                 ///
@@ -46,6 +48,8 @@ namespace server
                 /// @param udata Userdata
                 /// @return Successfulness
                 static duk_ret_t InvokeSafe(duk_context* context, void* udata);
+
+                bool InvokeCallback(const std::string& event);
 
                 static duk_ret_t PropertyGetter(duk_context* context);
                 static duk_ret_t PropertySetter(duk_context* context);

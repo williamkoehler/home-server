@@ -1,4 +1,5 @@
 #pragma once
+#include "LibraryInformation.hpp"
 #include "common.hpp"
 #include "robin-hood/robin_hood.h"
 #include <boost/dll/shared_library.hpp>
@@ -21,9 +22,8 @@ namespace server
                 ///
                 std::string path;
 
-                robin_hood::unordered_node_map<std::string, Ref<boost::dll::shared_library>> libraryList;
-
-                void LoadLibraries();
+                boost::container::vector<Ref<boost::dll::shared_library>> libraryList;
+                robin_hood::unordered_node_map<std::string, ScriptInformation> scriptList;
 
               public:
                 NativeScriptProvider(const std::string& path);
@@ -39,15 +39,17 @@ namespace server
                     return ScriptLanguage::kNativeScriptLanguage;
                 }
 
-                /// @brief Create javascript script source
-                ///
-                /// @param id Script source id
-                /// @param name Script source name (fmt. <library name>/<script name>)
-                /// @param usage Script usage
-                /// @param data Source code
-                /// @return Javascript script source
+                virtual bool IsDynamic() override
+                {
+                    // Only static script sources
+                    return false;
+                }
+
+                virtual boost::container::vector<StaticScriptSource> GetStaticScriptSources() override;
+
+                /// Does nothing. Every native script is static
                 virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name,
-                                                             ScriptUsage usage, const std::string_view& data) override;
+                                                             ScriptUsage usage, const std::string_view& content) override;
             };
         }
     }

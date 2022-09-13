@@ -24,6 +24,16 @@ namespace server
             if (scriptManager == nullptr)
                 return nullptr;
 
+            // Verify script providers
+            for (Ref<ScriptProvider> provider : providerList)
+            {
+                if (provider == nullptr)
+                {
+                    LOG_ERROR("Invalid script provider.");
+                    return nullptr;
+                }
+            }
+
             try
             {
                 Ref<Database> database = Database::GetInstance();
@@ -33,6 +43,21 @@ namespace server
                 database->LoadScriptSources(boost::bind(
                     &ScriptManager::LoadScriptSource, scriptManager, boost::placeholders::_1, boost::placeholders::_2,
                     boost::placeholders::_3, boost::placeholders::_4, boost::placeholders::_5));
+
+                // Load static script sources
+                for (Ref<ScriptProvider> provider : scriptManager->providerList)
+                {
+                    // Get static script sources
+                    boost::container::vector<StaticScriptSource> staticScriptSources =
+                        provider->GetStaticScriptSources();
+
+                    // Create static script sources
+                    for (StaticScriptSource& staticScriptSource : staticScriptSources)
+                    {
+                        scriptManager->AddScriptSource(provider->GetLanguage(), staticScriptSource.name,
+                                                       staticScriptSource.usage);
+                    }
+                }
             }
             catch (std::exception)
             {
@@ -80,10 +105,9 @@ namespace server
             assert(database != nullptr);
 
             // Find provider
-            const boost::container::vector<Ref<ScriptProvider>>::const_iterator it =
-                boost::find_if(providerList, [&](Ref<ScriptProvider> provider) -> bool {
-                    return provider->GetLanguage() == language;
-                });
+            const boost::container::vector<Ref<ScriptProvider>>::const_iterator it = boost::find_if(
+                providerList,
+                [&](Ref<ScriptProvider> provider) -> bool { return provider->GetLanguage() == language; });
 
             if (it == providerList.end())
                 return nullptr;
@@ -104,11 +128,11 @@ namespace server
                 return nullptr;
 
             // Create new script source
-            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(0, name, usage, empty);
+            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(id, name, usage, empty);
 
             // Add script source
             if (scriptSource != nullptr)
-                scriptSourceList[scriptSource->GetID()] = scriptSource;
+                scriptSourceList[id] = scriptSource;
             else
             {
                 database->RemoveScriptSource(id);
@@ -122,7 +146,7 @@ namespace server
         {
             boost::lock_guard lock(mutex);
 
-            const boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
+            const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
                 return nullptr;
@@ -151,7 +175,7 @@ namespace server
         {
             boost::lock_guard lock(mutex);
 
-            const boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
+            const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
                 return nullptr;

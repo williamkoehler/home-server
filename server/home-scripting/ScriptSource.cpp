@@ -112,12 +112,13 @@ namespace server
 
             boost::lock_guard lock(mutex);
 
+            output.AddMember("id", rapidjson::Value(id), allocator);
+            
             std::string languageStr = StringifyScriptLanguage(GetLanguage());
             output.AddMember("language", rapidjson::Value(languageStr.data(), languageStr.size(), allocator),
                              allocator);
 
             output.AddMember("name", rapidjson::Value(name.c_str(), name.size(), allocator), allocator);
-            output.AddMember("id", rapidjson::Value(id), allocator);
 
             std::string usageStr = StringifyScriptUsage(usage);
             output.AddMember("usage", rapidjson::Value(usageStr.data(), usageStr.size(), allocator), allocator);

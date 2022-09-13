@@ -6,14 +6,44 @@ namespace server
 {
     namespace scripting
     {
+        class ScriptManager;
+
+        struct StaticScriptSource
+        {
+            const std::string name;
+            const ScriptUsage usage;
+        };
+
         class ScriptProvider
         {
           public:
+            /// @brief Get script provider name
+            ///
+            /// @return Script provider name
             virtual std::string GetName() = 0;
             virtual ScriptLanguage GetLanguage() = 0;
 
+            /// @brief Can the script provider create scripts sources dynamically from source code.
+            /// For example JavaScript that only loads from source code.
+            ///
+            /// @return true Can create script source from source code
+            /// @return false Can only create static script sources
+            virtual bool IsDynamic() = 0;
+
+            /// @brief Get static script sources
+            ///
+            /// @return Static script sources
+            virtual boost::container::vector<StaticScriptSource> GetStaticScriptSources() = 0;
+
+            /// @brief Create script source
+            ///
+            /// @param id Script source id
+            /// @param name Script source name
+            /// @param usage Script usage
+            /// @param content Source code
+            /// @return Script Source
             virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
-                                                         const std::string_view& data) = 0;
+                                                         const std::string_view& content) = 0;
         };
 
         class ScriptManager
@@ -22,7 +52,7 @@ namespace server
             boost::mutex mutex;
 
             boost::container::vector<Ref<ScriptProvider>> providerList;
-            boost::unordered::unordered_map<identifier_t, Ref<ScriptSource>> scriptSourceList;
+            robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>> scriptSourceList;
 
             // Database
             bool LoadScriptSource(identifier_t id, const std::string& language, const std::string& name,

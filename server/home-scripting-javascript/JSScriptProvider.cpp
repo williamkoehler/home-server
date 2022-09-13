@@ -24,6 +24,12 @@ namespace server
                 return provider;
             }
 
+            boost::container::vector<StaticScriptSource> JSScriptProvider::GetStaticScriptSources()
+            {
+                // The javascript provider does not load any scripts
+                return boost::container::vector<StaticScriptSource>();
+            }
+
             Ref<ScriptSource> JSScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,
                                                                    ScriptUsage usage, const std::string_view& data)
             {

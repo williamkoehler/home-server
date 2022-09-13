@@ -1,5 +1,5 @@
 #include "NativeScriptProvider.hpp"
-#include "LibraryInformations.hpp"
+#include "LibraryInformation.hpp"
 #include "NativeScript.hpp"
 #include "NativeScriptSource.hpp"
 #include <home-scripting/ScriptManager.hpp>
@@ -20,61 +20,17 @@ namespace server
             {
                 Ref<NativeScriptProvider> provider = boost::make_shared<NativeScriptProvider>(path);
 
+                const char* libraryFunction = "GetLibraryInformations";
+
                 LOG_INFO("Initializing native script provider in '{0}'.", path);
 
-                if (provider != nullptr)
-                {
-                    // Load libraries
-                    provider->LoadLibraries();
-                }
-
-                return provider;
-            }
-
-            Ref<ScriptSource> NativeScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,
-                                                                       ScriptUsage usage, const std::string_view& data)
-            {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
-                std::string::size_type seperator = name.find_first_of('/');
-
-                if (seperator != std::string::npos && (seperator + 1) <= name.size())
-                {
-                    std::string libraryName = name.substr(0, seperator);
-                    std::string scriptName = name.substr(seperator + 1);
-
-                    // Find library
-                    const robin_hood::unordered_node_map<std::string, Ref<boost::dll::shared_library>>::const_iterator
-                        it = libraryList.find(libraryName);
-                    if (it != libraryList.end())
-                    {
-                        Ref<boost::dll::shared_library> library = it->second;
-
-                        // Find create script callback
-                        std::string callbackName = "Create" + scriptName;
-                        if (library->has(callbackName.c_str()))
-                        {
-                            CreateScriptCallback* callback = library->get<CreateScriptCallback>(callbackName);
-
-                            // Create script source
-                            return NativeScriptSource::Create(id, scriptName, usage, callback);
-                        }
-                    }
-                }
-
-                return nullptr;
-            }
-
-            void NativeScriptProvider::LoadLibraries()
-            {
                 try
                 {
                     // Iterate over every library
                     for (boost::filesystem::recursive_directory_iterator it(path);
                          it != boost::filesystem::recursive_directory_iterator(); it++)
                     {
-                        std::string name = it->path().stem().string();
+                        std::string libraryFileName = it->path().stem().string();
 
                         Ref<boost::dll::shared_library> library = boost::make_shared<boost::dll::shared_library>();
 
@@ -83,54 +39,87 @@ namespace server
 
                         if (!ec)
                         {
-                            if (library->has("GetLibraryInformations"))
+                            if (library->has(libraryFunction))
                             {
                                 try
                                 {
-                                    LOG_INFO("Registering library '{0}'", name);
+                                    LOG_INFO("Registering library '{0}'", libraryFileName);
 
                                     //  Get lib informations
-                                    LibraryInformations lib;
-                                    library->get<GetLibraryInformationsCallback>("GetLibraryInformations")(&lib);
+                                    LibraryInformation lib;
+                                    library->get<GetLibraryInformationsCallback>(libraryFunction)(&lib);
 
-                                    std::stringstream ss;
+                                    // Log library details
+                                    {
+                                        std::stringstream ss;
 
-                                    // Name: FooFoo DooDoo
-                                    // License: MIT
-                                    // Version: 1.0.0.0
-                                    // Authors: Max Mustermann, ...
-                                    // Dependencies: boost, ...
+                                        // Library Name: foo-foo--doo-doo
+                                        // Name: FooFoo DooDoo
+                                        // License: MIT
+                                        // Version: 1.0.0.0
+                                        // Authors: Max Mustermann, ...
+                                        // Dependencies: boost, ...
 
-                                    ss << "Library name: " << lib.libraryName << std::endl;
-                                    ss << "Name:         " << lib.name << std::endl;
-                                    ss << "License:      " << lib.license << std::endl;
-                                    ss << "Version:      " << lib.version.major << "." << lib.version.minor << "."
-                                       << lib.version.patch << "." << lib.version.revision << std::endl;
-                                    ss << "Authors:      " << boost::join(lib.authors, ", ") << std::endl;
-                                    ss << "Dependencies: " << boost::join(lib.dependencies, ", ") << std::endl;
+                                        ss << "Library name: " << lib.libraryName << std::endl;
+                                        ss << "Name:         " << lib.name << std::endl;
+                                        ss << "License:      " << lib.license << std::endl;
+                                        ss << "Version:      " << lib.version.ToString() << std::endl;
+                                        ss << "Authors:      " << boost::join(lib.authors, ", ") << std::endl;
+                                        ss << "Dependencies: " << boost::join(lib.dependencies, ", ") << std::endl;
 
-                                    LOG_INFO("Library {0}\n{1}", name, ss.str());
+                                        LOG_INFO("Library {0}\n{1}", libraryFileName, ss.str());
+                                    }
 
+                                    // Add library
                                     if (!lib.libraryName.empty())
-                                        libraryList[lib.libraryName] = library;
+                                    {
+                                        provider->libraryList.push_back(library);
+
+                                        // Add scripts
+                                        for (ScriptInformation& scriptInformation : lib.scripts)
+                                        {
+                                            // Generate unique name for each script
+                                            std::string name = lib.libraryName + '-' + scriptInformation.scriptName;
+
+                                            // Add static script
+                                            provider->scriptList[name] = scriptInformation;
+
+                                            // Log script details
+                                            {
+                                                std::stringstream ss;
+
+                                                // Script Name: foo-foo--boo-boo
+                                                // Name: FooFoo BooBoo
+                                                // Usage: No usage...
+
+                                                ss << "Script name: " << scriptInformation.scriptName << std::endl;
+                                                ss << "Name:        " << scriptInformation.name << std::endl;
+                                                ss << "Usage:       " << StringifyScriptUsage(scriptInformation.usage) << std::endl;
+
+                                                LOG_INFO("Static Script {0}\n{1}", scriptInformation.scriptName,
+                                                         ss.str());
+                                            }
+                                        }
+                                    }
                                     else
                                     {
-                                        LOG_ERROR("Invalid library name. Library '{0}'", name);
+                                        LOG_ERROR("Invalid library name. Library '{0}'", libraryFileName);
                                     }
                                 }
                                 catch (std::exception)
                                 {
-                                    LOG_ERROR("'GetLibraryInformations' not working properly. Library '{0}'", name);
+                                    LOG_ERROR("'GetLibraryInformations' not working properly. Library '{0}'",
+                                              libraryFileName);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR("'GetLibraryInformations' is missing. Library '{0}'", name);
+                                LOG_ERROR("'GetLibraryInformations' is missing. Library '{0}'", libraryFileName);
                             }
                         }
                         else
                         {
-                            LOG_ERROR("Load or open Library '{0}'", name);
+                            LOG_ERROR("Load or open Library '{0}'", libraryFileName);
                         }
                     }
                 }
@@ -138,6 +127,49 @@ namespace server
                 {
                     LOG_ERROR("Iterate over libraries in '{0}'\n{1}", path, e.what());
                 }
+
+                return provider;
+            }
+
+            boost::container::vector<StaticScriptSource> NativeScriptProvider::GetStaticScriptSources()
+            {
+                // Lock main mutex
+                boost::lock_guard lock(mutex);
+
+                boost::container::vector<StaticScriptSource> scriptSourceList =
+                    boost::container::vector<StaticScriptSource>();
+
+                // Generate static script sources
+                for (auto& [name, scriptInformation] : scriptList)
+                {
+                    scriptSourceList.push_back(StaticScriptSource{name, scriptInformation.usage});
+                }
+
+                return scriptSourceList;
+            }
+
+            Ref<ScriptSource> NativeScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,
+                                                                       ScriptUsage usage,
+                                                                       const std::string_view& content)
+            {
+                // Lock main mutex
+                boost::lock_guard lock(mutex);
+
+                robin_hood::unordered_node_map<std::string, ScriptInformation>::const_iterator it =
+                    scriptList.find(name);
+
+                if (it != scriptList.end())
+                {
+                    ScriptInformation scriptInformation = it->second;
+
+                    // Remove created scripts
+                    scriptList.erase(it);
+
+                    return NativeScriptSource::Create(id, scriptInformation.name, scriptInformation.usage,
+                                                      scriptInformation.callback);
+                }
+                else
+                    return nullptr;
             }
         }
     }

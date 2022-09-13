@@ -1,5 +1,5 @@
 #pragma once
-#include "LibraryInformations.hpp"
+#include "LibraryInformation.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/utils/Event.hpp>
@@ -44,8 +44,6 @@ namespace server
 
                 virtual bool Init() = 0;
             };
-
-            using CreateScriptCallback = void(Ref<View> view, Ref<NativeScriptSource> scriptSource, Ref<NativeScript>* result);
         }
     }
 }

@@ -26,6 +26,14 @@ namespace server
                     return ScriptLanguage::kJSScriptLanguage;
                 }
 
+                virtual bool IsDynamic() override
+                {
+                    // JS script sources can be created dynamically
+                    return true;
+                }
+
+                virtual boost::container::vector<StaticScriptSource> GetStaticScriptSources() override;
+
                 /// @brief Create javascript script source
                 ///
                 /// @param id Script source id

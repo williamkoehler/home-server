@@ -30,6 +30,8 @@ duk_ret_t duk_print(duk_context* context)
     return 0;
 }
 
+#define DUK_EVENT_FUNCTION_NAME(event) (DUK_HIDDEN_SYMBOL("event_") + event)
+
 namespace server
 {
     namespace scripting
@@ -72,8 +74,14 @@ namespace server
                     duk_push_global_object(context);
 
                     // Register methods
-                    static const duk_function_list_entry methods[] = {{"print", duk_print, DUK_VARARGS},
-                                                                      {nullptr, nullptr, 0}};
+                    static const duk_function_list_entry methods[] = {
+                        {
+                            "print",
+                            duk_print,
+                            DUK_VARARGS,
+                        },
+                        {nullptr, nullptr, 0},
+                    };
 
                     duk_put_function_list(context, -1, methods);
 
@@ -116,6 +124,70 @@ namespace server
 
             void JSScript::InitializeAttributes()
             {
+                assert(context != nullptr);
+
+                duk_context* c = context.get();
+
+#ifndef NDEBUG
+                duk_idx_t top1 = duk_get_top(c);
+#endif
+
+                duk_get_global_lstring(c, "attributes", 10);
+
+                if (duk_is_object(c, -1))
+                {
+                    // Iterate over every property in 'attributes'
+                    duk_enum(c, -1, 0);
+                    while (duk_next(c, -1, 0))
+                    {
+                        size_t nameLength;
+                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                        std::string name = std::string(nameStr, nameLength);
+
+                        // Read type
+                        duk_get_prop(c, -3); // Read property from 'attributes'
+
+                        // Convert attribute to json
+                        duk_json_encode(c, -1);
+
+                        size_t jsonLength;
+                        const char* jsonStr = duk_to_lstring(c, -1, &jsonLength);
+
+                        // Add attribute
+                        {
+                            rapidjson::Document document;
+
+                            document.Parse(jsonStr, jsonLength);
+
+                            // Add attribute to list
+                            if (!document.HasParseError())
+                                attributeList[name] = std::move(document);
+                            else
+                            {
+                                LOG_ERROR("Parsing duktape json.");
+                                LOG_CODE_MISSING("Add js error message.");
+                            }
+                        }
+
+                        // Pop json
+                        duk_pop(c);
+                    }
+
+                    // Pop enum
+                    duk_pop(c);
+                }
+
+                // Pop object
+                duk_pop(c);
+
+#ifndef NDEBUG
+                duk_idx_t top2 = duk_get_top(c);
+
+                // Check stack before and after
+                assert(top1 == top2);
+#endif
+
+                attributeList.compact();
             }
             void JSScript::InitializeProperties()
             {
@@ -123,58 +195,75 @@ namespace server
 
                 duk_context* c = context.get();
 
+#ifndef NDEBUG
+                duk_idx_t top1 = duk_get_top(c);
+#endif
+
                 duk_get_global_lstring(c, "properties", 10);
 
-                // Iterate over every property in 'properties'
-                duk_enum(c, -1, 0);
-                while (duk_next(c, -1, 0))
+                if (duk_is_object(c, -1))
                 {
-                    size_t nameLength;
-                    const char* nameStr = duk_to_lstring(c, -1, &nameLength);
-                    std::string name = std::string(nameStr, nameLength);
-
-                    // Read type
-                    duk_dup_top(c);
-                    duk_get_prop(c, -4);
-
-                    size_t typeLength;
-                    const char* typeStr = duk_to_lstring(c, -1, &typeLength);
-                    std::string type = std::string(typeStr, typeLength);
-
-                    uint32_t index = UINT32_MAX;
-
-                    // Add property
-                    Ref<Property> property = Property::Create(ParsePropertyType(type));
-                    if (property != nullptr)
+                    // Iterate over every property in 'properties'
+                    duk_enum(c, -1, 0);
+                    while (duk_next(c, -1, 0))
                     {
-                        // Insert property
-                        propertyList[name] = property;
+                        size_t nameLength;
+                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                        std::string name = std::string(nameStr, nameLength);
 
-                        // Insert property id reference
-                        index = (uint32_t)propertyByIDList.size();
-                        if (index >= UINT8_MAX)
-                            duk_error(c, DUK_ERR_ERROR, "Too many properties");
+                        // Read type
+                        duk_dup_top(c);
+                        duk_get_prop(c, -4); // Read property from 'properties'
 
-                        propertyByIDList.push_back(property);
+                        size_t typeLength;
+                        const char* typeStr = duk_to_lstring(c, -1, &typeLength);
+                        std::string type = std::string(typeStr, typeLength);
+
+                        uint32_t index = UINT32_MAX;
+
+                        // Add property
+                        Ref<Property> property = Property::Create(ParsePropertyType(type));
+                        if (property != nullptr)
+                        {
+                            // Insert property
+                            propertyList[name] = property;
+
+                            // Insert property id reference
+                            index = (uint32_t)propertyByIDList.size();
+                            if (index >= UINT8_MAX)
+                                duk_error(c, DUK_ERR_ERROR, "Too many properties");
+
+                            propertyByIDList.push_back(property);
+                        }
+
+                        // Pop type
+                        duk_pop(c);
+
+                        // Push function
+                        duk_push_c_function(c, JSScript::PropertyGetter, 0);
+                        duk_set_magic(c, -1, index);
+                        duk_push_c_function(c, JSScript::PropertySetter, 1);
+                        duk_set_magic(c, -1, index);
+
+                        // Set property getter and setter
+                        duk_def_prop(c, -5,
+                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
+                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE);
                     }
 
-                    // Pop type
+                    // Pop enum
                     duk_pop(c);
-
-                    // Push function
-                    duk_push_c_function(c, JSScript::PropertyGetter, 0);
-                    duk_set_magic(c, -1, index);
-                    duk_push_c_function(c, JSScript::PropertySetter, 1);
-                    duk_set_magic(c, -1, index);
-
-                    // Set property getter and setter
-                    duk_def_prop(c, -5,
-                                 DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
-                                     DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE);
                 }
 
-                // Pop enum
+                // Pop object
                 duk_pop(c);
+
+#ifndef NDEBUG
+                duk_idx_t top2 = duk_get_top(c);
+
+                // Check stack before and after
+                assert(top1 == top2);
+#endif
 
                 propertyByIDList.shrink_to_fit();
             }
@@ -184,39 +273,52 @@ namespace server
 
                 duk_context* c = context.get();
 
+#ifndef NDEBUG
+                duk_idx_t top1 = duk_get_top(c);
+#endif
+
                 // Get events object
                 duk_get_global_lstring(c, "events", 6);
 
-                // Iterate over every property in 'events'
-                duk_enum(c, -1, 0);
-                while (duk_next(c, -1, 0))
+                if (duk_is_object(c, -1))
                 {
-                    size_t idLength;
-                    const char* idStr = duk_to_lstring(c, -1, &idLength);
-                    std::string id = std::string(idStr, idLength);
+                    // Iterate over every property in 'events'
+                    duk_enum(c, -1, 0);
+                    while (duk_next(c, -1, 0))
+                    {
+                        size_t nameLength;
+                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                        std::string name = std::string(nameStr, nameLength);
 
-                    // Read type
-                    duk_get_prop(c, -3);
+                        // Read type
+                        duk_get_prop(c, -3); // Read property from 'events'
 
-                    size_t callbackLength;
-                    const char* callbackStr = duk_to_lstring(c, -1, &callbackLength);
-                    std::string callback = std::string(callbackStr, callbackLength);
+                        // Safe event as hidden variable
+                        std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                        duk_put_global_lstring(c, function_name.data(), function_name.size());
 
-                    // Add event
-                    // Ref<Event> event = Event::Create(id, call)
-                    // if (event != nullptr)
-                    // {
-                    //     // Insert property
-                    //     eventList[name] = event;
-                    // }
-                    // TODO: Implement javascript event creation 
+                        // Add event
+                        Ref<Event> event = Event::Create(name, &JSScript::InvokeCallback);
+                        if (event != nullptr)
+                        {
+                            // Insert property
+                            eventList[name] = event;
+                        }
+                    }
 
-                    // Pop type
+                    // Pop enum
                     duk_pop(c);
                 }
 
-                // Pop enum
+                // Pop object
                 duk_pop(c);
+
+#ifndef NDEBUG
+                duk_idx_t top2 = duk_get_top(c);
+
+                // Check stack before and after
+                assert(top1 == top2);
+#endif
             }
 
             bool JSScript::Initialize()
@@ -260,7 +362,7 @@ namespace server
 
             struct JSInvokeTuple
             {
-                std::string event;
+                const std::string& event;
             };
 
             duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
@@ -270,7 +372,8 @@ namespace server
                 auto& [event] = *(JSInvokeTuple*)udata;
 
                 // Get events object
-                if (!duk_get_global_lstring(context, event.data(), event.size()))
+                std::string function_name = DUK_EVENT_FUNCTION_NAME(event);
+                if (!duk_get_global_lstring(context, function_name.data(), function_name.size()))
                     return DUK_RET_ERROR;
 
                 // Prepare timout
@@ -278,9 +381,33 @@ namespace server
 
                 // Execute event
                 duk_call(context, 0);
-                duk_pop(context);
 
                 return DUK_EXEC_SUCCESS;
+            }
+
+            bool JSScript::InvokeCallback(const std::string& event)
+            {
+                assert(context != nullptr);
+
+                duk_context* c = context.get();
+
+                // Invoke event
+                JSInvokeTuple tuple = {event};
+                if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) == DUK_EXEC_SUCCESS)
+                {
+                    // Get result
+                    bool result = duk_to_boolean(c, -1);
+                    duk_pop(c);
+
+                    return result;
+                }
+                else
+                {
+                    // TODO Error message duk_safe_to_string(context, -1);
+                    LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(c, -1)));
+
+                    return false;
+                }
             }
 
             duk_ret_t JSScript::PropertyGetter(duk_context* context)
@@ -304,12 +431,14 @@ namespace server
                     case PropertyType::kNumberType:
                         duk_push_number(context, property->GetNumber());
                         return 1;
-                    case PropertyType::kStringType: {
+                    case PropertyType::kStringType:
+                    {
                         std::string string = property->GetString();
                         duk_push_lstring(context, string.data(), string.size());
                         return 1;
                     }
-                    case PropertyType::kEndpointType: {
+                    case PropertyType::kEndpointType:
+                    {
                         duk_push_object(context);
 
                         Endpoint endpoint = property->GetEndpoint();
@@ -322,7 +451,8 @@ namespace server
 
                         return 1;
                     }
-                    case PropertyType::kColorType: {
+                    case PropertyType::kColorType:
+                    {
                         duk_push_object(context);
 
                         Color color = property->GetColor();
@@ -359,25 +489,29 @@ namespace server
 
                     switch (property->GetType())
                     {
-                    case PropertyType::kBooleanType: {
+                    case PropertyType::kBooleanType:
+                    {
                         property->SetBoolean(duk_to_boolean(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kIntegerType: {
+                    case PropertyType::kIntegerType:
+                    {
                         property->SetInteger(duk_to_int(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kNumberType: {
+                    case PropertyType::kNumberType:
+                    {
                         property->SetNumber(duk_to_number(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kStringType: {
+                    case PropertyType::kStringType:
+                    {
                         size_t length;
                         const char* string = duk_to_lstring(context, -1, &length);
                         property->SetString(std::string(string, length));
@@ -385,7 +519,8 @@ namespace server
 
                         return 0;
                     }
-                    case PropertyType::kEndpointType: {
+                    case PropertyType::kEndpointType:
+                    {
                         // Coerce value
                         duk_to_object(context, -1);
 
@@ -405,7 +540,8 @@ namespace server
 
                         return 0;
                     }
-                    case PropertyType::kColorType: {
+                    case PropertyType::kColorType:
+                    {
                         // Coerce value
                         duk_to_object(context, -1);
 

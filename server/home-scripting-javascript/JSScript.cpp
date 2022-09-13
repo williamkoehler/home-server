@@ -5,7 +5,7 @@
 extern "C"
 {
     // Interrupt function called by the duktape engine
-    // This allows to interruption of any javascript code that runs too long
+    // This allows the interruption of any javascript code that runs too long
     duk_ret_t duk_exec_timeout(void* udata)
     {
         return ((server::scripting::javascript::JSScript*)udata)->CheckTimeout();
@@ -567,28 +567,6 @@ namespace server
                 // Error
                 return 0;
             }
-
-            // bool JSScript::Invoke(Ref<View> sender, const std::string& event)
-            // {
-            //     if (context != nullptr)
-            //     {
-            //         JSInvokeTuple tuple = {event};
-            //         if (duk_safe_call(context.get(), JSScript::InvokeSafe, (void*)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
-            //         {
-            //             // TODO Error message duk_safe_to_string(context, -1);
-            //             LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(context.get(), -1)));
-
-            //             duk_pop(context.get());
-            //             return false;
-            //         }
-            //         else
-            //             duk_pop(context.get());
-
-            //         return true;
-            //     }
-            //     else
-            //         return false;
-            // }
 
             bool JSScript::Terminate()
             {

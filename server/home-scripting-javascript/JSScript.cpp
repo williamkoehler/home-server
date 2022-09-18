@@ -47,7 +47,7 @@ namespace server
             };
             struct JSInvokeTuple
             {
-                const std::string& event;
+                const std::string& method;
             };
 
             JSScript::JSScript(Ref<View> view, Ref<JSScriptSource> source)
@@ -119,7 +119,7 @@ namespace server
                 // Initialize interface
                 script->InitializeAttributes();
                 script->InitializeProperties();
-                script->InitializeEvents();
+                script->InitializeMethods();
 
                 return DUK_EXEC_SUCCESS;
             }
@@ -306,7 +306,8 @@ namespace server
                         // Set property getter and setter
                         duk_def_prop(c, -5,
                                      DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
-                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
+                                         DUK_DEFPROP_HAVE_ENUMERABLE |
+                                         DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
                     }
 
                     // Pop enum
@@ -325,7 +326,7 @@ namespace server
 
                 propertyByIDList.shrink_to_fit();
             }
-            void JSScript::InitializeEvents()
+            void JSScript::InitializeMethods()
             {
                 assert(context != nullptr);
 
@@ -336,7 +337,7 @@ namespace server
 #endif
 
                 // Get events object
-                duk_get_global_lstring(c, "events", 6); // [ object ]
+                duk_get_global_lstring(c, "methods", 7); // [ object ]
 
                 if (duk_is_object(c, -1))
                 {
@@ -358,13 +359,10 @@ namespace server
                             std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
                             duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
 
-                            // Add event
-                            Ref<Event> event = Event::Create(name, &JSScript::InvokeImpl);
-                            if (event != nullptr)
-                            {
-                                // Insert property
-                                eventList[name] = event;
-                            }
+                            // Add method
+                            Ref<Method> method = Method::Create<JSScript>(name, &JSScript::InvokeImpl);
+                            if (method != nullptr)
+                                eventList[name] = method;
                         }
                         else
                             duk_pop(c); // [ object enum ]
@@ -386,62 +384,63 @@ namespace server
             }
             void JSScript::InitializeControllers()
             {
-                assert(context != nullptr);
+                //                 assert(context != nullptr);
 
-                duk_context* c = context.get();
+                //                 duk_context* c = context.get();
 
-#ifndef NDEBUG
-                duk_idx_t top1 = duk_get_top(c);
-#endif
+                // #ifndef NDEBUG
+                //                 duk_idx_t top1 = duk_get_top(c);
+                // #endif
 
-                // Get events object
-                duk_get_global_lstring(c, "controllers", 11); // [ object ]
+                //                 // Get events object
+                //                 duk_get_global_lstring(c, "controllers", 11); // [ object ]
 
-                if (duk_is_object(c, -1))
-                {
-                    // Iterate over every property in 'controllers'
-                    duk_enum(c, -1, 0); // [ object enum ]
+                //                 if (duk_is_object(c, -1))
+                //                 {
+                //                     // Iterate over every property in 'controllers'
+                //                     duk_enum(c, -1, 0); // [ object enum ]
 
-                    while (duk_next(c, -1, 0)) // [ object enum key ]
-                    {
-                        size_t nameLength;
-                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
-                        std::string name = std::string(nameStr, nameLength);
+                //                     while (duk_next(c, -1, 0)) // [ object enum key ]
+                //                     {
+                //                         size_t nameLength;
+                //                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                //                         std::string name = std::string(nameStr, nameLength);
 
-                        // Read property from 'events'
-                        duk_get_prop(c, -3); // [ object enum func ]
+                //                         // Read property from 'events'
+                //                         duk_get_prop(c, -3); // [ object enum func ]
 
-                        if (duk_is_function(c, -1))
-                        {
-                            // Safe event as hidden variable
-                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                            duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
+                //                         if (duk_is_function(c, -1))
+                //                         {
+                //                             // Safe event as hidden variable
+                //                             std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                //                             duk_put_global_lstring(c, function_name.data(), function_name.size()); //
+                //                             [ object enum ]
 
-                            // Add event
-                            Ref<Event> event = Event::Create(name, &JSScript::InvokeImpl);
-                            if (event != nullptr)
-                            {
-                                // Insert property
-                                eventList[name] = event;
-                            }
-                        }
-                        else
-                            duk_pop(c); // [ object enum ]
-                    }
+                //                             // Add event
+                //                             Ref<Method> event = Method::Create(name, &JSScript::InvokeImpl);
+                //                             if (event != nullptr)
+                //                             {
+                //                                 // Insert property
+                //                                 eventList[name] = event;
+                //                             }
+                //                         }
+                //                         else
+                //                             duk_pop(c); // [ object enum ]
+                //                     }
 
-                    // Pop enum
-                    duk_pop(c); // [ object ]
-                }
+                //                     // Pop enum
+                //                     duk_pop(c); // [ object ]
+                //                 }
 
-                // Pop object
-                duk_pop(c); // [ ]
+                //                 // Pop object
+                //                 duk_pop(c); // [ ]
 
-#ifndef NDEBUG
-                duk_idx_t top2 = duk_get_top(c);
+                // #ifndef NDEBUG
+                //                 duk_idx_t top2 = duk_get_top(c);
 
-                // Check stack before and after
-                assert(top1 == top2);
-#endif
+                //                 // Check stack before and after
+                //                 assert(top1 == top2);
+                // #endif
             }
 
             duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
@@ -466,14 +465,14 @@ namespace server
                     return DUK_RET_ERROR;
             }
 
-            bool JSScript::InvokeImpl(const std::string& event)
+            bool JSScript::InvokeImpl(const std::string& method)
             {
                 assert(context != nullptr);
 
                 duk_context* c = context.get();
 
-                // Invoke event
-                JSInvokeTuple tuple = {event};
+                // Invoke method
+                JSInvokeTuple tuple = {method};
                 if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) ==
                     DUK_EXEC_SUCCESS) // [ object ] or [ error ]
                 {

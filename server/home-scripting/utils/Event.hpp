@@ -8,43 +8,35 @@ namespace server
     {
         class Script;
 
-        template <class T = Script>
-        using EventMethod = bool (T::*)(const std::string& event);
-
-        template <class T>
-        union EventMethodConversion
+        struct EventEntry
         {
-            EventMethod<T> f1;
-            EventMethod<> f2;
+            const WeakRef<Script> script;
+            const std::string method;
         };
 
         class Event : public boost::enable_shared_from_this<Event>
         {
           protected:
-            std::string id;
-
-            WeakRef<Script> script;
-            EventMethod<> event;
+            const std::string& name;
+            boost::container::vector<EventEntry> entryList;
 
           public:
-            Event(const std::string& id, EventMethod<> event);
+            Event(const std::string& name);
             virtual ~Event();
 
-            static Ref<Event> Create(const std::string& id, EventMethod<> event);
+            static Ref<Event> Create(const std::string& event);
 
-            template <class T>
-            static inline Ref<Event> Create(const std::string& id, EventMethod<T> event)
-            {
-                return Create(id, EventMethodConversion<T>{event}.f2);
-            }
-
-            /// @brief Get event
+            /// @brief Add event entry
             ///
-            /// @return Event
-            inline EventMethod<> GetEvent() const
-            {
-                return event;
-            }
+            /// @param script Script to call
+            /// @param method Method to call
+            void Add(Ref<Script> script, const std::string& method);
+
+            /// @brief Remove event entry
+            ///
+            /// @param script Script
+            /// @param method Method
+            void Remove(Ref<Script> script, const std::string& method);
         };
     }
 }

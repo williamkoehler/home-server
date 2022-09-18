@@ -49,7 +49,7 @@ namespace server
 
                 void InitializeAttributes();
                 void InitializeProperties();
-                void InitializeEvents();
+                void InitializeMethods();
                 void InitializeControllers();
 
                 /// @brief Invoke event safely

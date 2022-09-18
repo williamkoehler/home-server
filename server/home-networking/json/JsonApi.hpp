@@ -60,7 +60,7 @@ namespace server
             static void ProcessJsonSetDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                       rapidjson::Document& output, ApiContext& context);
 
-            static void ProcessJsonInvokeDeviceEventMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                               rapidjson::Document& output, ApiContext& context);
 
             static void ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,

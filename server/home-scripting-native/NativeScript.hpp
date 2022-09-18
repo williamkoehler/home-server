@@ -2,7 +2,7 @@
 #include "LibraryInformation.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
-#include <home-scripting/utils/Event.hpp>
+#include <home-scripting/utils/Method.hpp>
 #include <home-scripting/utils/Property.hpp>
 
 namespace server
@@ -23,24 +23,24 @@ namespace server
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource);
                 virtual ~NativeScript();
 
-                bool AddAttribute(const std::string& id, const char* json);
-                bool RemoveAttribute(const std::string& id);
+                bool AddAttribute(const std::string& name, const char* json);
+                bool RemoveAttribute(const std::string& name);
                 void ClearAttributes();
 
-                Ref<Property> AddProperty(const std::string& id, Ref<Property> property);
-                bool RemoveProperty(const std::string& id);
+                Ref<Property> AddProperty(const std::string& name, Ref<Property> property);
+                bool RemoveProperty(const std::string& name);
                 void ClearProperties();
 
-                Ref<Event> AddEvent(const std::string& id, EventMethod<> event);
+                Ref<Method> AddMethod(const std::string& name, MethodCallback<> callback);
 
                 template <class T>
-                inline Ref<Event> AddEvent(const std::string& id, EventMethod<> event)
+                inline Ref<Method> AddMethod(const std::string& name, MethodCallback<> callback)
                 {
-                    return AddEvent(id, EventMethodConversion<T>{event}.f2);
+                    return AddMethod(name, MethodCallbackConversion<T>{callback}.f2);
                 }
 
-                bool RemoveEvent(const std::string& id);
-                void ClearEvents();
+                bool RemoveMethod(const std::string& name);
+                void ClearMethods();
 
                 virtual bool Init() = 0;
             };

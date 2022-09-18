@@ -27,7 +27,7 @@ namespace server
             LOG_FATAL("Home is not initialized.");
         }
 
-        Ref<RoomView> HomeView::GetRoom(identifier_t id)
+        Ref<scripting::RoomView> HomeView::GetRoom(identifier_t id)
         {
             Ref<Home> r = home.lock();
             assert(r != nullptr);
@@ -40,7 +40,7 @@ namespace server
                 return nullptr;
         }
 
-        Ref<DeviceView> HomeView::GetDevice(identifier_t id)
+        Ref<scripting::DeviceView> HomeView::GetDevice(identifier_t id)
         {
             Ref<Home> r = home.lock();
             assert(r != nullptr);

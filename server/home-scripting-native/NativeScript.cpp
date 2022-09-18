@@ -15,10 +15,10 @@ namespace server
             {
             }
 
-            bool NativeScript::AddAttribute(const std::string& id, const char* json)
+            bool NativeScript::AddAttribute(const std::string& name, const char* json)
             {
                 // Check existance
-                if (!attributeList.contains(id))
+                if (!attributeList.contains(name))
                 {
                     // Parse attribute
                     rapidjson::Document document;
@@ -28,65 +28,65 @@ namespace server
                     // Add attribute to list
                     if (!document.HasParseError())
                     {
-                        attributeList[id] = std::move(document);
+                        attributeList[name] = std::move(document);
                         return true;
                     }
                 }
 
                 return false;
             }
-            bool NativeScript::RemoveAttribute(const std::string& id)
+            bool NativeScript::RemoveAttribute(const std::string& name)
             {
-                return attributeList.erase(id);
+                return attributeList.erase(name);
             }
             void NativeScript::ClearAttributes()
             {
                 attributeList.clear();
             }
 
-            Ref<Property> NativeScript::AddProperty(const std::string& id, Ref<Property> property)
+            Ref<Property> NativeScript::AddProperty(const std::string& name, Ref<Property> property)
             {
                 // Check existance
-                if (!propertyList.contains(id) && property != nullptr)
+                if (!propertyList.contains(name) && property != nullptr)
                 {
-                    propertyList[id] = property;
+                    propertyList[name] = property;
                     return property;
                 }
 
                 return nullptr;
             }
-            bool NativeScript::RemoveProperty(const std::string& id)
+            bool NativeScript::RemoveProperty(const std::string& name)
             {
-                return propertyList.erase(id);
+                return propertyList.erase(name);
             }
             void NativeScript::ClearProperties()
             {
                 propertyList.clear();
             }
 
-            Ref<Event> NativeScript::AddEvent(const std::string& id, EventMethod<> event)
+            Ref<Method> NativeScript::AddMethod(const std::string& name, MethodCallback<> callback)
             {
                 // Check existance
-                if (!eventList.contains(id))
+                if (!eventList.contains(name))
                 {
-                    // Create event instance
-                    Ref<Event> e = boost::make_shared<Event>(id, event);
+                    // Create method instance
+                    Ref<Method> e = Method::Create(name, callback);
 
                     // Add event to list
                     if (e != nullptr)
                     {
-                        eventList[id] = e;
+                        eventList[name] = e;
                         return e;
                     }
                 }
 
                 return nullptr;
             }
-            bool NativeScript::RemoveEvent(const std::string& id)
+            bool NativeScript::RemoveMethod(const std::string& name)
             {
-                return eventList.erase(id);
+                return eventList.erase(name);
             }
-            void NativeScript::ClearEvents()
+            void NativeScript::ClearMethods()
             {
                 eventList.clear();
             }

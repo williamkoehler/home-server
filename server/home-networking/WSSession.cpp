@@ -135,7 +135,7 @@ namespace server
             // Device
             {"add-device", JsonApi::ProcessJsonAddDeviceMessageWS},
 
-            {"inv-device", JsonApi::ProcessJsonInvokeDeviceEventMessageWS},
+            {"inv-device", JsonApi::ProcessJsonInvokeDeviceMethodMessageWS},
 
             {"get-device", JsonApi::ProcessJsonGetDeviceMessageWS},
             {"get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS},

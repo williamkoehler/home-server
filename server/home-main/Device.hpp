@@ -95,10 +95,10 @@ namespace server
             ///
             void Initialize();
 
-            /// @brief Invoke script event
+            /// @brief Invoke script method
             ///
-            /// @param event Event name
-            void Invoke(const std::string& event);
+            /// @param event Method name
+            void Invoke(const std::string& method);
 
             /// @brief Terminate script
             ///

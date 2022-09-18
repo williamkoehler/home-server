@@ -310,18 +310,18 @@ namespace server
             device->JsonGet(output, allocator);
         }
 
-        void JsonApi::ProcessJsonInvokeDeviceEventMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+        void JsonApi::ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                             rapidjson::Document& output, ApiContext& context)
         {
             assert(input.IsObject() && output.IsObject());
 
             // Process request
             rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-            rapidjson::Value::MemberIterator eventIt = input.FindMember("event");
-            if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() || eventIt == input.MemberEnd() ||
-                !eventIt->value.IsString())
+            rapidjson::Value::MemberIterator methodIt = input.FindMember("method");
+            if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() || methodIt == input.MemberEnd() ||
+                !methodIt->value.IsString())
             {
-                context.Error("Missing id and/or event");
+                context.Error("Missing id and/or method");
                 context.Error(ApiError::kError_InvalidArguments);
                 return;
             }
@@ -340,8 +340,8 @@ namespace server
                 return;
             }
 
-            // Invoke event
-            device->Invoke(std::string(eventIt->value.GetString(), eventIt->value.GetStringLength()));
+            // Invoke method
+            device->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()));
         }
 
         void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,

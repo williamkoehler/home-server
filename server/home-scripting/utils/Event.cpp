@@ -5,17 +5,33 @@ namespace server
 {
     namespace scripting
     {
-        Event::Event(const std::string& id, EventMethod<> event) : id(id), event(event)
+        Event::Event(const std::string& name) : name(name)
         {
-            assert(event != nullptr);
         }
         Event::~Event()
         {
         }
 
-        Ref<Event> Event::Create(const std::string& id, EventMethod<> event)
+        Ref<Event> Event::Create(const std::string& name)
         {
-            return boost::make_shared<Event>(id, event);
+            return boost::make_shared<Event>(name);
+        }
+
+        void Event::Add(Ref<Script> script, const std::string& method)
+        {
+            entryList.push_back(EventEntry{
+                script,
+                method,
+            });
+        }
+
+        void Event::Remove(Ref<Script> script, const std::string& method)
+        {
+            for (boost::container::vector<EventEntry>::iterator it = entryList.begin(); it != entryList.end(); it++)
+            {
+                // if (it->script.lock() == script && it->method == method)
+                //     it = entryList.erase(it);
+            }
         }
     }
 }

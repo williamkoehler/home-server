@@ -1,5 +1,5 @@
 #include "Script.hpp"
-#include "utils/Event.hpp"
+#include "utils/Method.hpp"
 #include "utils/Property.hpp"
 
 namespace server
@@ -25,9 +25,9 @@ namespace server
             return it->second;
         }
 
-        Ref<Event> Script::GetEvent(const std::string& id)
+        Ref<Method> Script::GetMethod(const std::string& id)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(id);
+            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = eventList.find(id);
             if (it == eventList.end())
                 return nullptr;
 
@@ -36,17 +36,17 @@ namespace server
 
         bool Script::Invoke(const std::string& event)
         {
-            // Find event
-            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(event);
+            // Find method
+            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = eventList.find(event);
             if (it != eventList.end())
             {
-                // Invoke event
+                // Invoke method
                 try
                 {
-                    EventMethod<> event = it->second->GetEvent();
+                    MethodCallback<> callback = it->second->GetCallback();
 
-                    if (event != nullptr)
-                        return (this->*event)(it->first);
+                    if (callback != nullptr)
+                        return (this->*callback)(it->first);
                 }
                 catch (std::exception)
                 {
@@ -55,10 +55,10 @@ namespace server
 
             return false;
         }
-        bool Script::PostInvoke(const std::string& event)
+        bool Script::PostInvoke(const std::string& method)
         {
-            // Invoke event
-            GetWorker()->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), event));
+            // Invoke method
+            GetWorker()->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), method));
 
             return true;
         }

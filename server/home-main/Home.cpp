@@ -1,9 +1,9 @@
 #include "Home.hpp"
 #include "Device.hpp"
+#include "HomeView.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
 #include <home-scripting/ScriptManager.hpp>
-#include <home-scripting/main/HomeView.hpp>
 
 namespace server
 {
@@ -57,7 +57,7 @@ namespace server
             }
 
             // Create home view
-            Ref<scripting::HomeView> homeView = boost::make_shared<scripting::HomeView>(home);
+            Ref<HomeView> homeView = boost::make_shared<HomeView>(home);
             if (homeView == nullptr)
             {
                 LOG_ERROR("Create home view.");

@@ -153,7 +153,7 @@ namespace server
           public:
             /// @brief Send http request
             ///
-            /// @param callback Event id
+            /// @param callback Method id
             /// @param method Http method
             /// @param target URL Target
             /// @param content Body Content
@@ -201,7 +201,7 @@ namespace server
           public:
             /// @brief Send https request
             ///
-            /// @param callback Event id
+            /// @param callback Method id
             /// @param method Http method
             /// @param target URL Target
             /// @param content Body Content
@@ -213,7 +213,7 @@ namespace server
 
             /// @brief Send https get request
             ///
-            /// @param callback Event id
+            /// @param callback Method id
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
@@ -229,7 +229,7 @@ namespace server
 
             /// @brief Send https post request
             ///
-            /// @param callback Event id
+            /// @param callback Method id
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness

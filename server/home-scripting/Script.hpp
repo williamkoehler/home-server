@@ -2,7 +2,7 @@
 #include "ScriptSource.hpp"
 #include "View.hpp"
 #include "common.hpp"
-#include "utils/Event.hpp"
+#include "utils/Method.hpp"
 #include <home-common/Worker.hpp>
 
 namespace server
@@ -12,7 +12,7 @@ namespace server
         class ScriptSource;
 
         class Property;
-        class Event;
+        class Method;
         class Timer;
 
         class Script : public boost::enable_shared_from_this<Script>
@@ -23,7 +23,7 @@ namespace server
 
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
             robin_hood::unordered_node_map<std::string, Ref<Property>> propertyList;
-            robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
+            robin_hood::unordered_node_map<std::string, Ref<Method>> eventList;
 
             rapidjson::Document snapshot;
 
@@ -50,7 +50,7 @@ namespace server
             }
 
             Ref<Property> GetProperty(const std::string& id);
-            Ref<Event> GetEvent(const std::string& id);
+            Ref<Method> GetMethod(const std::string& id);
 
             /// @brief Initialize script (must be called by host thread)
             ///
@@ -59,14 +59,14 @@ namespace server
 
             /// @brief Call script event
             ///
-            /// @param id Event id
+            /// @param id Method id
             /// @return Successfulness
             bool Invoke(const std::string& id);
 
             /// @brief Let home worker call script event
             ///
-            /// @param id Event id
-            /// @param args Event arguments
+            /// @param id Method id
+            /// @param args Method arguments
             /// @return Successfulness
             bool PostInvoke(const std::string& id);
 

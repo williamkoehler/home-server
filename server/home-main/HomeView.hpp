@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-scripting/View.hpp>
+#include <home-scripting/main/HomeView.hpp>
 
 namespace server
 {
@@ -11,7 +11,7 @@ namespace server
         class RoomView;
         class DeviceView;
 
-        class HomeView : public scripting::View
+        class HomeView : public scripting::HomeView
         {
           private:
             WeakRef<Home> home;
@@ -20,30 +20,22 @@ namespace server
             HomeView(Ref<Home> home);
             virtual ~HomeView();
 
-            /// @brief Get view type
-            ///
-            /// @return View  type
-            scripting::ViewType GetType() override
-            {
-                return scripting::ViewType::kHomeViewType;
-            }
-
             /// @brief Get worker instance
             ///
             /// @return Worker
             virtual Ref<Worker> GetWorker() override;
 
-            /// @brief Get room view
+             /// @brief Get room view
             ///
             /// @param id Room id
-            /// @return Room view
-            Ref<RoomView> GetRoom(identifier_t id);
+            /// @return Ref<RoomView> Room view
+            virtual Ref<scripting::RoomView> GetRoom(identifier_t id) override;
 
             /// @brief Get device view
             ///
             /// @param id Device id
-            /// @return Device view
-            Ref<DeviceView> GetDevice(identifier_t id);
+            /// @return Ref<DeviceView> Device view
+            virtual Ref<scripting::DeviceView> GetDevice(identifier_t id) override;
         };
     }
 }

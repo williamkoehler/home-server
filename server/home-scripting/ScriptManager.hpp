@@ -7,6 +7,7 @@ namespace server
     namespace scripting
     {
         class ScriptManager;
+        class HomeView;
 
         struct StaticScriptSource
         {
@@ -51,6 +52,8 @@ namespace server
           private:
             boost::mutex mutex;
 
+            const Ref<HomeView> homeView;
+
             boost::container::vector<Ref<ScriptProvider>> providerList;
             robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>> scriptSourceList;
 
@@ -59,10 +62,15 @@ namespace server
                                   const std::string& usage, const std::string_view& content);
 
           public:
-            ScriptManager(const boost::container::vector<Ref<ScriptProvider>>& providerList);
+            ScriptManager(const Ref<HomeView>& homeView,
+                          const boost::container::vector<Ref<ScriptProvider>>& providerList);
             virtual ~ScriptManager();
-            static Ref<ScriptManager> Create(const boost::container::vector<Ref<ScriptProvider>>& providerList);
+            static Ref<ScriptManager> Create(Ref<HomeView> homeView,
+                                             const boost::container::vector<Ref<ScriptProvider>>& providerList);
             static Ref<ScriptManager> GetInstance();
+
+            // Get singletons
+            // static Ref<HomeView> GetHomeView();
 
             //! Script Source
 

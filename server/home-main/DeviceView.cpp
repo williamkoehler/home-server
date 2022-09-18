@@ -22,6 +22,16 @@ namespace server
             return home->GetWorker();
         }
 
+        identifier_t DeviceView::GetID()
+        {
+            Ref<Device> r = device.lock();
+
+            if (r != nullptr)
+                return r->GetID();
+
+            return 0;
+        }
+
         std::string DeviceView::GetName()
         {
             Ref<Device> r = device.lock();

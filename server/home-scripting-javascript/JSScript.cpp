@@ -38,6 +38,15 @@ namespace server
     {
         namespace javascript
         {
+            struct JSTuple
+            {
+                Ref<JSScript> script;
+            };
+            struct JSInvokeTuple
+            {
+                const std::string& event;
+            };
+
             JSScript::JSScript(Ref<View> view, Ref<JSScriptSource> source)
                 : Script(view, boost::static_pointer_cast<ScriptSource>(source)), context(nullptr)
             {
@@ -52,21 +61,9 @@ namespace server
                 maxTime = maxTime;
             }
 
-            struct JSTuple
-            {
-                Ref<JSScript> script;
-            };
-
             duk_ret_t JSScript::InitializeSafe(duk_context* context, void* udata)
             {
                 auto& [script] = *(JSTuple*)udata;
-
-                // Setup default variables
-                duk_push_object(context);
-                duk_put_global_lstring(context, "events", 6);
-
-                duk_push_object(context);
-                duk_put_global_lstring(context, "properties", 10);
 
                 // Import modules
                 {
@@ -122,6 +119,59 @@ namespace server
                 return DUK_EXEC_SUCCESS;
             }
 
+            bool JSScript::InitializeImpl()
+            {
+                // Check if compilation stage is needed
+                size_t cs = scriptSource->GetChecksum();
+                if (cs != checksum || context == nullptr)
+                {
+                    // Terminate script before reinitializing it
+                    if (context != nullptr)
+                        TerminateImpl();
+
+                    // Initialize javascript runtime
+                    context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr),
+                                               [](duk_context* context) -> void { duk_destroy_heap(context); });
+                    if (context == nullptr)
+                    {
+                        checksum = 0;
+                        return false;
+                    }
+
+                    duk_context* c = context.get();
+
+                    // Prepare context
+                    {
+                        JSTuple tuple = {boost::dynamic_pointer_cast<JSScript>(shared_from_this())};
+                        if (duk_safe_call(c, JSScript::InitializeSafe, (void*)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
+                        {
+                            // TODO Error message duk_safe_to_string(context, -1);
+                            LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(c, -1)));
+                            duk_pop(c);
+
+                            context = nullptr;
+                            checksum = 0;
+
+                            return false;
+                        }
+                        else
+                            duk_pop(c);
+                    }
+
+                    // Call initialize event
+                    {
+                        JSInvokeTuple tuple = {"initialize"};
+                        duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1);
+                        duk_pop(c);
+                    }
+
+                    // Set checksum to prevent recompilation
+                    checksum = cs;
+                }
+
+                return true;
+            }
+
             void JSScript::InitializeAttributes()
             {
                 assert(context != nullptr);
@@ -132,23 +182,24 @@ namespace server
                 duk_idx_t top1 = duk_get_top(c);
 #endif
 
-                duk_get_global_lstring(c, "attributes", 10);
+                duk_get_global_lstring(c, "attributes", 10); // [ object ]
 
                 if (duk_is_object(c, -1))
                 {
                     // Iterate over every property in 'attributes'
-                    duk_enum(c, -1, 0);
-                    while (duk_next(c, -1, 0))
+                    duk_enum(c, -1, 0); // [ object enum ]
+
+                    while (duk_next(c, -1, 0)) // [ object enum key ]
                     {
                         size_t nameLength;
                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        // Read type
-                        duk_get_prop(c, -3); // Read property from 'attributes'
+                        // Read property from 'attributes'
+                        duk_get_prop(c, -3); // [ object enum object ]
 
                         // Convert attribute to json
-                        duk_json_encode(c, -1);
+                        duk_json_encode(c, -1); // [ object enum json ]
 
                         size_t jsonLength;
                         const char* jsonStr = duk_to_lstring(c, -1, &jsonLength);
@@ -170,15 +221,15 @@ namespace server
                         }
 
                         // Pop json
-                        duk_pop(c);
+                        duk_pop(c); // [ object enum ]
                     }
 
                     // Pop enum
-                    duk_pop(c);
+                    duk_pop(c); // [ object ]
                 }
 
                 // Pop object
-                duk_pop(c);
+                duk_pop(c); // [ ]
 
 #ifndef NDEBUG
                 duk_idx_t top2 = duk_get_top(c);
@@ -199,27 +250,29 @@ namespace server
                 duk_idx_t top1 = duk_get_top(c);
 #endif
 
-                duk_get_global_lstring(c, "properties", 10);
+                duk_get_global_lstring(c, "properties", 10); // [ object ]
 
                 if (duk_is_object(c, -1))
                 {
                     // Iterate over every property in 'properties'
-                    duk_enum(c, -1, 0);
-                    while (duk_next(c, -1, 0))
+                    duk_enum(c, -1, 0); // [ object enum ]
+
+                    while (duk_next(c, -1, 0)) // [ object enum key ]
                     {
                         size_t nameLength;
                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        // Read type
-                        duk_dup_top(c);
-                        duk_get_prop(c, -4); // Read property from 'properties'
+                        duk_dup_top(c); // [ object enum key key ]
+
+                        // Read property from 'properties'
+                        duk_get_prop(c, -4); // [ object enum key object ]
 
                         size_t typeLength;
                         const char* typeStr = duk_to_lstring(c, -1, &typeLength);
                         std::string type = std::string(typeStr, typeLength);
 
-                        uint32_t index = UINT32_MAX;
+                        uint32_t index;
 
                         // Add property
                         Ref<Property> property = Property::Create(ParsePropertyType(type));
@@ -230,33 +283,33 @@ namespace server
 
                             // Insert property id reference
                             index = (uint32_t)propertyByIDList.size();
-                            if (index >= UINT8_MAX)
+                            if (index >= 64)
                                 duk_error(c, DUK_ERR_ERROR, "Too many properties");
 
                             propertyByIDList.push_back(property);
                         }
 
-                        // Pop type
-                        duk_pop(c);
+                        // Pop object
+                        duk_pop(c); // [ object enum key ]
 
                         // Push function
-                        duk_push_c_function(c, JSScript::PropertyGetter, 0);
+                        duk_push_c_function(c, JSScript::PropertyGetter, 0); // [ object enum key c_func ]
                         duk_set_magic(c, -1, index);
-                        duk_push_c_function(c, JSScript::PropertySetter, 1);
+                        duk_push_c_function(c, JSScript::PropertySetter, 1); // [ object enum key c_func c_func ]
                         duk_set_magic(c, -1, index);
 
                         // Set property getter and setter
                         duk_def_prop(c, -5,
                                      DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
-                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE);
+                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object key ]
                     }
 
                     // Pop enum
-                    duk_pop(c);
+                    duk_pop(c); // [ object ]
                 }
 
                 // Pop object
-                duk_pop(c);
+                duk_pop(c); // [ ]
 
 #ifndef NDEBUG
                 duk_idx_t top2 = duk_get_top(c);
@@ -278,40 +331,105 @@ namespace server
 #endif
 
                 // Get events object
-                duk_get_global_lstring(c, "events", 6);
+                duk_get_global_lstring(c, "events", 6); // [ object ]
 
                 if (duk_is_object(c, -1))
                 {
                     // Iterate over every property in 'events'
-                    duk_enum(c, -1, 0);
-                    while (duk_next(c, -1, 0))
+                    duk_enum(c, -1, 0); // [ object enum ]
+
+                    while (duk_next(c, -1, 0)) // [ object enum key ]
                     {
                         size_t nameLength;
                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        // Read type
-                        duk_get_prop(c, -3); // Read property from 'events'
+                        // Read property from 'events'
+                        duk_get_prop(c, -3); // [ object enum func ]
 
-                        // Safe event as hidden variable
-                        std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                        duk_put_global_lstring(c, function_name.data(), function_name.size());
-
-                        // Add event
-                        Ref<Event> event = Event::Create(name, &JSScript::InvokeCallback);
-                        if (event != nullptr)
+                        if (duk_is_function(c, -1))
                         {
-                            // Insert property
-                            eventList[name] = event;
+                            // Safe event as hidden variable
+                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                            duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
+
+                            // Add event
+                            Ref<Event> event = Event::Create(name, &JSScript::InvokeImpl);
+                            if (event != nullptr)
+                            {
+                                // Insert property
+                                eventList[name] = event;
+                            }
                         }
+                        else
+                            duk_pop(c); // [ object enum ]
                     }
 
                     // Pop enum
-                    duk_pop(c);
+                    duk_pop(c); // [ object ]
                 }
 
                 // Pop object
-                duk_pop(c);
+                duk_pop(c); // [ ]
+
+#ifndef NDEBUG
+                duk_idx_t top2 = duk_get_top(c);
+
+                // Check stack before and after
+                assert(top1 == top2);
+#endif
+            }
+            void JSScript::InitializeControllers()
+            {
+                assert(context != nullptr);
+
+                duk_context* c = context.get();
+
+#ifndef NDEBUG
+                duk_idx_t top1 = duk_get_top(c);
+#endif
+
+                // Get events object
+                duk_get_global_lstring(c, "controllers", 11); // [ object ]
+
+                if (duk_is_object(c, -1))
+                {
+                    // Iterate over every property in 'controllers'
+                    duk_enum(c, -1, 0); // [ object enum ]
+
+                    while (duk_next(c, -1, 0)) // [ object enum key ]
+                    {
+                        size_t nameLength;
+                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                        std::string name = std::string(nameStr, nameLength);
+
+                        // Read property from 'events'
+                        duk_get_prop(c, -3); // [ object enum func ]
+
+                        if (duk_is_function(c, -1))
+                        {
+                            // Safe event as hidden variable
+                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                            duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
+
+                            // Add event
+                            Ref<Event> event = Event::Create(name, &JSScript::InvokeImpl);
+                            if (event != nullptr)
+                            {
+                                // Insert property
+                                eventList[name] = event;
+                            }
+                        }
+                        else
+                            duk_pop(c); // [ object enum ]
+                    }
+
+                    // Pop enum
+                    duk_pop(c); // [ object ]
+                }
+
+                // Pop object
+                duk_pop(c); // [ ]
 
 #ifndef NDEBUG
                 duk_idx_t top2 = duk_get_top(c);
@@ -321,50 +439,6 @@ namespace server
 #endif
             }
 
-            bool JSScript::Initialize()
-            {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
-                // Check if compilation stage is needed
-                size_t c = scriptSource->GetChecksum();
-                if (c != checksum || context == nullptr)
-                {
-                    context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr),
-                                               [](duk_context* context) -> void { duk_destroy_heap(context); });
-                    if (context == nullptr)
-                    {
-                        checksum = 0;
-                        return false;
-                    }
-
-                    // Prepare context
-                    JSTuple tuple = {boost::dynamic_pointer_cast<JSScript>(shared_from_this())};
-                    if (duk_safe_call(context.get(), JSScript::InitializeSafe, (void*)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
-                    {
-                        // TODO Error message duk_safe_to_string(context, -1);
-                        LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(context.get(), -1)));
-
-                        context = nullptr;
-                        checksum = 0;
-
-                        return false;
-                    }
-                    else
-                        duk_pop(context.get());
-
-                    // Set checksum to prevent recompilation
-                    checksum = c;
-                }
-
-                return true;
-            }
-
-            struct JSInvokeTuple
-            {
-                const std::string& event;
-            };
-
             duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
@@ -373,19 +447,21 @@ namespace server
 
                 // Get events object
                 std::string function_name = DUK_EVENT_FUNCTION_NAME(event);
-                if (!duk_get_global_lstring(context, function_name.data(), function_name.size()))
+                if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                {
+                    // Prepare timout
+                    script->PrepareTimeout(5000); // 5 seconds
+
+                    // Call event function
+                    duk_call(context, 0); // [ object ]
+
+                    return DUK_EXEC_SUCCESS;
+                }
+                else
                     return DUK_RET_ERROR;
-
-                // Prepare timout
-                script->PrepareTimeout(5000); // 5 seconds
-
-                // Execute event
-                duk_call(context, 0);
-
-                return DUK_EXEC_SUCCESS;
             }
 
-            bool JSScript::InvokeCallback(const std::string& event)
+            bool JSScript::InvokeImpl(const std::string& event)
             {
                 assert(context != nullptr);
 
@@ -393,7 +469,8 @@ namespace server
 
                 // Invoke event
                 JSInvokeTuple tuple = {event};
-                if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) == DUK_EXEC_SUCCESS)
+                if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) ==
+                    DUK_EXEC_SUCCESS) // [ object ] or [ error ]
                 {
                     // Get result
                     bool result = duk_to_boolean(c, -1);
@@ -568,10 +645,48 @@ namespace server
                 return 0;
             }
 
+            duk_ret_t JSScript::TerminateSafe(duk_context* context, void* udata)
+            {
+                return DUK_EXEC_SUCCESS;
+            }
+
+            bool JSScript::TerminateImpl()
+            {
+                duk_context* c = context.get();
+
+                if (c != nullptr)
+                {
+
+                    // Call terminate event
+                    {
+                        JSInvokeTuple tuple = {"terminate"};
+                        duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1); // [ object ] or [ undefined ]
+                        duk_pop(c);                                                  // [ ]
+                    }
+
+                    return true;
+                }
+
+                // Destroy javascript runtime
+                context = nullptr;
+
+                return true;
+            }
+
+            bool JSScript::Initialize()
+            {
+                // Lock main mutex
+                boost::lock_guard lock(mutex);
+
+                return InitializeImpl();
+            }
+
             bool JSScript::Terminate()
             {
-                LOG_CODE_MISSING("Terminate js script.");
-                return true;
+                // Lock main mutex
+                boost::lock_guard lock(mutex);
+
+                return TerminateImpl();
             }
         }
     }

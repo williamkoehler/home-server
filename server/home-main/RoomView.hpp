@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-scripting/View.hpp>
+#include <home-scripting/main/RoomView.hpp>
 
 namespace server
 {
@@ -8,7 +8,7 @@ namespace server
     {
         class Room;
 
-        class RoomView : public scripting::View
+        class RoomView : public scripting::RoomView
         {
           private:
             WeakRef<Room> room;
@@ -24,8 +24,10 @@ namespace server
 
             virtual Ref<threading::Worker> GetWorker() override;
 
-            std::string GetName();
-            void SetName(const std::string& v);
+            virtual identifier_t GetID() override;
+
+            virtual std::string GetName() override;
+            virtual void SetName(const std::string& v) override;
         };
     }
 }

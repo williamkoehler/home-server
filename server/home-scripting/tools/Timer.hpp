@@ -12,7 +12,6 @@ namespace server
         {
           private:
             CallbackMethod<> callback;
-            size_t interval;
 
             boost::asio::deadline_timer timer;
 
@@ -32,22 +31,6 @@ namespace server
             virtual ControllerType GetType() const override
             {
                 return ControllerType::kTimerController;
-            }
-
-            /// @brief Is timer running
-            ///
-            /// @return Timer state
-            inline bool IsRunning() const
-            {
-                return interval != 0;
-            }
-
-            /// @brief Get timer interval
-            ///
-            /// @return Interval in seconds
-            inline size_t GetInterval() const
-            {
-                return interval;
             }
 
             /// @brief Start timer

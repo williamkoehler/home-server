@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include "duktape.h"
 #include <home-scripting/Script.hpp>
+#include <home-scripting/tools/Controller.hpp>
 
 extern "C"
 {
@@ -24,7 +25,13 @@ namespace server
                 Ref<duk_context> context;
                 uint64_t checksum;
 
+                /// @brief Script properties ordered by id
+                /// 
                 boost::container::vector<Ref<Property>> propertyByIDList;
+
+                /// @brief Script controllers
+                /// 
+                robin_hood::unordered_node_map<duk_int_t, Ref<Controller>> controllerList;
 
                 /// @brief Prepare script timeout
                 /// 
@@ -38,9 +45,12 @@ namespace server
                 /// @return Sucessfulness
                 static duk_ret_t InitializeSafe(duk_context* context, void* udata);
 
+                bool InitializeImpl();
+
                 void InitializeAttributes();
                 void InitializeProperties();
                 void InitializeEvents();
+                void InitializeControllers();
 
                 /// @brief Invoke event safely
                 ///
@@ -49,12 +59,14 @@ namespace server
                 /// @return Successfulness
                 static duk_ret_t InvokeSafe(duk_context* context, void* udata);
 
-                bool InvokeCallback(const std::string& event);
+                bool InvokeImpl(const std::string& event);
 
                 static duk_ret_t PropertyGetter(duk_context* context);
                 static duk_ret_t PropertySetter(duk_context* context);
 
                 static duk_ret_t TerminateSafe(duk_context* context, void* udata);
+
+                bool TerminateImpl();
 
               public:
                 JSScript(Ref<View> view, Ref<JSScriptSource> source);

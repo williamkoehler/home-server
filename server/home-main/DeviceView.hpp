@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-scripting/View.hpp>
+#include <home-scripting/main/DeviceView.hpp>
 
 namespace server
 {
@@ -8,7 +8,7 @@ namespace server
     {
         class Device;
 
-        class DeviceView : public scripting::View
+        class DeviceView : public scripting::DeviceView
         {
           private:
             WeakRef<Device> device;
@@ -17,15 +17,12 @@ namespace server
             DeviceView(Ref<Device> device);
             virtual ~DeviceView();
 
-            scripting::ViewType GetType() override
-            {
-                return scripting::ViewType::kDeviceViewType;
-            }
-
             virtual Ref<threading::Worker> GetWorker() override;
 
-            std::string GetName();
-            void SetName(const std::string& v);
+            virtual identifier_t GetID() override;
+
+            virtual std::string GetName() override;
+            virtual void SetName(const std::string& v) override;
         };
     }
 }

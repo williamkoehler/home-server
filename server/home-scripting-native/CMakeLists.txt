@@ -16,7 +16,6 @@ target_include_directories(home_scripting_native
 )
 target_link_libraries(home_scripting_native
     home_common
-    home_threading
     home_database
     home_scripting
     xxhash

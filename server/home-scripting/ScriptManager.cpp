@@ -111,8 +111,6 @@ namespace server
         Ref<ScriptSource> ScriptManager::AddScriptSource(ScriptLanguage language, const std::string& name,
                                                          ScriptUsage usage)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -156,8 +154,6 @@ namespace server
 
         Ref<ScriptSource> ScriptManager::GetScriptSource(identifier_t id)
         {
-            boost::lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
@@ -168,8 +164,6 @@ namespace server
 
         bool ScriptManager::RemoveScriptSource(identifier_t id)
         {
-            boost::lock_guard lock(mutex);
-
             if (scriptSourceList.erase(id))
             {
                 Ref<Database> database = Database::GetInstance();
@@ -185,8 +179,6 @@ namespace server
 
         Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id, Ref<View> view)
         {
-            boost::lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
@@ -204,8 +196,6 @@ namespace server
         void ScriptManager::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            boost::lock_guard lock(mutex);
 
             // ScriptSources
             rapidjson::Value scriptSourceListJson = rapidjson::Value(rapidjson::kArrayType);

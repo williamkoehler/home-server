@@ -10,13 +10,13 @@ namespace server
     {
         WeakRef<NetworkManager> instanceNetworkManager;
 
-        NetworkManager::NetworkManager(Ref<threading::Worker> worker) : worker(std::move(worker))
+        NetworkManager::NetworkManager(Ref<Worker> worker) : worker(std::move(worker))
         {
         }
         NetworkManager::~NetworkManager()
         {
         }
-        Ref<NetworkManager> NetworkManager::Create(Ref<threading::Worker> worker, const std::string& address,
+        Ref<NetworkManager> NetworkManager::Create(Ref<Worker> worker, const std::string& address,
                                                    uint16_t port, const std::string& externalURL)
         {
             assert(worker != nullptr);
@@ -124,9 +124,6 @@ namespace server
             if (err)
                 return;
 
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
             try
             {
                 if (!err)
@@ -194,8 +191,6 @@ namespace server
 
         void NetworkManager::Broadcast(rapidjson::Document& document)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
             rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);
             document.Accept(writer);

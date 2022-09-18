@@ -1,7 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include <boost/array.hpp>
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 
 namespace server
 {
@@ -22,9 +22,9 @@ namespace server
             void OnSend(boost::system::error_code ec, size_t size, Ref<rapidjson::StringBuffer> message);
 
           public:
-            BeaconListener(Ref<threading::Worker> worker, const std::string& externalURL);
+            BeaconListener(Ref<Worker> worker, const std::string& externalURL);
             virtual ~BeaconListener();
-            static Ref<BeaconListener> Create(Ref<threading::Worker> worker, const std::string& externalURL);
+            static Ref<BeaconListener> Create(Ref<Worker> worker, const std::string& externalURL);
         };
     }
 }

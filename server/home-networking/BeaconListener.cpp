@@ -7,7 +7,7 @@ namespace server
     {
         WeakRef<BeaconListener> instanceBeacon;
 
-        BeaconListener::BeaconListener(Ref<threading::Worker> worker, const std::string& externalURL)
+        BeaconListener::BeaconListener(Ref<Worker> worker, const std::string& externalURL)
             : nameCopy("missing in name in BeaconListener.cpp"), buffer(), externalUrlCopy(externalURL),
               listener(worker->GetContext(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025))
         {
@@ -16,7 +16,7 @@ namespace server
         {
         }
 
-        Ref<BeaconListener> BeaconListener::Create(Ref<threading::Worker> worker, const std::string& externalURL)
+        Ref<BeaconListener> BeaconListener::Create(Ref<Worker> worker, const std::string& externalURL)
         {
             if (!instanceBeacon.expired())
                 return Ref<BeaconListener>(instanceBeacon);

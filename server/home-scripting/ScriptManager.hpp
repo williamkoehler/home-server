@@ -50,8 +50,6 @@ namespace server
         class ScriptManager
         {
           private:
-            boost::mutex mutex;
-
             const Ref<HomeView> homeView;
 
             boost::container::vector<Ref<ScriptProvider>> providerList;
@@ -78,7 +76,6 @@ namespace server
 
             inline size_t GetScriptSourceCount()
             {
-                boost::lock_guard lock(mutex);
                 return scriptSourceList.size();
             }
 

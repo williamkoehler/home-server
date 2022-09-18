@@ -14,7 +14,7 @@ namespace server
         {
         }
 
-        Ref<threading::Worker> RoomView::GetWorker()
+        Ref<Worker> RoomView::GetWorker()
         {
             Ref<Home> home = Home::GetInstance();
             assert(home != nullptr);

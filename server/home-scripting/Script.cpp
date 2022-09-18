@@ -18,9 +18,6 @@ namespace server
 
         Ref<Property> Script::GetProperty(const std::string& id)
         {
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<std::string, Ref<Property>>::const_iterator it = propertyList.find(id);
             if (it == propertyList.end())
                 return nullptr;
@@ -30,9 +27,6 @@ namespace server
 
         Ref<Event> Script::GetEvent(const std::string& id)
         {
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(id);
             if (it == eventList.end())
                 return nullptr;
@@ -42,9 +36,6 @@ namespace server
 
         bool Script::Invoke(const std::string& event)
         {
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
             // Find event
             const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(event);
             if (it != eventList.end())
@@ -74,11 +65,6 @@ namespace server
 
         void Script::TakeSnapshot()
         {
-            // Lock main and snapshot mutex
-            boost::lock(mutex, snapshotMutex);
-            boost::lock_guard lock2(mutex, boost::adopt_lock);
-            boost::lock_guard lock(snapshotMutex, boost::adopt_lock);
-
             // Prepare rapidjson snapshot
             rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
 
@@ -100,9 +86,6 @@ namespace server
         {
             assert(output.IsObject());
 
-            // Lock main mutex
-            boost::lock_guard lock(mutex);
-
             // Build script attributes
             rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
             attributesJson.MemberReserve(attributeList.size(), allocator);
@@ -121,8 +104,6 @@ namespace server
         void Script::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            boost::lock_guard lock(snapshotMutex);
 
             output.CopyFrom(snapshot, allocator, true);
         }

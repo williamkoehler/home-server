@@ -91,9 +91,6 @@ namespace server
         const boost::function<void(identifier_t id, const std::string& type, const std::string& name,
                                    const std::string& usage, const std::string_view& content)>& callback)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -146,9 +143,6 @@ namespace server
 
     identifier_t SQLiteDatabase::ReserveScriptSource()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -180,9 +174,6 @@ namespace server
     bool SQLiteDatabase::UpdateScriptSource(identifier_t id, const std::string& type, const std::string& name,
                                             const std::string& usage, const std::string_view& content)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -218,9 +209,6 @@ namespace server
     bool SQLiteDatabase::UpdateScriptSourcePropName(identifier_t id, const std::string& value,
                                                     const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -253,9 +241,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateScriptSourcePropContent(identifier_t id, const std::string_view& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -289,9 +274,6 @@ namespace server
 
     bool SQLiteDatabase::RemoveScriptSource(identifier_t id)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -323,9 +305,6 @@ namespace server
 
     size_t SQLiteDatabase::GetScriptSourceCount()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -354,9 +333,6 @@ namespace server
     bool SQLiteDatabase::LoadRooms(
         const boost::function<bool(identifier_t id, const std::string& type, const std::string& name)>& callback)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -400,9 +376,6 @@ namespace server
 
     identifier_t SQLiteDatabase::ReserveRoom()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -433,9 +406,6 @@ namespace server
 
     bool SQLiteDatabase::UpdateRoom(identifier_t id, const std::string& type, const std::string& name)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -468,9 +438,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateRoomPropType(identifier_t id, const std::string& value, const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -503,9 +470,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateRoomPropName(identifier_t id, const std::string& value, const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -539,9 +503,6 @@ namespace server
 
     bool SQLiteDatabase::RemoveRoom(identifier_t roomID)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -572,9 +533,6 @@ namespace server
 
     size_t SQLiteDatabase::GetRoomCount()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -604,9 +562,6 @@ namespace server
                                    identifier_t controllerID, identifier_t roomID, const std::string_view& data)>&
             callback)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -659,9 +614,6 @@ namespace server
 
     identifier_t SQLiteDatabase::ReserveDevice()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -693,9 +645,6 @@ namespace server
     bool SQLiteDatabase::UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                                       identifier_t controllerID, identifier_t roomID)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -730,9 +679,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateDevicePropName(identifier_t id, const std::string& value, const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -764,9 +710,6 @@ namespace server
         return true;
     }bool SQLiteDatabase::UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -799,9 +742,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateDevicePropController(identifier_t id, identifier_t value, identifier_t newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -834,9 +774,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -870,9 +807,6 @@ namespace server
 
     bool SQLiteDatabase::RemoveDevice(identifier_t id)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -903,9 +837,6 @@ namespace server
 
     size_t SQLiteDatabase::GetDeviceCount()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -934,9 +865,6 @@ namespace server
         const boost::function<void(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
                                    uint8_t salt[SALT_SIZE], const std::string& accessLevel)>& callback)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1009,9 +937,6 @@ namespace server
 
     identifier_t SQLiteDatabase::ReserveUser()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1043,9 +968,6 @@ namespace server
     bool SQLiteDatabase::UpdateUser(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
                                     uint8_t salt[SALT_SIZE], const std::string& accessLevel)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1084,9 +1006,6 @@ namespace server
 
     bool SQLiteDatabase::UpdateUserPropName(identifier_t id, const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1119,9 +1038,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1154,9 +1070,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateUserPropHash(identifier_t id, uint8_t newValue[SHA256_SIZE])
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1191,9 +1104,6 @@ namespace server
     }
     bool SQLiteDatabase::UpdateUserPropSalt(identifier_t id, uint8_t newValue[SALT_SIZE])
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1229,9 +1139,6 @@ namespace server
 
     bool SQLiteDatabase::RemoveUser(identifier_t id)
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -1262,9 +1169,6 @@ namespace server
 
     size_t SQLiteDatabase::GetUserCount()
     {
-        // Lock main mutex
-        boost::lock_guard lock(mutex);
-
         // Insert into database
         sqlite3_stmt* statement;
 

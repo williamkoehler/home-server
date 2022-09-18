@@ -16,8 +16,6 @@ namespace server
             class NativeScriptProvider : public ScriptProvider
             {
               private:
-                boost::mutex mutex;
-
                 /// @brief Directory path where native scripts can be found
                 ///
                 std::string path;

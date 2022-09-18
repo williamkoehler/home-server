@@ -51,13 +51,11 @@ namespace server
 
         std::string User::GetName()
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
             return name;
         }
         bool User::SetName(const std::string& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -77,21 +75,19 @@ namespace server
         {
             assert(h != nullptr);
 
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             // Copy to output variable
             memcpy(h, hash, SHA256_SIZE);
         }
         bool User::CompaireHash(uint8_t h[SHA256_SIZE])
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             return memcmp(hash, h, SHA256_SIZE) == 0;
         }
         bool User::SetHash(uint8_t h[SHA256_SIZE])
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -111,7 +107,7 @@ namespace server
         {
             assert(s != nullptr);
 
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             // Copy to output variable
             memcpy(s, salt, SALT_SIZE);
@@ -119,14 +115,12 @@ namespace server
 
         UserAccessLevel User::GetAccessLevel()
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             return accessLevel;
         }
         bool User::SetAccessLevel(UserAccessLevel v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -146,7 +140,7 @@ namespace server
             assert(output.IsObject());
 
             // Lock main mutex
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             output.AddMember("id", rapidjson::Value(id), allocator);
 
@@ -162,7 +156,7 @@ namespace server
             assert(input.IsObject());
 
             // Lock main mutex
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
             if (nameIt != input.MemberEnd() && nameIt->value.IsString())

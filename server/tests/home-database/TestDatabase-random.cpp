@@ -5,18 +5,14 @@
 const boost::filesystem::path databaseFilepath = "test.sqlite3";
 Ref<server::Database> database = nullptr;
 
-Ref<server::threading::Worker> worker = nullptr;
+Ref<server::Worker> worker = nullptr;
 
-boost::mutex scriptSourceMutex;
 robin_hood::unordered_map<identifier_t, ScriptSource> scriptSources;
 
-boost::mutex roomMutex;
 robin_hood::unordered_map<identifier_t, Room> rooms;
 
-boost::mutex deviceMutex;
 robin_hood::unordered_map<identifier_t, Device> devices;
 
-boost::mutex userMutex;
 robin_hood::unordered_map<identifier_t, User> users;
 
 #define TEST_SIZE (50000)
@@ -30,7 +26,7 @@ BOOST_AUTO_TEST_CASE(test_database_initialize)
     database = server::Database::Create(server::DatabaseType::kSQLiteDatabaseType, databaseFilepath.string());
     BOOST_CHECK_MESSAGE(database != nullptr, "Create database.");
 
-    worker = server::threading::Worker::Create("test worker", 10);
+    worker = server::Worker::Create("test worker", 10);
     BOOST_CHECK_MESSAGE(worker != nullptr, "Create worker.");
 
     // Start worker
@@ -280,7 +276,6 @@ void JobHandler()
     {
     case kScriptSourceEntry:
     {
-        boost::lock_guard lock(scriptSourceMutex);
         if (scriptSources.size() == 0)
             seed2 = 0;
 

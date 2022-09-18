@@ -1,7 +1,7 @@
 #include "TestWorker.hpp"
 #include "home-threading/Worker.hpp"
 
-static Ref<server::threading::Worker> worker;
+static Ref<server::Worker> worker;
 
 boost::atomic_size_t load = 0;
 
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(test_empty_worker)
 {
     LOG_INFO("Test empty worker");
 
-    worker = server::threading::Worker::Create("test worker", 1);
+    worker = server::Worker::Create("test worker", 1);
     BOOST_CHECK_MESSAGE(worker != nullptr, "Create worker");
 
     // Start worker
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(test_worker_threads)
 {
     LOG_INFO("Test worker threads");
 
-    worker = server::threading::Worker::Create("test worker", 50);
+    worker = server::Worker::Create("test worker", 50);
     BOOST_CHECK_MESSAGE(worker != nullptr, "Create worker");
 
     // Start worker
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(test_worker_threads)
 
 void TestPostJob(size_t jobCount)
 {
-    worker = server::threading::Worker::Create("test worker", 5);
+    worker = server::Worker::Create("test worker", 5);
     BOOST_CHECK_MESSAGE(worker != nullptr, "Create worker");
 
     // Start worker

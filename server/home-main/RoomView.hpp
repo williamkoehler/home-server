@@ -22,7 +22,7 @@ namespace server
                 return scripting::ViewType::kRoomViewType;
             }
 
-            virtual Ref<threading::Worker> GetWorker() override;
+            virtual Ref<Worker> GetWorker() override;
 
             virtual identifier_t GetID() override;
 

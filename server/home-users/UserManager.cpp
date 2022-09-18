@@ -126,8 +126,6 @@ namespace server
         }
         Ref<User> UserManager::AddUser(std::string name, uint8_t* hash, uint8_t* salt, UserAccessLevel accessLevel)
         {
-            boost::lock_guard lock(mutex);
-
             // Verify name
             if (!boost::regex_match(name, boost::regex(R"(^[a-zA-Z0-9_-]*$)")))
             {
@@ -173,7 +171,7 @@ namespace server
 
         Ref<User> UserManager::GetUser(identifier_t userID)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it = userList.find(userID);
             if (it == userList.end())
@@ -183,7 +181,7 @@ namespace server
         }
         Ref<User> UserManager::GetUserByName(std::string_view name)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
                 boost::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool {
@@ -196,7 +194,7 @@ namespace server
         }
         Ref<User> UserManager::Authenticate(std::string_view name, std::string_view password)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             // Search for user
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
@@ -225,7 +223,7 @@ namespace server
 
         bool UserManager::SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it = userList.find(userID);
             if (it == userList.end())
@@ -256,8 +254,6 @@ namespace server
 
         bool UserManager::RemoveUser(identifier_t userID)
         {
-            boost::lock_guard lock(mutex);
-
             // Remove user
             if (userList.erase(userID))
             {
@@ -294,7 +290,7 @@ namespace server
         {
             assert(user != nullptr);
 
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             return jwt::create()
                 .set_issuer(issuer)
@@ -308,7 +304,7 @@ namespace server
         }
         identifier_t UserManager::VerifyJWTToken(const std::string& token)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             try
             {
@@ -333,7 +329,7 @@ namespace server
             assert(output.IsObject());
 
             // Lock main mutex
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             rapidjson::Value userListJson = rapidjson::Value(rapidjson::kArrayType);
 

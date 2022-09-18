@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 #include <home-scripting/Script.hpp>
 
 namespace server
@@ -13,16 +13,12 @@ namespace server
         class Home : public boost::enable_shared_from_this<Home>
         {
           private:
-            boost::shared_mutex mutex;
-
             boost::atomic<time_t> timestamp = 0;
 
             robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
             robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
 
-            const Ref<threading::Worker> worker;
-
-            void Worker();
+            const Ref<Worker> worker;
 
             // Database
             bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);
@@ -30,12 +26,12 @@ namespace server
                             identifier_t controllerID, identifier_t roomID, const std::string_view& data);
 
           public:
-            Home(Ref<threading::Worker> worker);
+            Home(Ref<Worker> worker);
             virtual ~Home();
-            static Ref<Home> Create();
+            static Ref<Home> Create(Ref<Worker> worker);
             static Ref<Home> GetInstance();
 
-            inline Ref<threading::Worker> GetWorker() const
+            inline Ref<Worker> GetWorker() const
             {
                 return worker;
             }
@@ -65,7 +61,7 @@ namespace server
             /// @return Room count
             inline size_t GetRoomCount()
             {
-                boost::shared_lock_guard lock(mutex);
+                // boost::shared_lock_guard lock(mutex);
                 return roomList.size();
             }
 
@@ -96,7 +92,7 @@ namespace server
             /// @return Device count
             inline size_t GetDeviceCount()
             {
-                boost::shared_lock_guard lock(mutex);
+                // boost::shared_lock_guard lock(mutex);
                 return deviceList.size();
             }
 
@@ -120,9 +116,6 @@ namespace server
             /// @brief Remove device using its id
             /// @param id Device id
             bool RemoveDevice(identifier_t id);
-
-            /// @brief Start home worker
-            void Run();
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
         };

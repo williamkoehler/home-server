@@ -14,9 +14,6 @@ namespace server
 
     class Database : public boost::enable_shared_from_this<Database>
     {
-      protected:
-        boost::mutex mutex;
-
       public:
         Database();
         virtual ~Database();

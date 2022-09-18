@@ -53,13 +53,10 @@ namespace server
 
         std::string Device::GetName()
         {
-            boost::lock_guard lock(mutex);
             return name;
         }
         bool Device::SetName(const std::string& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -75,8 +72,6 @@ namespace server
 
         bool Device::SetScriptSourceID(identifier_t scriptSourceID)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -115,8 +110,6 @@ namespace server
         }
         identifier_t Device::GetScriptSourceID()
         {
-            boost::lock_guard lock(mutex);
-
             if (script != nullptr)
                 return script->GetSourceID();
 
@@ -125,13 +118,11 @@ namespace server
 
         Ref<Device> Device::GetController()
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
             return controller.lock();
         }
         bool Device::SetController(Ref<Device> v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Device> controllerRef = controller.lock();
             identifier_t oldControllerID = controllerRef != nullptr ? controllerRef->GetID() : 0;
             identifier_t controllerID = v != nullptr ? v->GetID() : 0;
@@ -163,21 +154,16 @@ namespace server
 
         identifier_t Device::GetControllerID()
         {
-            boost::shared_lock_guard lock(mutex);
-
             Ref<Device> controllerRef = controller.lock();
             return controllerRef != nullptr ? controllerRef->GetID() : 0;
         }
 
         Ref<Room> Device::GetRoom()
         {
-            boost::shared_lock_guard lock(mutex);
             return room.lock();
         }
         bool Device::SetRoom(Ref<Room> v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Room> oldRoomRef = room.lock();
             identifier_t oldRoomID = oldRoomRef != nullptr ? oldRoomRef->GetID() : 0;
 
@@ -197,15 +183,12 @@ namespace server
 
         identifier_t Device::GetRoomID()
         {
-            boost::shared_lock_guard lock(mutex);
-
             Ref<Room> roomRef = room.lock();
             return roomRef != nullptr ? roomRef->GetID() : 0;
         }
 
         Ref<DeviceView> Device::GetView()
         {
-            boost::shared_lock_guard lock(mutex);
             return view;
         }
 
@@ -232,7 +215,7 @@ namespace server
             assert(output.IsObject());
 
             // Lock
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             output.MemberReserve(6, allocator);
 
@@ -298,7 +281,7 @@ namespace server
             assert(output.IsObject());
 
             // Lock mutex
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             // Build properties
             output.AddMember("id", rapidjson::Value(id), allocator);

@@ -3,7 +3,7 @@
 #include "View.hpp"
 #include "common.hpp"
 #include "utils/Event.hpp"
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 
 namespace server
 {
@@ -18,8 +18,6 @@ namespace server
         class Script : public boost::enable_shared_from_this<Script>
         {
           protected:
-            boost::mutex mutex;
-
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
@@ -27,14 +25,13 @@ namespace server
             robin_hood::unordered_node_map<std::string, Ref<Property>> propertyList;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 
-            boost::mutex snapshotMutex;
             rapidjson::Document snapshot;
 
           public:
             Script(Ref<View> view, Ref<ScriptSource> scriptSource);
             virtual ~Script();
 
-            inline Ref<threading::Worker> GetWorker() const
+            inline Ref<Worker> GetWorker() const
             {
                 return view->GetWorker();
             }

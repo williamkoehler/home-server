@@ -13,8 +13,6 @@ namespace server
         class UserManager : public boost::enable_shared_from_this<UserManager>
         {
           private:
-            boost::shared_mutex mutex;
-
             boost::atomic<time_t> timestamp = 0;
 
             robin_hood::unordered_node_map<identifier_t, Ref<User>> userList;
@@ -64,7 +62,7 @@ namespace server
 
             size_t GetUserCount()
             {
-                boost::shared_lock_guard lock(mutex);
+                // boost::shared_lock_guard lock(mutex);
                 return userList.size();
             }
             Ref<User> GetUser(identifier_t userID);

@@ -97,8 +97,6 @@ namespace server
 
                 // Initialize script
                 {
-                    boost::lock_guard lock(mutex);
-
                     result = Init();
                 }
 

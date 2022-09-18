@@ -16,7 +16,7 @@ namespace server
         {
         }
 
-        Ref<threading::Worker> HomeView::GetWorker()
+        Ref<Worker> HomeView::GetWorker()
         {
             Ref<Home> home = Home::GetInstance();
             assert(home != nullptr);

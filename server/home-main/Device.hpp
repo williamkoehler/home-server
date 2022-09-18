@@ -13,8 +13,6 @@ namespace server
         class Device : public boost::enable_shared_from_this<Device>
         {
           protected:
-            boost::shared_mutex mutex;
-
             const identifier_t id;
             std::string name;
             Ref<scripting::Script> script;

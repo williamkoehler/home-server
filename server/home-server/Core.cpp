@@ -50,7 +50,7 @@ namespace server
             LOG_INFO("This server is called '{0}'", core->name);
 
             // Init worker
-            core->worker = threading::Worker::Create("Core", core->threadCount);
+            core->worker = Worker::Create();
             if (core->worker == nullptr)
             {
                 LOG_ERROR("Initialize core worker.");
@@ -91,7 +91,7 @@ namespace server
             }
 
             // Initialize home
-            core->home = main::Home::Create();
+            core->home = main::Home::Create(core->worker);
             if (core->home == nullptr)
             {
                 LOG_ERROR("Initialize home.");
@@ -127,11 +127,8 @@ namespace server
 
     void Core::Run()
     {
-        // Start home worker
-        home->Run();
-
-        // Start core worker
-        worker->Start(true);
+        // Run worker
+        worker->Run();
     }
 
     // Shutdown
@@ -152,8 +149,6 @@ namespace server
             LOG_ERROR("Missing config file '{0}'", configFile);
             return false;
         }
-
-        boost::lock_guard lock(mutex);
 
         char buffer[RAPIDJSON_BUFFER_SIZE_SMALL];
         rapidjson::IStreamWrapper stream = rapidjson::IStreamWrapper(file, buffer, sizeof(buffer));
@@ -205,21 +200,6 @@ namespace server
         {
             externalURL = "127.0.0.1";
             LOG_WARNING("Missing 'external-url'. External Url will be set to default '{0}'.", externalURL);
-        }
-
-        // Load thread counts
-        rapidjson::Value::MemberIterator threadCountIt = document.FindMember("thread-count");
-        if (threadCountIt != document.MemberEnd() && threadCountIt->value.IsUint())
-            threadCount = std::max(threadCountIt->value.GetUint(), 1u);
-        else
-        {
-            threadCount = boost::thread::hardware_concurrency() - 1;
-            LOG_WARNING("Missing 'thread-count'. Thread count will be set to default '{0}'.", threadCount);
-        }
-
-        if (threadCount == 1)
-        {
-            LOG_WARNING("No additional worker thread is used. This could cause some slowdowns.");
         }
 
         // Load scripting config

@@ -16,7 +16,6 @@ target_include_directories(home_scripting
 )
 target_link_libraries(home_scripting
     home_common
-    home_threading
     home_database
     xxhash
     ${Boost_LIBRARIES}

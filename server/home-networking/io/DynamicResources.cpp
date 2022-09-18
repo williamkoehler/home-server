@@ -59,8 +59,6 @@ namespace server
 
             resource->buffer = {data, size};
 
-            boost::lock_guard lock(mutex);
-
             resourceList[id] = resource;
 
             LOG_INFO("Adding resource '{0}_{1}':{2} ({3})", prefix, name, id, PrettyBytes(size));
@@ -87,8 +85,6 @@ namespace server
 
             uint32_t id =
                 XXH32(prefix.c_str(), prefix.size(), 0x44595245) ^ XXH32(name.c_str(), name.size(), 0x44595245);
-
-            boost::lock_guard lock(mutex);
 
             Ref<Resource> resource;
 
@@ -119,7 +115,7 @@ namespace server
 
         Ref<Resource> DynamicResources::GetFile(std::string prefix, std::string name)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             uint32_t id =
                 XXH32(prefix.c_str(), prefix.size(), 0x44595245) ^ XXH32(name.c_str(), name.size(), 0x44595245);
@@ -136,8 +132,6 @@ namespace server
             uint32_t id =
                 XXH32(prefix.c_str(), prefix.size(), 0x44595245) ^ XXH32(name.c_str(), name.size(), 0x44595245);
 
-            boost::lock_guard lock(mutex);
-
             boost::unordered::unordered_map<uint32_t, Ref<Resource>>::iterator it = resourceList.find(id);
             if (it == resourceList.end())
                 throw std::runtime_error("Resource ID does not exist");
@@ -151,8 +145,6 @@ namespace server
 
         void DynamicResources::Load()
         {
-            // boost::lock_guard lock(mutex);
-
             // LOG_INFO("Loading http resource information from file");
 
             // boost::filesystem::ifstream file("resources-info.json");

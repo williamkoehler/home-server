@@ -12,8 +12,6 @@ namespace server
         class Room : public boost::enable_shared_from_this<Room>
         {
           private:
-            boost::shared_mutex mutex;
-
             const identifier_t id;
             std::string type;
             std::string name;

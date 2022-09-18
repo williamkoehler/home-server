@@ -675,17 +675,11 @@ namespace server
 
             bool JSScript::Initialize()
             {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
                 return InitializeImpl();
             }
 
             bool JSScript::Terminate()
             {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
                 return TerminateImpl();
             }
         }

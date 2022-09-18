@@ -29,7 +29,7 @@ namespace server
             /// @brief Get worker instance
             ///
             /// @return Worker
-            virtual Ref<threading::Worker> GetWorker() override;
+            virtual Ref<Worker> GetWorker() override;
 
             /// @brief Get room view
             ///

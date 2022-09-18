@@ -4,7 +4,7 @@
 #include <home-main/Home.hpp>
 #include <home-networking/NetworkManager.hpp>
 #include <home-scripting/ScriptManager.hpp>
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 #include <home-users/UserManager.hpp>
 
 namespace server
@@ -14,20 +14,17 @@ namespace server
     class Core : public boost::enable_shared_from_this<Core>
     {
       private:
-        boost::mutex mutex;
-
         std::string name = "error-no-name";
 
         // Networking
         std::string externalURL;
         std::string address;
         uint16_t port;
-        size_t threadCount;
 
         // Scripting
         std::string nativeScriptDirectory;
 
-        Ref<threading::Worker> worker;
+        Ref<Worker> worker;
 
         // Components
         Ref<Database> database;
@@ -71,7 +68,7 @@ namespace server
             return externalURL;
         }
 
-        inline Ref<threading::Worker> GetWorker() const
+        inline Ref<Worker> GetWorker() const
         {
             return worker;
         }

@@ -9,7 +9,7 @@ namespace server
     {
         WeakRef<Home> instanceHome;
 
-        Home::Home(Ref<threading::Worker> worker) : worker(std::move(worker))
+        Home::Home(Ref<Worker> worker) : worker(std::move(worker))
         {
         }
         Home::~Home()
@@ -17,18 +17,12 @@ namespace server
             deviceList.clear();
             roomList.clear();
         }
-        Ref<Home> Home::Create()
+        Ref<Home> Home::Create(Ref<Worker> worker)
         {
+            assert(worker != nullptr);
+
             if (!instanceHome.expired())
                 return Ref<Home>(instanceHome);
-
-            // Create worker
-            Ref<threading::Worker> worker = threading::Worker::Create("Home", 1);
-            if (worker == nullptr)
-            {
-                LOG_ERROR("Failed to create home worker.");
-                return nullptr;
-            }
 
             Ref<Home> home = boost::make_shared<Home>(std::move(worker));
             if (home == nullptr)
@@ -36,36 +30,28 @@ namespace server
 
             instanceHome = home;
 
-            try
+            // Load from database
             {
+                Ref<Database> database = Database::GetInstance();
+                assert(database != nullptr);
 
-                // Load from database
+                // Load rooms
+                if (!database->LoadRooms(boost::bind(&Home::LoadRoom, home, boost::placeholders::_1,
+                                                     boost::placeholders::_2, boost::placeholders::_3)))
                 {
-                    Ref<Database> database = Database::GetInstance();
-                    assert(database != nullptr);
-
-                    // Load rooms
-                    if (!database->LoadRooms(boost::bind(&Home::LoadRoom, home, boost::placeholders::_1,
-                                                         boost::placeholders::_2, boost::placeholders::_3)))
-                    {
-                        LOG_ERROR("Loading rooms");
-                        return nullptr;
-                    }
-
-                    // Load devices
-                    if (!database->LoadDevices(boost::bind(&Home::LoadDevice, home, boost::placeholders::_1,
-                                                           boost::placeholders::_2, boost::placeholders::_3,
-                                                           boost::placeholders::_4, boost::placeholders::_5,
-                                                           boost::placeholders::_6)))
-                    {
-                        LOG_ERROR("Loading devices");
-                        return nullptr;
-                    }
+                    LOG_ERROR("Loading rooms");
+                    return nullptr;
                 }
-            }
-            catch (std::exception)
-            {
-                return nullptr;
+
+                // Load devices
+                if (!database->LoadDevices(boost::bind(&Home::LoadDevice, home, boost::placeholders::_1,
+                                                       boost::placeholders::_2, boost::placeholders::_3,
+                                                       boost::placeholders::_4, boost::placeholders::_5,
+                                                       boost::placeholders::_6)))
+                {
+                    LOG_ERROR("Loading devices");
+                    return nullptr;
+                }
             }
 
             home->UpdateTimestamp();
@@ -134,7 +120,7 @@ namespace server
 
         Ref<Room> Home::GetRoom(identifier_t roomID)
         {
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<Room>>::const_iterator it = roomList.find(roomID);
             if (it == roomList.end())
@@ -145,8 +131,6 @@ namespace server
 
         bool Home::RemoveRoom(identifier_t roomID)
         {
-            boost::lock_guard lock(mutex);
-
             if (roomList.erase(roomID))
             {
                 Ref<Database> database = Database::GetInstance();
@@ -212,9 +196,6 @@ namespace server
             // Add device
             if (device != nullptr)
             {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
                 deviceList[device->GetID()] = device;
 
                 // Initialize device
@@ -231,8 +212,6 @@ namespace server
 
         Ref<Device> Home::GetDevice(identifier_t id)
         {
-            boost::shared_lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(id);
             if (it == deviceList.end())
                 return nullptr;
@@ -250,7 +229,7 @@ namespace server
             identifier_t roomID = room->GetID();
 
             // Lock home mutex
-            boost::shared_lock_guard lock(mutex);
+            // boost::shared_lock_guard lock(mutex);
 
             for (auto& [id, device] : deviceList)
             {
@@ -270,9 +249,6 @@ namespace server
             // Get script source id
             identifier_t scriptSourceID = scriptSource->GetID();
 
-            // Lock home mutex
-            boost::shared_lock_guard lock(mutex);
-
             for (auto& [id, device] : deviceList)
             {
                 if (device->GetScriptSourceID() == scriptSourceID)
@@ -284,8 +260,6 @@ namespace server
 
         bool Home::RemoveDevice(identifier_t id)
         {
-            boost::lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<identifier_t, Ref<Device>>::const_iterator it = deviceList.find(id);
             if (it != deviceList.end())
             {
@@ -305,18 +279,9 @@ namespace server
                 return false;
         }
 
-        //! Worker
-        void Home::Run()
-        {
-            // Start worker thread
-            worker->Start();
-        }
-
         void Home::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            boost::shared_lock_guard lock(mutex);
 
             output.AddMember("timestamp", rapidjson::Value(timestamp), allocator);
 

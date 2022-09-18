@@ -36,7 +36,6 @@ if(${ENABLE_TESTS})
         )
         target_link_libraries(${testname}
             home_common
-            home_threading
             home_database
             dl
             ${CMAKE_THREAD_LIBS_INIT}

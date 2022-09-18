@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 
 namespace server
 {
@@ -15,9 +15,7 @@ namespace server
           private:
             friend class WSSession;
 
-            boost::mutex mutex;
-
-            const Ref<threading::Worker> worker;
+            const Ref<Worker> worker;
 
             Ref<DynamicResources> dynamicResources = nullptr;
 
@@ -33,16 +31,16 @@ namespace server
             boost::container::vector<WeakRef<WSSession>> sessionList;
 
           public:
-            NetworkManager(Ref<threading::Worker> worker);
+            NetworkManager(Ref<Worker> worker);
             virtual ~NetworkManager();
-            static Ref<NetworkManager> Create(Ref<threading::Worker> worker, const std::string& address, uint16_t port,
+            static Ref<NetworkManager> Create(Ref<Worker> worker, const std::string& address, uint16_t port,
                                               const std::string& externalURL);
             static Ref<NetworkManager> GetInstance();
 
             /// @brief Get networking worker
             /// 
             /// @return Worker
-            inline Ref<threading::Worker> GetWorker() const
+            inline Ref<Worker> GetWorker() const
             {
                 return worker;
             }

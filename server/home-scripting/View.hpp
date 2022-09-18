@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include <home-threading/Worker.hpp>
+#include <home-common/Worker.hpp>
 
 namespace server
 {
@@ -26,7 +26,7 @@ namespace server
             /// Note: Should always be valid (not null)
             ///
             /// @return View worker
-            virtual Ref<threading::Worker> GetWorker() = 0;
+            virtual Ref<Worker> GetWorker() = 0;
         };
     }
 }

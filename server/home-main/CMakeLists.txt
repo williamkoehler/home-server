@@ -16,7 +16,6 @@ target_include_directories(home_main
 )
 target_link_libraries(home_main
     home_common
-    home_threading
     home_database
     home_scripting
     ${Boost_LIBRARIES}

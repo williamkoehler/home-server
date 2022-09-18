@@ -16,7 +16,6 @@ target_include_directories(home_networking
 )
 target_link_libraries(home_networking
     home_common
-    home_threading
     home_database
     home_scripting
     home_main

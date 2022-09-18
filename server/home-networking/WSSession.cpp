@@ -36,7 +36,6 @@ namespace server
             // Add ws to publish list
             {
                 Ref<NetworkManager> networkManager = NetworkManager::GetInstance();
-                boost::lock_guard lock(networkManager->mutex);
                 networkManager->sessionList.push_back(shared_from_this());
             }
 
@@ -182,8 +181,6 @@ namespace server
             rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);
             document.Accept(writer);
 
-            boost::lock_guard lock(queueMutex);
-
             messageQueue.push_back(message);
 
             if (messageQueue.size() == 1)
@@ -201,8 +198,6 @@ namespace server
             message->Push(buffer.GetSize());
             memcpy((void*)message->GetString(), buffer.GetString(), buffer.GetSize());
 
-            boost::lock_guard lock(queueMutex);
-
             messageQueue.push_back(message);
 
             if (messageQueue.size() == 1)
@@ -216,8 +211,6 @@ namespace server
         }
         void WSSession::Send(Ref<rapidjson::StringBuffer> buffer)
         {
-            boost::lock_guard lock(queueMutex);
-
             messageQueue.push_back(buffer);
 
             if (messageQueue.size() == 1)
@@ -233,8 +226,6 @@ namespace server
         {
             if (error)
                 return;
-
-            boost::lock_guard lock(queueMutex);
 
             messageQueue.erase(messageQueue.begin());
 

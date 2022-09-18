@@ -20,10 +20,8 @@ namespace server
         class User : public boost::enable_shared_from_this<User>
         {
           private:
-            boost::shared_mutex mutex;
-
-            std::string name;
             const identifier_t id;
+            std::string name;
             uint8_t hash[SHA256_SIZE] = "";
             uint8_t salt[SALT_SIZE] = "";
 

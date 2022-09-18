@@ -21,7 +21,6 @@ namespace server
         class DynamicResources
         {
           private:
-            boost::shared_mutex mutex;
             boost::unordered::unordered_map<uint32_t, Ref<Resource>> resourceList;
 
           public:

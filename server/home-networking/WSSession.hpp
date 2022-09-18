@@ -16,7 +16,6 @@ namespace server
             Ref<websocket_t> socket;
             boost::beast::flat_buffer buffer;
 
-            boost::mutex queueMutex;
             boost::container::vector<Ref<rapidjson::StringBuffer>> messageQueue;
 
             void OnAccept(boost::system::error_code error);

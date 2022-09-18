@@ -34,13 +34,10 @@ namespace server
 
         std::string Room::GetType()
         {
-            boost::shared_lock_guard lock(mutex);
             return type;
         }
         bool Room::SetType(const std::string& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -56,13 +53,10 @@ namespace server
 
         std::string Room::GetName()
         {
-            boost::shared_lock_guard lock(mutex);
             return name;
         }
         bool Room::SetName(const std::string& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -78,16 +72,12 @@ namespace server
 
         Ref<RoomView> Room::GetView()
         {
-            boost::shared_lock_guard lock(mutex);
             return view;
         }
 
         void Room::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            // Lock mutex
-            boost::shared_lock_guard lock(mutex);
 
             output.AddMember("id", rapidjson::Value(id), allocator);
             output.AddMember("name", rapidjson::Value(name.c_str(), name.size()), allocator);

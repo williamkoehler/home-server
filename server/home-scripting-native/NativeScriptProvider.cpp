@@ -133,9 +133,6 @@ namespace server
 
             boost::container::vector<StaticScriptSource> NativeScriptProvider::GetStaticScriptSources()
             {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
                 boost::container::vector<StaticScriptSource> scriptSourceList =
                     boost::container::vector<StaticScriptSource>();
 
@@ -152,9 +149,6 @@ namespace server
                                                                        ScriptUsage usage,
                                                                        const std::string_view& content)
             {
-                // Lock main mutex
-                boost::lock_guard lock(mutex);
-
                 robin_hood::unordered_node_map<std::string, ScriptInformation>::const_iterator it =
                     scriptList.find(name);
 

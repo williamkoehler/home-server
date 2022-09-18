@@ -63,13 +63,10 @@ namespace server
 
         std::string ScriptSource::GetName()
         {
-            boost::shared_lock_guard lock(mutex);
             return name;
         }
         bool ScriptSource::SetName(const std::string& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -85,13 +82,10 @@ namespace server
 
         std::string ScriptSource::GetContent()
         {
-            boost::shared_lock_guard lock(mutex);
             return content;
         }
         bool ScriptSource::SetContent(const std::string_view& v)
         {
-            boost::lock_guard lock(mutex);
-
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -109,8 +103,6 @@ namespace server
         void ScriptSource::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            boost::lock_guard lock(mutex);
 
             output.AddMember("id", rapidjson::Value(id), allocator);
             
@@ -136,8 +128,6 @@ namespace server
         void ScriptSource::JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
-
-            boost::lock_guard lock(mutex);
 
             output.AddMember("content", rapidjson::Value((const char*)content.data(), content.size(), allocator),
                              allocator);

@@ -12,6 +12,8 @@ namespace server
         class HomeView : public scripting::View
         {
           public:
+            static Ref<HomeView> GetHomeView();
+
             /// @brief Get view type
             ///
             /// @return View  type

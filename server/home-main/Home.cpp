@@ -2,6 +2,8 @@
 #include "Device.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
+#include <home-scripting/ScriptManager.hpp>
+#include <home-scripting/main/HomeView.hpp>
 
 namespace server
 {
@@ -39,7 +41,7 @@ namespace server
                 if (!database->LoadRooms(boost::bind(&Home::LoadRoom, home, boost::placeholders::_1,
                                                      boost::placeholders::_2, boost::placeholders::_3)))
                 {
-                    LOG_ERROR("Loading rooms");
+                    LOG_ERROR("Loading rooms.");
                     return nullptr;
                 }
 
@@ -49,10 +51,21 @@ namespace server
                                                        boost::placeholders::_4, boost::placeholders::_5,
                                                        boost::placeholders::_6)))
                 {
-                    LOG_ERROR("Loading devices");
+                    LOG_ERROR("Loading devices.");
                     return nullptr;
                 }
             }
+
+            // Create home view
+            Ref<scripting::HomeView> homeView = boost::make_shared<scripting::HomeView>(home);
+            if (homeView == nullptr)
+            {
+                LOG_ERROR("Create home view.");
+                return nullptr;
+            }
+
+            // Set home view
+            scripting::ScriptManager::SetHomeView(homeView);
 
             home->UpdateTimestamp();
 

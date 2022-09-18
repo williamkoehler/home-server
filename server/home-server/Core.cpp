@@ -83,7 +83,7 @@ namespace server
             }
 
             // Initialize scripting
-            core->scriptManager = scripting::ScriptManager::Create(nullptr, scriptProviderList);
+            core->scriptManager = scripting::ScriptManager::Create(scriptProviderList);
             if (core->scriptManager == nullptr)
             {
                 LOG_ERROR("Initialize script manager.");

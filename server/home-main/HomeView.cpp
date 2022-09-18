@@ -9,7 +9,7 @@ namespace server
 {
     namespace main
     {
-        HomeView::HomeView()
+        HomeView::HomeView(Ref<Home> home) : home(home)
         {
         }
         HomeView::~HomeView()
@@ -18,32 +18,35 @@ namespace server
 
         Ref<Worker> HomeView::GetWorker()
         {
-            Ref<Home> home = Home::GetInstance();
-            assert(home != nullptr);
+            Ref<Home> r = home.lock();
+            assert(r != nullptr);
 
-            return home->GetWorker();
+            if (r != nullptr)
+                return r->GetWorker();
+
+            LOG_FATAL("Home is not initialized.");
         }
 
         Ref<RoomView> HomeView::GetRoom(identifier_t id)
         {
-            Ref<Home> home = Home::GetInstance();
-            assert(home != nullptr);
+            Ref<Home> r = home.lock();
+            assert(r != nullptr);
 
-            // Ger room using identifier
-            Ref<Room> room = home->GetRoom(id);
+            // Get room using identifier
+            Ref<Room> room = r->GetRoom(id);
             if (room != nullptr)
                 return room->GetView();
             else
                 return nullptr;
         }
 
-        Ref<DeviceView> GetDevice(identifier_t id)
+        Ref<DeviceView> HomeView::GetDevice(identifier_t id)
         {
-            Ref<Home> home = Home::GetInstance();
-            assert(home != nullptr);
+            Ref<Home> r = home.lock();
+            assert(r != nullptr);
 
             // Get device using identifier
-            Ref<Device> device = home->GetDevice(id);
+            Ref<Device> device = r->GetDevice(id);
             if (device != nullptr)
                 return device->GetView();
             else

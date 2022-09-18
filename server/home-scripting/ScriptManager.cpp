@@ -6,24 +6,21 @@ namespace server
     namespace scripting
     {
         WeakRef<ScriptManager> instanceScriptManager;
+        WeakRef<HomeView> instanceHomeView;
 
-        ScriptManager::ScriptManager(const Ref<HomeView>& homeView,
-                                     const boost::container::vector<Ref<ScriptProvider>>& providerList)
-            : homeView(homeView), providerList(providerList)
+        ScriptManager::ScriptManager(const boost::container::vector<Ref<ScriptProvider>>& providerList)
+            : providerList(providerList)
         {
         }
         ScriptManager::~ScriptManager()
         {
         }
-        Ref<ScriptManager> ScriptManager::Create(Ref<HomeView> homeView,
-                                                 const boost::container::vector<Ref<ScriptProvider>>& providerList)
+        Ref<ScriptManager> ScriptManager::Create(const boost::container::vector<Ref<ScriptProvider>>& providerList)
         {
-            // assert(homeView != nullptr);
-
             if (!instanceScriptManager.expired())
                 return Ref<ScriptManager>(instanceScriptManager);
 
-            Ref<ScriptManager> scriptManager = boost::make_shared<ScriptManager>(homeView, providerList);
+            Ref<ScriptManager> scriptManager = boost::make_shared<ScriptManager>(providerList);
             instanceScriptManager = scriptManager;
             if (scriptManager == nullptr)
                 return nullptr;
@@ -75,13 +72,15 @@ namespace server
             return Ref<ScriptManager>(instanceScriptManager);
         }
 
-        // Ref<HomeView> ScriptManager::GetHomeView()
-        // {
-        //     Ref<ScriptManager> scriptManager = Ref<ScriptManager>(instanceScriptManager);
-        //     assert(scriptManager != nullptr);
-
-        //     return scriptManager->homeView;
-        // }
+        void ScriptManager::SetHomeView(Ref<HomeView> homeView)
+        {
+            assert(homeView != nullptr);
+            instanceHomeView = homeView;
+        }
+        Ref<HomeView> ScriptManager::GetHomeView()
+        {
+            return Ref<HomeView>(instanceHomeView);
+        }
 
         bool ScriptManager::LoadScriptSource(identifier_t id, const std::string& language, const std::string& name,
                                              const std::string& usage, const std::string_view& content)

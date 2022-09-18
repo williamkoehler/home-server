@@ -9,7 +9,7 @@ namespace server
     {
         namespace javascript
         {
-            /// @brief JavaScript device wrapper
+            /// @brief JavaScript Device wrapper
             ///
             class JSDevice
             {

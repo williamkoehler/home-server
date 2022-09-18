@@ -14,8 +14,10 @@ namespace server
         class HomeView : public scripting::View
         {
           private:
+            WeakRef<Home> home;
+
           public:
-            HomeView();
+            HomeView(Ref<Home> home);
             virtual ~HomeView();
 
             /// @brief Get view type

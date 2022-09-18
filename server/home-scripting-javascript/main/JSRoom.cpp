@@ -1,5 +1,4 @@
 #include "JSRoom.hpp"
-#include <home-scripting/ScriptManager.hpp>
 #include <home-scripting/main/HomeView.hpp>
 #include <home-scripting/main/RoomView.hpp>
 
@@ -49,8 +48,8 @@ namespace server
                 duk_dup(context, -2);                        // [ number this number ]
                 duk_put_prop_string(context, -2, UNIQUE_ID); // [ number this ]
 
-                // Pop number and this
-                duk_pop_2(context);
+                // Pop this and number
+                duk_pop_2(context); // [ ]
 
                 return 0;
             }
@@ -68,21 +67,22 @@ namespace server
                     // Pop 2
                     duk_pop_2(context); // [ ]
 
-                    // Get home view
-                    // Ref<HomeView> homeView = ScriptManager::GetHomeView();
-                    // assert(homeView != nullptr);
+                    Ref<HomeView> homeView = HomeView::GetHomeView();
+                    assert(homeView != nullptr);
 
-                    // // Get room view
-                    // Ref<RoomView> roomView = homeView->GetRoom(roomID);
+                    // Get room view
+                    Ref<RoomView> roomView = homeView->GetRoom(roomID);
 
-                    // // Push result
-                    // duk_push_boolean(context, roomView != nullptr);
-                    return 1;
+                    // Push result
+                    duk_push_boolean(context, roomView != nullptr);
+
+                    return 1; // [ boolean ]
                 }
-
-                // Push undefined
-                duk_push_undefined(context);
-                return 1;
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
+                }
             }
 
             duk_ret_t JSRoom::GetName(duk_context* context)
@@ -99,24 +99,33 @@ namespace server
                     duk_pop_2(context); // [ ]
 
                     // Get home view
-                    // Ref<HomeView> homeView = ScriptManager::GetHomeView();
-                    // assert(homeView != nullptr);
+                    Ref<HomeView> homeView = HomeView::GetHomeView();
+                    assert(homeView != nullptr);
 
-                    // // Get room view
-                    // Ref<RoomView> roomView = homeView->GetRoom(roomID);
-                    // if (roomView != nullptr)
-                    // {
-                    //     std::string name = roomView->GetName();
+                    // Get room view
+                    Ref<RoomView> roomView = homeView->GetRoom(roomID);
+                    if (roomView != nullptr)
+                    {
+                        std::string name = roomView->GetName();
 
-                    //     // Push name
-                    //     duk_push_lstring(context, name.data(), name.size()); // [ string ]
-                    //     return 1;
-                    // }
+                        // Push name
+                        duk_push_lstring(context, name.data(), name.size()); // [ string ]
+
+                        return 1; // [ string ]
+                    }
+                    else
+                    {
+                        // Push undefined
+                        duk_push_undefined(context); // [ undefined ]
+
+                        return 1; // [ undefined ]
+                    }
                 }
-
-                // Push undefined
-                duk_push_undefined(context);
-                return 1;
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
+                }
             }
             duk_ret_t JSRoom::SetName(duk_context* context)
             {
@@ -133,16 +142,36 @@ namespace server
                     identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
                     // Get home view
-                    // Ref<HomeView> homeView = ScriptManager::GetHomeView();
-                    // assert(homeView != nullptr);
+                    Ref<HomeView> homeView = HomeView::GetHomeView();
+                    assert(homeView != nullptr);
 
-                    // // Get room view
-                    // Ref<RoomView> roomView = homeView->GetRoom(roomID);
-                    // if (roomView == nullptr)
-                    //     return DUK_RET_ERROR;
+                    // Get room view
+                    Ref<RoomView> roomView = homeView->GetRoom(roomID);
+                    if (roomView != nullptr)
+                    {
+                        // Pop number and this
+                        duk_pop_2(context); // [ string ]
 
-                    // // Set name
-                    // roomView->SetName(std::string(name, nameLength));
+                        // Set name
+                        roomView->SetName(std::string(name, nameLength));
+
+                        return 1; // [ string ]
+                    }
+                    else
+                    {
+                        // Pop number, this and string
+                        duk_pop_3(context);
+
+                        // Push undefined
+                        duk_push_undefined(context); // [ undefined ]
+
+                        return 1; // [ undefined ]
+                    }
+                }
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
                 }
 
                 return 0;

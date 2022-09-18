@@ -2,6 +2,9 @@
 #include "JSScriptSource.hpp"
 #include <home-scripting/utils/Property.hpp>
 
+#include "main/JSDevice.hpp"
+#include "main/JSRoom.hpp"
+
 extern "C"
 {
     // Interrupt function called by the duktape engine
@@ -86,7 +89,9 @@ namespace server
                     duk_pop(context);
                 }
 
-                // script->ImportModules();
+                // Import main
+                JSRoom::Import(context);
+                JSDevice::Import(context);
 
                 // Load script source
                 std::string data = script->scriptSource->GetContent();
@@ -301,7 +306,7 @@ namespace server
                         // Set property getter and setter
                         duk_def_prop(c, -5,
                                      DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
-                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object key ]
+                                         DUK_DEFPROP_HAVE_ENUMERABLE | DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
                     }
 
                     // Pop enum

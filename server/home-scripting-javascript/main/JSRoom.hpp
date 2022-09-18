@@ -9,6 +9,8 @@ namespace server
     {
         namespace javascript
         {
+            /// @brief JavaScript Room wrapper
+            /// 
             class JSRoom
             {
               private:

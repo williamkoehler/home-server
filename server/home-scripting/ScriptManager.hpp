@@ -60,15 +60,14 @@ namespace server
                                   const std::string& usage, const std::string_view& content);
 
           public:
-            ScriptManager(const Ref<HomeView>& homeView,
-                          const boost::container::vector<Ref<ScriptProvider>>& providerList);
+            ScriptManager(const boost::container::vector<Ref<ScriptProvider>>& providerList);
             virtual ~ScriptManager();
-            static Ref<ScriptManager> Create(Ref<HomeView> homeView,
-                                             const boost::container::vector<Ref<ScriptProvider>>& providerList);
+            static Ref<ScriptManager> Create(const boost::container::vector<Ref<ScriptProvider>>& providerList);
             static Ref<ScriptManager> GetInstance();
 
-            // Get singletons
-            // static Ref<HomeView> GetHomeView();
+            // Get singleton views
+            static void SetHomeView(Ref<HomeView> homeView);
+            static Ref<HomeView> GetHomeView();
 
             //! Script Source
 

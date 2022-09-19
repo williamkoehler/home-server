@@ -21,12 +21,6 @@ namespace server
             ///
             /// @return View type
             virtual ViewType GetType() = 0;
-
-            /// @brief Get view worker
-            /// Note: Should always be valid (not null)
-            ///
-            /// @return View worker
-            virtual Ref<Worker> GetWorker() = 0;
         };
     }
 }

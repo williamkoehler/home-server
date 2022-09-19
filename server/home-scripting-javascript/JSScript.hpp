@@ -29,6 +29,10 @@ namespace server
                 /// 
                 boost::container::vector<Ref<Property>> propertyByIDList;
 
+                /// @brief Script events ordered by id
+                /// 
+                boost::container::vector<Ref<Event>> eventByIDList;
+
                 /// @brief Script controllers
                 /// 
                 robin_hood::unordered_node_map<duk_int_t, Ref<Controller>> controllerList;
@@ -50,6 +54,7 @@ namespace server
                 void InitializeAttributes();
                 void InitializeProperties();
                 void InitializeMethods();
+                void InitializeEvents();
                 void InitializeControllers();
 
                 /// @brief Invoke event safely
@@ -59,10 +64,12 @@ namespace server
                 /// @return Successfulness
                 static duk_ret_t InvokeSafe(duk_context* context, void* udata);
 
-                bool InvokeImpl(const std::string& event);
+                bool InvokeImpl(const std::string& event, Ref<Property> parameter);
 
-                static duk_ret_t PropertyGetter(duk_context* context);
-                static duk_ret_t PropertySetter(duk_context* context);
+                static duk_ret_t GetProperty(duk_context* context);
+                static duk_ret_t SetProperty(duk_context* context);
+
+                static duk_ret_t InvokeEvent(duk_context* context);
 
                 static duk_ret_t TerminateSafe(duk_context* context, void* udata);
 

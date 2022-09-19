@@ -116,7 +116,7 @@ namespace server
             {
                 return rapidjson::Value(rapidjson::kNullType);
             }
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+            virtual bool JsonSet(rapidjson::Value& input)
             {
                 return false;
             }
@@ -143,7 +143,7 @@ namespace server
             virtual void SetBoolean(bool v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
         class IntegerProperty : public Property
@@ -162,7 +162,7 @@ namespace server
             virtual void SetNumber(double v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
         class NumberProperty : public Property
@@ -181,7 +181,7 @@ namespace server
             virtual void SetNumber(double v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
         class StringProperty : public Property
@@ -197,7 +197,7 @@ namespace server
             virtual void SetString(const std::string& v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
         class EndpointProperty : public Property
@@ -213,7 +213,7 @@ namespace server
             virtual void SetEndpoint(const Endpoint& v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
         class ColorProperty : public Property
@@ -229,7 +229,7 @@ namespace server
             virtual void SetColor(const Color& v) override;
 
             virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSet(rapidjson::Value& input) override;
         };
     }
 }

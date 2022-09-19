@@ -10,21 +10,19 @@ namespace server
     {
         WeakRef<NetworkManager> instanceNetworkManager;
 
-        NetworkManager::NetworkManager(Ref<Worker> worker) : worker(std::move(worker))
+        NetworkManager::NetworkManager()
         {
         }
         NetworkManager::~NetworkManager()
         {
         }
-        Ref<NetworkManager> NetworkManager::Create(Ref<Worker> worker, const std::string& address,
-                                                   uint16_t port, const std::string& externalURL)
+        Ref<NetworkManager> NetworkManager::Create(const std::string& address, uint16_t port,
+                                                   const std::string& externalURL)
         {
-            assert(worker != nullptr);
-
             if (!instanceNetworkManager.expired())
                 return Ref<NetworkManager>(instanceNetworkManager);
 
-            Ref<NetworkManager> networkManager = boost::make_shared<NetworkManager>(std::move(worker));
+            Ref<NetworkManager> networkManager = boost::make_shared<NetworkManager>();
             instanceNetworkManager = networkManager;
 
             // Initialize dynamic resources
@@ -54,9 +52,12 @@ namespace server
             //     return nullptr;
             // }
 
+            // Get worker
+            Ref<Worker> worker = Worker::GetInstance();
+            assert(worker != nullptr);
+
             // Initialize tcp socket
-            networkManager->server =
-                boost::make_shared<boost::asio::ip::tcp::acceptor>(networkManager->worker->GetContext());
+            networkManager->server = boost::make_shared<boost::asio::ip::tcp::acceptor>(worker->GetContext());
 
             boost::asio::ip::address addr = boost::asio::ip::make_address(address, ec);
             if (ec)
@@ -99,13 +100,13 @@ namespace server
 
             LOG_INFO("Web server listenning on port {0}", port);
 
-            networkManager->socket = boost::make_shared<tcp_socket_t>(networkManager->worker->GetContext());
+            networkManager->socket = boost::make_shared<tcp_socket_t>(worker->GetContext());
             networkManager->server->async_accept(
                 networkManager->socket->socket(),
                 boost::bind(&NetworkManager::OnAccept, networkManager.get(), boost::placeholders::_1));
 
             // Initialize beacon listener
-            networkManager->beaconListener = BeaconListener::Create(networkManager->worker, externalURL);
+            networkManager->beaconListener = BeaconListener::Create(externalURL);
             if (networkManager->beaconListener == nullptr)
             {
                 LOG_ERROR("Open beacon listener");
@@ -138,6 +139,10 @@ namespace server
                     {
                         LOG_ERROR("Create http session.");
                     }
+
+                    // Get worker
+                    Ref<Worker> worker = Worker::GetInstance();
+                    assert(worker != nullptr);
 
                     // Wait for new connection
                     socket = boost::make_shared<tcp_socket_t>(worker->GetContext());

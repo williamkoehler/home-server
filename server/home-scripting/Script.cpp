@@ -9,7 +9,6 @@ namespace server
         Script::Script(Ref<View> view, Ref<ScriptSource> scriptSource) : view(view), scriptSource(scriptSource)
         {
             assert(view != nullptr);
-            assert(view->GetWorker() != nullptr);
             assert(scriptSource != nullptr);
         }
         Script::~Script()
@@ -27,59 +26,20 @@ namespace server
 
         Ref<Method> Script::GetMethod(const std::string& id)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = eventList.find(id);
-            if (it == eventList.end())
+            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = methodList.find(id);
+            if (it == methodList.end())
                 return nullptr;
 
             return it->second;
         }
 
-        bool Script::Invoke(const std::string& event)
+        Ref<Event> Script::GetEvent(const std::string& id)
         {
-            // Find method
-            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = eventList.find(event);
-            if (it != eventList.end())
-            {
-                // Invoke method
-                try
-                {
-                    MethodCallback<> callback = it->second->GetCallback();
+            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(id);
+            if (it == eventList.end())
+                return nullptr;
 
-                    if (callback != nullptr)
-                        return (this->*callback)(it->first);
-                }
-                catch (std::exception)
-                {
-                }
-            }
-
-            return false;
-        }
-        bool Script::PostInvoke(const std::string& method)
-        {
-            // Invoke method
-            GetWorker()->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), method));
-
-            return true;
-        }
-
-        void Script::TakeSnapshot()
-        {
-            // Prepare rapidjson snapshot
-            rapidjson::Document::AllocatorType& allocator = snapshot.GetAllocator();
-
-            snapshot.SetNull();
-            allocator.Clear();
-
-            snapshot.SetObject();
-
-            snapshot.MemberReserve(propertyList.size(), allocator);
-            for (auto& [id, property] : propertyList)
-            {
-                // Add property
-                snapshot.AddMember(rapidjson::Value(id.data(), id.size(), allocator), property->JsonGet(allocator),
-                                   allocator);
-            }
+            return it->second;
         }
 
         void Script::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -105,11 +65,27 @@ namespace server
         {
             assert(output.IsObject());
 
-            output.CopyFrom(snapshot, allocator, true);
+            output.MemberReserve(propertyList.size(), allocator);
+            for (auto& [id, property] : propertyList)
+            {
+                // Add property
+                output.AddMember(rapidjson::Value(id.data(), id.size(), allocator), property->JsonGet(allocator),
+                                 allocator);
+            }
         }
         void Script::JsonSetState(rapidjson::Value& input)
         {
-            LOG_CODE_MISSING("Script json set state");
+            assert(input.IsObject());
+
+            for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
+                 propertyIt++)
+            {
+                Ref<Property> property =
+                    GetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
+
+                if(property != nullptr)
+                    property->JsonSet(propertyIt->value);
+            }
         }
     }
 }

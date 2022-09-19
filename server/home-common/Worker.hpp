@@ -24,6 +24,7 @@ namespace server
         Worker();
         virtual ~Worker();
         static Ref<Worker> Create();
+        static Ref<Worker> GetInstance();
 
         inline boost::asio::io_context& GetContext()
         {

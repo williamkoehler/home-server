@@ -22,8 +22,6 @@ namespace server
                 return scripting::ViewType::kRoomViewType;
             }
 
-            virtual Ref<Worker> GetWorker() override;
-
             virtual identifier_t GetID() override;
 
             virtual std::string GetName() override;

@@ -7,24 +7,40 @@ namespace server
     {
         WeakRef<BeaconListener> instanceBeacon;
 
-        BeaconListener::BeaconListener(Ref<Worker> worker, const std::string& externalURL)
-            : nameCopy("missing in name in BeaconListener.cpp"), buffer(), externalUrlCopy(externalURL),
-              listener(worker->GetContext(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025))
+        BeaconListener::BeaconListener(const std::string& externalURL)
+            : nameCopy("missing in name in BeaconListener.cpp"), buffer(), externalUrlCopy(externalURL)
         {
         }
         BeaconListener::~BeaconListener()
         {
         }
 
-        Ref<BeaconListener> BeaconListener::Create(Ref<Worker> worker, const std::string& externalURL)
+        Ref<BeaconListener> BeaconListener::Create(const std::string& externalURL)
         {
             if (!instanceBeacon.expired())
                 return Ref<BeaconListener>(instanceBeacon);
 
-            Ref<BeaconListener> beacon = boost::make_shared<BeaconListener>(worker, externalURL);
+            Ref<BeaconListener> beacon = boost::make_shared<BeaconListener>(externalURL);
             instanceBeacon = beacon;
 
-            beacon->listener.set_option(udp_socket_t::broadcast(true));
+            // Initialize listener
+            {
+                // Get worker
+                Ref<Worker> worker = Worker::GetInstance();
+                assert(worker != nullptr);
+
+                // Create listener
+                beacon->listener = boost::make_shared<udp_socket_t>(
+                    worker->GetContext(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 20025));
+                if (beacon->listener == nullptr)
+                {
+                    LOG_ERROR("Create beacon listener.");
+                    return nullptr;
+                }
+
+                // Configure listener
+                beacon->listener->set_option(udp_socket_t::broadcast(true));
+            }
 
             beacon->StartReceiving();
 
@@ -33,7 +49,7 @@ namespace server
 
         void BeaconListener::StartReceiving()
         {
-            listener.async_receive_from(
+            listener->async_receive_from(
                 boost::asio::buffer(buffer), remoteEnpoint,
                 boost::bind(&BeaconListener::OnReceive, this, boost::placeholders::_1, boost::placeholders::_2));
         }
@@ -62,7 +78,7 @@ namespace server
                     rapidjson::Writer<rapidjson::StringBuffer>(*message);
                 document.Accept(writer);
 
-                listener.async_send_to(boost::asio::buffer(message->GetString(), message->GetSize()), remoteEnpoint,
+                listener->async_send_to(boost::asio::buffer(message->GetString(), message->GetSize()), remoteEnpoint,
                                        boost::bind(&BeaconListener::OnSend, this, boost::placeholders::_1,
                                                    boost::placeholders::_2, message));
             }

@@ -201,7 +201,11 @@ namespace server
         void Device::Invoke(const std::string& id)
         {
             if (script != nullptr)
-                script->Invoke(id);
+            {
+                Ref<scripting::Method> method = script->GetMethod(id);
+                if (method != nullptr)
+                    method->PostInvoke(nullptr);
+            }
         }
 
         void Device::Terminate()

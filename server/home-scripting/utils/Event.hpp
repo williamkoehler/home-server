@@ -7,30 +7,33 @@ namespace server
     namespace scripting
     {
         class Script;
-
-        struct EventEntry
-        {
-            const WeakRef<Script> script;
-            const std::string method;
-        };
+        class Property;
+        class Method;
 
         class Event : public boost::enable_shared_from_this<Event>
         {
           protected:
-            const std::string& name;
-            boost::container::vector<EventEntry> entryList;
+            boost::container::vector<WeakRef<Method>> methodList;
 
           public:
-            Event(const std::string& name);
+            Event();
             virtual ~Event();
 
-            static Ref<Event> Create(const std::string& event);
+            static Ref<Event> Create();
 
             /// @brief Add event entry
             ///
             /// @param script Script to call
             /// @param method Method to call
             void Add(Ref<Script> script, const std::string& method);
+
+            /// @brief Invoke event
+            ///
+            void Invoke(Ref<Property> parameter);
+
+            /// @brief Post invoke to worker
+            ///
+            void PostInvoke(Ref<Property> parameter);
 
             /// @brief Remove event entry
             ///

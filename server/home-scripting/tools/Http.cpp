@@ -160,9 +160,8 @@ namespace server
 
           public:
             HttpControllerImpl(Ref<Script> script, CallbackMethod<> callback)
-                : HttpController(script, callback),
-                  resolver(boost::asio::make_strand(script->GetWorker()->GetContext())),
-                  stream(boost::asio::make_strand(script->GetWorker()->GetContext()))
+                : HttpController(script, callback), resolver(Worker::GetInstance()->GetContext()),
+                  stream(Worker::GetInstance()->GetContext())
             {
             }
 
@@ -406,8 +405,8 @@ namespace server
           public:
             HttpsControllerImpl(Ref<Script> script, CallbackMethod<> callback)
                 : HttpController(script, callback),
-                  resolver(boost::asio::make_strand(script->GetWorker()->GetContext())),
-                  stream(boost::asio::make_strand(script->GetWorker()->GetContext()), sslContext)
+                  resolver(Worker::GetInstance()->GetContext()),
+                  stream(Worker::GetInstance()->GetContext(), sslContext)
             {
             }
 

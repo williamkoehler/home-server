@@ -15,8 +15,6 @@ namespace server
           private:
             friend class WSSession;
 
-            const Ref<Worker> worker;
-
             Ref<DynamicResources> dynamicResources = nullptr;
 
             // Ref<boost::asio::ssl::context> context = nullptr;
@@ -31,19 +29,11 @@ namespace server
             boost::container::vector<WeakRef<WSSession>> sessionList;
 
           public:
-            NetworkManager(Ref<Worker> worker);
+            NetworkManager();
             virtual ~NetworkManager();
-            static Ref<NetworkManager> Create(Ref<Worker> worker, const std::string& address, uint16_t port,
+            static Ref<NetworkManager> Create(const std::string& address, uint16_t port,
                                               const std::string& externalURL);
             static Ref<NetworkManager> GetInstance();
-
-            /// @brief Get networking worker
-            /// 
-            /// @return Worker
-            inline Ref<Worker> GetWorker() const
-            {
-                return worker;
-            }
 
             // inline boost::asio::ssl::context& GetSSLContext() const
             // {

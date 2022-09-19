@@ -16,17 +16,6 @@ namespace server
         {
         }
 
-        Ref<Worker> HomeView::GetWorker()
-        {
-            Ref<Home> r = home.lock();
-            assert(r != nullptr);
-
-            if (r != nullptr)
-                return r->GetWorker();
-
-            LOG_FATAL("Home is not initialized.");
-        }
-
         Ref<scripting::RoomView> HomeView::GetRoom(identifier_t id)
         {
             Ref<Home> r = home.lock();

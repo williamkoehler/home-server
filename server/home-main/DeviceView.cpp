@@ -14,14 +14,6 @@ namespace server
         {
         }
 
-        Ref<Worker> DeviceView::GetWorker()
-        {
-            Ref<Home> home = Home::GetInstance();
-            assert(home != nullptr);
-
-            return home->GetWorker();
-        }
-
         identifier_t DeviceView::GetID()
         {
             Ref<Device> r = device.lock();

@@ -2,6 +2,8 @@
 
 namespace server
 {
+    WeakRef<Worker> instanceWorker;
+
     Worker::Worker() : running(false)
     {
     }
@@ -11,28 +13,37 @@ namespace server
     }
     Ref<Worker> Worker::Create()
     {
+        if (!instanceWorker.expired())
+            return Ref<Worker>(instanceWorker);
+
         Ref<Worker> worker = boost::make_shared<Worker>();
+        if (worker == nullptr)
+            return nullptr;
 
-        if (worker != nullptr)
+        instanceWorker = worker;
+
+        // Initialize context
+        worker->context = boost::make_shared<boost::asio::io_context>(1);
+        if (worker->context == nullptr)
         {
-            // Initialize context
-            worker->context = boost::make_shared<boost::asio::io_context>(1);
-            if (worker->context == nullptr)
-            {
-                LOG_ERROR("Create worker context.");
-                return nullptr;
-            }
+            LOG_ERROR("Create worker context.");
+            return nullptr;
+        }
 
-            // Initialize notifier
-            worker->work = boost::make_shared<boost::asio::io_context::work>(worker->GetContext());
-            if (worker->work == nullptr)
-            {
-                LOG_ERROR("Create worker context notifier.");
-                return nullptr;
-            }
+        // Initialize notifier
+        worker->work = boost::make_shared<boost::asio::io_context::work>(worker->GetContext());
+        if (worker->work == nullptr)
+        {
+            LOG_ERROR("Create worker context notifier.");
+            return nullptr;
         }
 
         return worker;
+    }
+
+    Ref<Worker> Worker::GetInstance()
+    {
+        return Ref<Worker>(instanceWorker);
     }
 
     void Worker::Run()

@@ -1,36 +1,74 @@
 #include "Event.hpp"
 #include "../Script.hpp"
+#include "Method.hpp"
 
 namespace server
 {
     namespace scripting
     {
-        Event::Event(const std::string& name) : name(name)
+        Event::Event()
         {
         }
         Event::~Event()
         {
         }
 
-        Ref<Event> Event::Create(const std::string& name)
+        Ref<Event> Event::Create()
         {
-            return boost::make_shared<Event>(name);
+            return boost::make_shared<Event>();
         }
 
         void Event::Add(Ref<Script> script, const std::string& method)
         {
-            entryList.push_back(EventEntry{
-                script,
-                method,
-            });
+            assert(script != nullptr);
+
+            Ref<Method> r = script->GetMethod(method);
+
+            if (r != nullptr)
+                methodList.push_back(r);
+        }
+
+        void Event::Invoke(Ref<Property> parameter)
+        {
+            for (boost::container::vector<WeakRef<Method>>::iterator it = methodList.begin(); it != methodList.end();
+                 it++)
+            {
+                Ref<Method> r = it->lock();
+
+                if (r != nullptr)
+                    r->Invoke(parameter);
+                else
+                    it = methodList.erase(it);
+            }
+        }
+
+        void Event::PostInvoke(Ref<Property> parameter)
+        {
+            for (boost::container::vector<WeakRef<Method>>::iterator it = methodList.begin(); it != methodList.end();
+                 it++)
+            {
+                Ref<Method> r = it->lock();
+
+                if (r != nullptr)
+                    r->PostInvoke(parameter);
+                else
+                    it = methodList.erase(it);
+            }
         }
 
         void Event::Remove(Ref<Script> script, const std::string& method)
         {
-            for (boost::container::vector<EventEntry>::iterator it = entryList.begin(); it != entryList.end(); it++)
+            assert(script != nullptr);
+
+            Ref<Method> r1 = script->GetMethod(method);
+
+            for (boost::container::vector<WeakRef<Method>>::iterator it = methodList.begin(); it != methodList.end();
+                 it++)
             {
-                // if (it->script.lock() == script && it->method == method)
-                //     it = entryList.erase(it);
+                Ref<Method> r2 = it->lock();
+
+                if (r2 == r1 || r2 == nullptr)
+                    it = methodList.erase(it);
             }
         }
     }

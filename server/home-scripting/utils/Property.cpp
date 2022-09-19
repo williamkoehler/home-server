@@ -96,7 +96,7 @@ namespace server
         {
             return rapidjson::Value(value);
         }
-        bool BooleanProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool BooleanProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsBool())
             {
@@ -137,7 +137,7 @@ namespace server
         {
             return rapidjson::Value(value);
         }
-        bool IntegerProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool IntegerProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsInt64())
             {
@@ -178,7 +178,7 @@ namespace server
         {
             return rapidjson::Value(value);
         }
-        bool NumberProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool NumberProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsNumber())
             {
@@ -211,7 +211,7 @@ namespace server
         {
             return rapidjson::Value(value.data(), value.size());
         }
-        bool StringProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool StringProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsString())
             {
@@ -251,7 +251,7 @@ namespace server
 
             return json;
         }
-        bool EndpointProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool EndpointProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsObject())
             {
@@ -305,7 +305,7 @@ namespace server
 
             return json;
         }
-        bool ColorProperty::JsonSet(rapidjson::Value& input, rapidjson::Document::AllocatorType& allocator)
+        bool ColorProperty::JsonSet(rapidjson::Value& input)
         {
             if (input.IsObject())
             {

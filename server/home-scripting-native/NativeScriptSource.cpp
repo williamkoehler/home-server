@@ -23,7 +23,6 @@ namespace server
             Ref<Script> NativeScriptSource::CreateScript(Ref<View> view)
             {
                 assert(view != nullptr);
-                assert(view->GetWorker() != nullptr);
 
                 try
                 {

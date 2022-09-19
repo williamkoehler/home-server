@@ -17,8 +17,6 @@ namespace server
             DeviceView(Ref<Device> device);
             virtual ~DeviceView();
 
-            virtual Ref<Worker> GetWorker() override;
-
             virtual identifier_t GetID() override;
 
             virtual std::string GetName() override;

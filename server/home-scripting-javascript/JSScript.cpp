@@ -1,6 +1,7 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
 #include <home-scripting/utils/Property.hpp>
+#include <home-scripting/utils/Event.hpp>
 
 #include "main/JSDevice.hpp"
 #include "main/JSRoom.hpp"
@@ -114,7 +115,7 @@ namespace server
                 script->attributeList.clear();
                 script->propertyList.clear();
                 script->propertyByIDList.clear();
-                script->eventList.clear();
+                script->methodList.clear();
 
                 // Initialize interface
                 script->InitializeAttributes();
@@ -289,7 +290,7 @@ namespace server
                             // Insert property id reference
                             index = (uint32_t)propertyByIDList.size();
                             if (index >= 64)
-                                duk_error(c, DUK_ERR_ERROR, "Too many properties");
+                                duk_error(c, DUK_ERR_ERROR, "Too many properties.");
 
                             propertyByIDList.push_back(property);
                         }
@@ -298,9 +299,9 @@ namespace server
                         duk_pop(c); // [ object enum key ]
 
                         // Push function
-                        duk_push_c_function(c, JSScript::PropertyGetter, 0); // [ object enum key c_func ]
+                        duk_push_c_function(c, JSScript::GetProperty, 0); // [ object enum key c_func ]
                         duk_set_magic(c, -1, index);
-                        duk_push_c_function(c, JSScript::PropertySetter, 1); // [ object enum key c_func c_func ]
+                        duk_push_c_function(c, JSScript::SetProperty, 1); // [ object enum key c_func c_func ]
                         duk_set_magic(c, -1, index);
 
                         // Set property getter and setter
@@ -336,8 +337,65 @@ namespace server
                 duk_idx_t top1 = duk_get_top(c);
 #endif
 
-                // Get events object
+                // Get methods object
                 duk_get_global_lstring(c, "methods", 7); // [ object ]
+
+                if (duk_is_object(c, -1))
+                {
+                    // Iterate over every property in 'methods'
+                    duk_enum(c, -1, 0); // [ object enum ]
+
+                    while (duk_next(c, -1, 0)) // [ object enum key ]
+                    {
+                        size_t nameLength;
+                        const char* nameStr = duk_to_lstring(c, -1, &nameLength);
+                        std::string name = std::string(nameStr, nameLength);
+
+                        // Read property from 'methods'
+                        duk_get_prop(c, -3); // [ object enum func ]
+
+                        if (duk_is_function(c, -1))
+                        {
+                            // Safe event as hidden variable
+                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                            duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
+
+                            // Add method
+                            Ref<Method> method =
+                                Method::Create<JSScript>(name, shared_from_this(), &JSScript::InvokeImpl);
+                            if (method != nullptr)
+                                methodList[name] = method;
+                        }
+                        else
+                            duk_pop(c); // [ object enum ]
+                    }
+
+                    // Pop enum
+                    duk_pop(c); // [ object ]
+                }
+
+                // Pop object
+                duk_pop(c); // [ ]
+
+#ifndef NDEBUG
+                duk_idx_t top2 = duk_get_top(c);
+
+                // Check stack before and after
+                assert(top1 == top2);
+#endif
+            }
+            void JSScript::InitializeEvents()
+            {
+                assert(context != nullptr);
+
+                duk_context* c = context.get();
+
+#ifndef NDEBUG
+                duk_idx_t top1 = duk_get_top(c);
+#endif
+
+                // Get events object
+                duk_get_global_lstring(c, "events", 6); // [ object ]
 
                 if (duk_is_object(c, -1))
                 {
@@ -350,22 +408,44 @@ namespace server
                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
+                        duk_dup_top(c); // [ object enum key key ]
+
                         // Read property from 'events'
-                        duk_get_prop(c, -3); // [ object enum func ]
+                        duk_get_prop(c, -4); // [ object enum key object ]
 
-                        if (duk_is_function(c, -1))
+                        size_t typeLength;
+                        const char* typeStr = duk_to_lstring(c, -1, &typeLength);
+                        std::string type = std::string(typeStr, typeLength);
+
+                        uint32_t index;
+
+                        // Add event
+                        Ref<Event> event = Event::Create();
+                        if (event != nullptr)
                         {
-                            // Safe event as hidden variable
-                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                            duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
+                            // Insert event
+                            eventList[name] = event;
 
-                            // Add method
-                            Ref<Method> method = Method::Create<JSScript>(name, &JSScript::InvokeImpl);
-                            if (method != nullptr)
-                                eventList[name] = method;
+                            // Insert event id reference
+                            index = (uint32_t)propertyByIDList.size();
+                            if (index >= 64)
+                                duk_error(c, DUK_ERR_ERROR, "Too many events.");
+
+                            eventByIDList.push_back(event);
                         }
-                        else
-                            duk_pop(c); // [ object enum ]
+
+                        // Pop object
+                        duk_pop(c); // [ object enum key ]
+
+                        // Push function
+                        duk_push_c_function(c, JSScript::InvokeEvent, 0); // [ object enum key c_func ]
+                        duk_set_magic(c, -1, index);
+
+                        // Set event
+                        duk_def_prop(c, -5,
+                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_FORCE |
+                                         DUK_DEFPROP_HAVE_ENUMERABLE |
+                                         DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
                     }
 
                     // Pop enum
@@ -465,14 +545,14 @@ namespace server
                     return DUK_RET_ERROR;
             }
 
-            bool JSScript::InvokeImpl(const std::string& method)
+            bool JSScript::InvokeImpl(const std::string& name, Ref<Property> parameter)
             {
                 assert(context != nullptr);
 
                 duk_context* c = context.get();
 
                 // Invoke method
-                JSInvokeTuple tuple = {method};
+                JSInvokeTuple tuple = {name};
                 if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) ==
                     DUK_EXEC_SUCCESS) // [ object ] or [ error ]
                 {
@@ -491,7 +571,7 @@ namespace server
                 }
             }
 
-            duk_ret_t JSScript::PropertyGetter(duk_context* context)
+            duk_ret_t JSScript::GetProperty(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
                 uint32_t index = duk_get_current_magic(context);
@@ -558,7 +638,7 @@ namespace server
                 duk_push_null(context);
                 return 1;
             }
-            duk_ret_t JSScript::PropertySetter(duk_context* context)
+            duk_ret_t JSScript::SetProperty(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
                 uint32_t index = duk_get_current_magic(context);
@@ -643,6 +723,23 @@ namespace server
                     default:
                         break;
                     }
+                }
+
+                // Error
+                return 0;
+            }
+
+            duk_ret_t JSScript::InvokeEvent(duk_context* context)
+            {
+                JSScript* script = (JSScript*)duk_get_user_data(context);
+                uint32_t index = duk_get_current_magic(context);
+
+                if (index < script->eventByIDList.size() && duk_get_top(context) == 1)
+                {
+                    Ref<Event> event = script->eventByIDList[index];
+                    assert(event != nullptr);
+
+                    event->PostInvoke(nullptr);
                 }
 
                 // Error

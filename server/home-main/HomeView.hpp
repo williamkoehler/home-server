@@ -20,11 +20,6 @@ namespace server
             HomeView(Ref<Home> home);
             virtual ~HomeView();
 
-            /// @brief Get worker instance
-            ///
-            /// @return Worker
-            virtual Ref<Worker> GetWorker() override;
-
              /// @brief Get room view
             ///
             /// @param id Room id

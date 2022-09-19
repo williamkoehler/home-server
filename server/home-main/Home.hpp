@@ -18,23 +18,16 @@ namespace server
             robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
             robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
 
-            const Ref<Worker> worker;
-
             // Database
             bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);
             bool LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                             identifier_t controllerID, identifier_t roomID, const std::string_view& data);
 
           public:
-            Home(Ref<Worker> worker);
+            Home();
             virtual ~Home();
-            static Ref<Home> Create(Ref<Worker> worker);
+            static Ref<Home> Create();
             static Ref<Home> GetInstance();
-
-            inline Ref<Worker> GetWorker() const
-            {
-                return worker;
-            }
 
             //! Timestamp
 

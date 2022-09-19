@@ -13,7 +13,7 @@ namespace server
 
         class Property;
         class Method;
-        class Timer;
+        class Event;
 
         class Script : public boost::enable_shared_from_this<Script>
         {
@@ -23,18 +23,12 @@ namespace server
 
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
             robin_hood::unordered_node_map<std::string, Ref<Property>> propertyList;
-            robin_hood::unordered_node_map<std::string, Ref<Method>> eventList;
-
-            rapidjson::Document snapshot;
+            robin_hood::unordered_node_map<std::string, Ref<Method>> methodList;
+            robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 
           public:
             Script(Ref<View> view, Ref<ScriptSource> scriptSource);
             virtual ~Script();
-
-            inline Ref<Worker> GetWorker() const
-            {
-                return view->GetWorker();
-            }
 
             inline Ref<View> GetView() const
             {
@@ -51,32 +45,17 @@ namespace server
 
             Ref<Property> GetProperty(const std::string& id);
             Ref<Method> GetMethod(const std::string& id);
+            Ref<Event> GetEvent(const std::string& id);
 
             /// @brief Initialize script (must be called by host thread)
             ///
             /// @return Successful
             virtual bool Initialize() = 0;
 
-            /// @brief Call script event
-            ///
-            /// @param id Method id
-            /// @return Successfulness
-            bool Invoke(const std::string& id);
-
-            /// @brief Let home worker call script event
-            ///
-            /// @param id Method id
-            /// @param args Method arguments
-            /// @return Successfulness
-            bool PostInvoke(const std::string& id);
-
             /// @brief Terminate script (must be called by host thread)
             ///
             /// @return Successful
             virtual bool Terminate() = 0;
-
-            /// @brief Take property snapshot
-            void TakeSnapshot();
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

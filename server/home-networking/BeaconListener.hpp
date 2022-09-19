@@ -13,7 +13,7 @@ namespace server
             std::string nameCopy = "";
             std::string externalUrlCopy = "";
 
-            udp_socket_t listener;
+            Ref<udp_socket_t> listener;
             boost::array<char, 50> buffer;
             boost::asio::ip::udp::endpoint remoteEnpoint;
 
@@ -22,9 +22,9 @@ namespace server
             void OnSend(boost::system::error_code ec, size_t size, Ref<rapidjson::StringBuffer> message);
 
           public:
-            BeaconListener(Ref<Worker> worker, const std::string& externalURL);
+            BeaconListener(const std::string& externalURL);
             virtual ~BeaconListener();
-            static Ref<BeaconListener> Create(Ref<Worker> worker, const std::string& externalURL);
+            static Ref<BeaconListener> Create(const std::string& externalURL);
         };
     }
 }

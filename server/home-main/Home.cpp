@@ -11,7 +11,7 @@ namespace server
     {
         WeakRef<Home> instanceHome;
 
-        Home::Home(Ref<Worker> worker) : worker(std::move(worker))
+        Home::Home()
         {
         }
         Home::~Home()
@@ -19,14 +19,12 @@ namespace server
             deviceList.clear();
             roomList.clear();
         }
-        Ref<Home> Home::Create(Ref<Worker> worker)
+        Ref<Home> Home::Create()
         {
-            assert(worker != nullptr);
-
             if (!instanceHome.expired())
                 return Ref<Home>(instanceHome);
 
-            Ref<Home> home = boost::make_shared<Home>(std::move(worker));
+            Ref<Home> home = boost::make_shared<Home>();
             if (home == nullptr)
                 return nullptr;
 

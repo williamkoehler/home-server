@@ -14,14 +14,6 @@ namespace server
         {
         }
 
-        Ref<Worker> RoomView::GetWorker()
-        {
-            Ref<Home> home = Home::GetInstance();
-            assert(home != nullptr);
-
-            return home->GetWorker();
-        }
-
         identifier_t RoomView::GetID()
         {
             Ref<Room> r = room.lock();

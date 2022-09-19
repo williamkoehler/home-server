@@ -49,11 +49,11 @@ namespace server
 
             LOG_INFO("This server is called '{0}'", core->name);
 
-            // Init worker
+            // Initialize worker
             core->worker = Worker::Create();
             if (core->worker == nullptr)
             {
-                LOG_ERROR("Initialize core worker.");
+                LOG_ERROR("Initialize worker.");
                 return nullptr;
             }
 
@@ -91,7 +91,7 @@ namespace server
             }
 
             // Initialize home
-            core->home = main::Home::Create(core->worker);
+            core->home = main::Home::Create();
             if (core->home == nullptr)
             {
                 LOG_ERROR("Initialize home.");
@@ -106,8 +106,7 @@ namespace server
             }
 
             // Initialize networking
-            core->networkManager =
-                networking::NetworkManager::Create(core->worker, core->address, core->port, core->externalURL);
+            core->networkManager = networking::NetworkManager::Create(core->address, core->port, core->externalURL);
             if (core->networkManager == nullptr)
             {
                 LOG_ERROR("Intialize network manager.");

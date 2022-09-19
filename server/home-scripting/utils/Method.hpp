@@ -7,9 +7,10 @@ namespace server
     namespace scripting
     {
         class Script;
+        class Property;
 
         template <class T = Script>
-        using MethodCallback = bool (T::*)(const std::string& method);
+        using MethodCallback = bool (T::*)(const std::string& name, Ref<Property> parameter);
 
         template <class T>
         union MethodCallbackConversion
@@ -26,24 +27,24 @@ namespace server
             const MethodCallback<> callback;
 
           public:
-            Method(const std::string& name, MethodCallback<> callback);
+            Method(const std::string& name, Ref<Script> script, MethodCallback<> callback);
             virtual ~Method();
 
-            static Ref<Method> Create(const std::string& name, MethodCallback<> callback);
+            static Ref<Method> Create(const std::string& name, Ref<Script> script, MethodCallback<> callback);
 
             template <class T>
-            static inline Ref<Method> Create(const std::string& name, MethodCallback<T> callback)
+            static inline Ref<Method> Create(const std::string& name, Ref<Script> script, MethodCallback<T> callback)
             {
-                return Create(name, MethodCallbackConversion<T>{callback}.f2);
+                return Create(name, script, MethodCallbackConversion<T>{callback}.f2);
             }
 
-            /// @brief Get callback
+            /// @brief Invoke method
             ///
-            /// @return Callback
-            inline MethodCallback<> GetCallback() const
-            {
-                return callback;
-            }
+            void Invoke(Ref<Property> parameter);
+
+            /// @brief Post invoke to worker
+            ///
+            void PostInvoke(Ref<Property> parameter);
         };
     }
 }

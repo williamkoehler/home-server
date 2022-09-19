@@ -67,15 +67,15 @@ namespace server
             Ref<Method> NativeScript::AddMethod(const std::string& name, MethodCallback<> callback)
             {
                 // Check existance
-                if (!eventList.contains(name))
+                if (!methodList.contains(name))
                 {
                     // Create method instance
-                    Ref<Method> e = Method::Create(name, callback);
+                    Ref<Method> e = Method::Create(name, shared_from_this(), callback);
 
-                    // Add event to list
+                    // Add method to list
                     if (e != nullptr)
                     {
-                        eventList[name] = e;
+                        methodList[name] = e;
                         return e;
                     }
                 }
@@ -84,9 +84,36 @@ namespace server
             }
             bool NativeScript::RemoveMethod(const std::string& name)
             {
-                return eventList.erase(name);
+                return methodList.erase(name);
             }
             void NativeScript::ClearMethods()
+            {
+                methodList.clear();
+            }
+
+            Ref<Event> NativeScript::AddEvent(const std::string& name)
+            {
+                // Check existance
+                if (!eventList.contains(name))
+                {
+                    // Create event instance
+                    Ref<Event> r = Event::Create();
+
+                    // Add event to list
+                    if (r != nullptr)
+                    {
+                        eventList[name] = r;
+                        return r;
+                    }
+                }
+
+                return nullptr;
+            }
+            bool NativeScript::RemoveEvent(const std::string& name)
+            {
+                return eventList.erase(name);
+            }
+            void NativeScript::ClearEvents()
             {
                 eventList.clear();
             }
@@ -99,9 +126,6 @@ namespace server
                 {
                     result = Init();
                 }
-
-                // Take snapshot
-                TakeSnapshot();
 
                 return result;
             }

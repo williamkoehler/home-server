@@ -2,6 +2,7 @@
 #include "LibraryInformation.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
+#include <home-scripting/utils/Event.hpp>
 #include <home-scripting/utils/Method.hpp>
 #include <home-scripting/utils/Property.hpp>
 
@@ -41,6 +42,11 @@ namespace server
 
                 bool RemoveMethod(const std::string& name);
                 void ClearMethods();
+
+                Ref<Event> AddEvent(const std::string& name);
+
+                bool RemoveEvent(const std::string& name);
+                void ClearEvents();
 
                 virtual bool Init() = 0;
             };

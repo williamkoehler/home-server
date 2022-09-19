@@ -24,9 +24,8 @@ namespace server
         // Scripting
         std::string nativeScriptDirectory;
 
-        Ref<Worker> worker;
-
         // Components
+        Ref<Worker> worker;
         Ref<Database> database;
         Ref<scripting::ScriptManager> scriptManager;
         Ref<main::Home> home;
@@ -66,11 +65,6 @@ namespace server
         inline const std::string& GetExternalURL()
         {
             return externalURL;
-        }
-
-        inline Ref<Worker> GetWorker() const
-        {
-            return worker;
         }
 
         void Run();

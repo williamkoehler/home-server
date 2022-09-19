@@ -28,7 +28,7 @@ namespace server
                 methodList.push_back(r);
         }
 
-        void Event::Invoke(Ref<Property> parameter)
+        void Event::Invoke(Ref<Value> parameter)
         {
             for (boost::container::vector<WeakRef<Method>>::iterator it = methodList.begin(); it != methodList.end();
                  it++)
@@ -42,7 +42,7 @@ namespace server
             }
         }
 
-        void Event::PostInvoke(Ref<Property> parameter)
+        void Event::PostInvoke(Ref<Value> parameter)
         {
             for (boost::container::vector<WeakRef<Method>>::iterator it = methodList.begin(); it != methodList.end();
                  it++)

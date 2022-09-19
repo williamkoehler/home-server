@@ -4,7 +4,7 @@
 #include <home-scripting/Script.hpp>
 #include <home-scripting/utils/Event.hpp>
 #include <home-scripting/utils/Method.hpp>
-#include <home-scripting/utils/Property.hpp>
+#include <home-scripting/utils/Value.hpp>
 
 namespace server
 {
@@ -28,7 +28,7 @@ namespace server
                 bool RemoveAttribute(const std::string& name);
                 void ClearAttributes();
 
-                Ref<Property> AddProperty(const std::string& name, Ref<Property> property);
+                Ref<Value> AddProperty(const std::string& name, Ref<Value> property);
                 bool RemoveProperty(const std::string& name);
                 void ClearProperties();
 

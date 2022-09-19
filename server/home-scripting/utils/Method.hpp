@@ -7,10 +7,10 @@ namespace server
     namespace scripting
     {
         class Script;
-        class Property;
+        class Value;
 
         template <class T = Script>
-        using MethodCallback = bool (T::*)(const std::string& name, Ref<Property> parameter);
+        using MethodCallback = bool (T::*)(const std::string& name, Ref<Value> parameter);
 
         template <class T>
         union MethodCallbackConversion
@@ -40,11 +40,11 @@ namespace server
 
             /// @brief Invoke method
             ///
-            void Invoke(Ref<Property> parameter);
+            void Invoke(Ref<Value> parameter);
 
             /// @brief Post invoke to worker
             ///
-            void PostInvoke(Ref<Property> parameter);
+            void PostInvoke(Ref<Value> parameter);
         };
     }
 }

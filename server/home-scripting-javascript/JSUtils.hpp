@@ -1,7 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include "duktape.h"
-#include <home-scripting/utils/Property.hpp>
+#include <home-scripting/utils/Value.hpp>
 
 namespace server
 {
@@ -23,13 +23,13 @@ namespace server
                 ///
                 /// @param context Duktape context
                 /// @param property Property
-                static void GetProperty(duk_context* context, Ref<Property> property);
+                static void GetProperty(duk_context* context, Ref<Value> property);
 
                 /// @brief Set property value from stack
                 ///
                 /// @param context Duktape context
                 /// @param property Property
-                static void SetProperty(duk_context* context, Ref<Property> property);
+                static void SetProperty(duk_context* context, Ref<Value> property);
             };
 
             class JSEndpoint

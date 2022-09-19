@@ -11,7 +11,7 @@ namespace server
     {
         class ScriptSource;
 
-        class Property;
+        class Value;
         class Method;
         class Event;
 
@@ -22,7 +22,7 @@ namespace server
             const Ref<ScriptSource> scriptSource;
 
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
-            robin_hood::unordered_node_map<std::string, Ref<Property>> propertyList;
+            robin_hood::unordered_node_map<std::string, Ref<Value>> propertyList;
             robin_hood::unordered_node_map<std::string, Ref<Method>> methodList;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 
@@ -43,7 +43,7 @@ namespace server
                 return scriptSource->GetID();
             }
 
-            Ref<Property> GetProperty(const std::string& id);
+            Ref<Value> GetProperty(const std::string& id);
             Ref<Method> GetMethod(const std::string& id);
             Ref<Event> GetEvent(const std::string& id);
 

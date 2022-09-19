@@ -19,7 +19,7 @@ namespace server
             return boost::make_shared<Method>(name, script, callback);
         }
 
-        void Method::Invoke(Ref<Property> parameter)
+        void Method::Invoke(Ref<Value> parameter)
         {
             Ref<Script> r = script.lock();
 
@@ -27,7 +27,7 @@ namespace server
                 (r.get()->*callback)(name, parameter);
         }
 
-        void Method::PostInvoke(Ref<Property> parameter)
+        void Method::PostInvoke(Ref<Value> parameter)
         {
             Ref<Worker> worker = Worker::GetInstance();
             assert(worker != nullptr);

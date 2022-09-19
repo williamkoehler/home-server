@@ -1,6 +1,6 @@
 #include "Script.hpp"
 #include "utils/Method.hpp"
-#include "utils/Property.hpp"
+#include "utils/Value.hpp"
 
 namespace server
 {
@@ -15,9 +15,9 @@ namespace server
         {
         }
 
-        Ref<Property> Script::GetProperty(const std::string& id)
+        Ref<Value> Script::GetProperty(const std::string& id)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Property>>::const_iterator it = propertyList.find(id);
+            const robin_hood::unordered_node_map<std::string, Ref<Value>>::const_iterator it = propertyList.find(id);
             if (it == propertyList.end())
                 return nullptr;
 
@@ -80,7 +80,7 @@ namespace server
             for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
                  propertyIt++)
             {
-                Ref<Property> property =
+                Ref<Value> property =
                     GetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
 
                 if(property != nullptr)

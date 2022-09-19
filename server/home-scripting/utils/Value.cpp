@@ -1,102 +1,102 @@
-#include "Property.hpp"
+#include "Value.hpp"
 
 namespace server
 {
     namespace scripting
     {
-        std::string StringifyPropertyType(PropertyType type)
+        std::string StringifyValueType(ValueType type)
         {
             switch (type)
             {
-            case PropertyType::kBooleanType:
+            case ValueType::kBooleanType:
                 return "boolean";
-            case PropertyType::kIntegerType:
+            case ValueType::kIntegerType:
                 return "integer";
-            case PropertyType::kNumberType:
+            case ValueType::kNumberType:
                 return "number";
-            case PropertyType::kStringType:
+            case ValueType::kStringType:
                 return "string";
-            case PropertyType::kEndpointType:
+            case ValueType::kEndpointType:
                 return "endpoint";
-            case PropertyType::kColorType:
+            case ValueType::kColorType:
                 return "color";
             default:
                 return "unknown";
             }
         }
-        PropertyType ParsePropertyType(const std::string& type)
+        ValueType ParseValueType(const std::string& type)
         {
             switch (crc32(type.data(), type.size()))
             {
             case CRC32("boolean"):
-                return PropertyType::kBooleanType;
+                return ValueType::kBooleanType;
             case CRC32("integer"):
-                return PropertyType::kIntegerType;
+                return ValueType::kIntegerType;
             case CRC32("number"):
-                return PropertyType::kNumberType;
+                return ValueType::kNumberType;
             case CRC32("string"):
-                return PropertyType::kStringType;
+                return ValueType::kStringType;
             case CRC32("endpoint"):
-                return PropertyType::kEndpointType;
+                return ValueType::kEndpointType;
             case CRC32("color"):
-                return PropertyType::kColorType;
+                return ValueType::kColorType;
             default:
-                return PropertyType::kUnknownType;
+                return ValueType::kUnknownType;
             }
         }
 
-        Ref<Property> Property::Create(PropertyType type)
+        Ref<Value> Value::Create(ValueType type)
         {
             switch (type)
             {
-            case PropertyType::kBooleanType:
-                return BooleanProperty::Create();
-            case PropertyType::kIntegerType:
-                return IntegerProperty::Create();
-            case PropertyType::kNumberType:
-                return NumberProperty::Create();
-            case PropertyType::kStringType:
-                return StringProperty::Create();
-            case PropertyType::kEndpointType:
-                return EndpointProperty::Create();
-            case PropertyType::kColorType:
-                return ColorProperty::Create();
+            case ValueType::kBooleanType:
+                return BooleanValue::Create();
+            case ValueType::kIntegerType:
+                return IntegerValue::Create();
+            case ValueType::kNumberType:
+                return NumberValue::Create();
+            case ValueType::kStringType:
+                return StringValue::Create();
+            case ValueType::kEndpointType:
+                return EndpointValue::Create();
+            case ValueType::kColorType:
+                return ColorValue::Create();
             default:
                 return nullptr;
             }
         }
 
-        Ref<NullProperty> NullProperty::Create()
+        Ref<NullValue> NullValue::Create()
         {
-            return boost::make_shared<NullProperty>();
+            return boost::make_shared<NullValue>();
         }
-        PropertyType NullProperty::GetType() const
+        ValueType NullValue::GetType() const
         {
-            return PropertyType::kUnknownType;
+            return ValueType::kUnknownType;
         }
 
         //! Boolean
-        Ref<BooleanProperty> BooleanProperty::Create()
+        Ref<BooleanValue> BooleanValue::Create()
         {
-            return boost::make_shared<BooleanProperty>();
+            return boost::make_shared<BooleanValue>();
         }
-        PropertyType BooleanProperty::GetType() const
+        ValueType BooleanValue::GetType() const
         {
-            return PropertyType::kBooleanType;
+            return ValueType::kBooleanType;
         }
-        bool BooleanProperty::GetBoolean()
+        bool BooleanValue::GetBoolean()
         {
             return value;
         }
-        void BooleanProperty::SetBoolean(bool v)
+        void BooleanValue::SetBoolean(bool v)
         {
             value = v;
         }
-        rapidjson::Value BooleanProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value BooleanValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             return rapidjson::Value(value);
         }
-        bool BooleanProperty::JsonSet(rapidjson::Value& input)
+        bool BooleanValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsBool())
             {
@@ -109,35 +109,35 @@ namespace server
         }
 
         //! Integer
-        Ref<IntegerProperty> IntegerProperty::Create()
+        Ref<IntegerValue> IntegerValue::Create()
         {
-            return boost::make_shared<IntegerProperty>();
+            return boost::make_shared<IntegerValue>();
         }
-        PropertyType IntegerProperty::GetType() const
+        ValueType IntegerValue::GetType() const
         {
-            return PropertyType::kIntegerType;
+            return ValueType::kIntegerType;
         }
-        int64_t IntegerProperty::GetInteger()
+        int64_t IntegerValue::GetInteger()
         {
             return value;
         }
-        void IntegerProperty::SetInteger(int64_t v)
+        void IntegerValue::SetInteger(int64_t v)
         {
             value = v;
         }
-        double IntegerProperty::GetNumber()
+        double IntegerValue::GetNumber()
         {
             return (double)value;
         }
-        void IntegerProperty::SetNumber(double v)
+        void IntegerValue::SetNumber(double v)
         {
             value = (int64_t)v;
         }
-        rapidjson::Value IntegerProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value IntegerValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             return rapidjson::Value(value);
         }
-        bool IntegerProperty::JsonSet(rapidjson::Value& input)
+        bool IntegerValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsInt64())
             {
@@ -150,35 +150,35 @@ namespace server
         }
 
         //! Number
-        Ref<NumberProperty> NumberProperty::Create()
+        Ref<NumberValue> NumberValue::Create()
         {
-            return boost::make_shared<NumberProperty>();
+            return boost::make_shared<NumberValue>();
         }
-        PropertyType NumberProperty::GetType() const
+        ValueType NumberValue::GetType() const
         {
-            return PropertyType::kNumberType;
+            return ValueType::kNumberType;
         }
-        int64_t NumberProperty::GetInteger()
+        int64_t NumberValue::GetInteger()
         {
             return (int64_t)value;
         }
-        void NumberProperty::SetInteger(int64_t v)
+        void NumberValue::SetInteger(int64_t v)
         {
             value = (double)v;
         }
-        double NumberProperty::GetNumber()
+        double NumberValue::GetNumber()
         {
             return value;
         }
-        void NumberProperty::SetNumber(double v)
+        void NumberValue::SetNumber(double v)
         {
             value = v;
         }
-        rapidjson::Value NumberProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value NumberValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             return rapidjson::Value(value);
         }
-        bool NumberProperty::JsonSet(rapidjson::Value& input)
+        bool NumberValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsNumber())
             {
@@ -191,27 +191,27 @@ namespace server
         }
 
         //! String
-        Ref<StringProperty> StringProperty::Create()
+        Ref<StringValue> StringValue::Create()
         {
-            return boost::make_shared<StringProperty>();
+            return boost::make_shared<StringValue>();
         }
-        PropertyType StringProperty::GetType() const
+        ValueType StringValue::GetType() const
         {
-            return PropertyType::kStringType;
+            return ValueType::kStringType;
         }
-        std::string StringProperty::GetString()
+        std::string StringValue::GetString()
         {
             return value;
         }
-        void StringProperty::SetString(const std::string& v)
+        void StringValue::SetString(const std::string& v)
         {
             value = v;
         }
-        rapidjson::Value StringProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value StringValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             return rapidjson::Value(value.data(), value.size());
         }
-        bool StringProperty::JsonSet(rapidjson::Value& input)
+        bool StringValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsString())
             {
@@ -225,23 +225,23 @@ namespace server
         }
 
         //! Endpoint
-        Ref<EndpointProperty> EndpointProperty::Create()
+        Ref<EndpointValue> EndpointValue::Create()
         {
-            return boost::make_shared<EndpointProperty>();
+            return boost::make_shared<EndpointValue>();
         }
-        PropertyType EndpointProperty::GetType() const
+        ValueType EndpointValue::GetType() const
         {
-            return PropertyType::kEndpointType;
+            return ValueType::kEndpointType;
         }
-        Endpoint EndpointProperty::GetEndpoint()
+        Endpoint EndpointValue::GetEndpoint()
         {
             return value;
         }
-        void EndpointProperty::SetEndpoint(const Endpoint& v)
+        void EndpointValue::SetEndpoint(const Endpoint& v)
         {
             value = v;
         }
-        rapidjson::Value EndpointProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value EndpointValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -251,7 +251,7 @@ namespace server
 
             return json;
         }
-        bool EndpointProperty::JsonSet(rapidjson::Value& input)
+        bool EndpointValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsObject())
             {
@@ -278,23 +278,23 @@ namespace server
         }
 
         //! Color
-        Ref<ColorProperty> ColorProperty::Create()
+        Ref<ColorValue> ColorValue::Create()
         {
-            return boost::make_shared<ColorProperty>();
+            return boost::make_shared<ColorValue>();
         }
-        PropertyType ColorProperty::GetType() const
+        ValueType ColorValue::GetType() const
         {
-            return PropertyType::kColorType;
+            return ValueType::kColorType;
         }
-        Color ColorProperty::GetColor()
+        Color ColorValue::GetColor()
         {
             return value;
         }
-        void ColorProperty::SetColor(const Color& v)
+        void ColorValue::SetColor(const Color& v)
         {
             value = v;
         }
-        rapidjson::Value ColorProperty::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        rapidjson::Value ColorValue::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
             rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -305,7 +305,7 @@ namespace server
 
             return json;
         }
-        bool ColorProperty::JsonSet(rapidjson::Value& input)
+        bool ColorValue::JsonSet(rapidjson::Value& input)
         {
             if (input.IsObject())
             {

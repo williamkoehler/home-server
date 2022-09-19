@@ -18,26 +18,26 @@ namespace server
                 return true;
             }
 
-            void JSUtils::GetProperty(duk_context* context, Ref<Property> property)
+            void JSUtils::GetProperty(duk_context* context, Ref<Value> property)
             {
                 switch (property->GetType())
                 {
-                case PropertyType::kBooleanType:
+                case ValueType::kBooleanType:
                     duk_push_boolean(context, property->GetBoolean());
                     break;
-                case PropertyType::kIntegerType:
+                case ValueType::kIntegerType:
                     duk_push_int(context, property->GetInteger());
                     break;
-                case PropertyType::kNumberType:
+                case ValueType::kNumberType:
                     duk_push_number(context, property->GetNumber());
                     break;
-                case PropertyType::kStringType: {
+                case ValueType::kStringType: {
                     std::string value = property->GetString();
                     duk_push_lstring(context, value.data(), value.size());
 
                     break;
                 }
-                case PropertyType::kEndpointType: {
+                case ValueType::kEndpointType: {
                     Endpoint endpoint = property->GetEndpoint();
 
                     duk_push_object(context);
@@ -56,7 +56,7 @@ namespace server
 
                     break;
                 }
-                case PropertyType::kColorType: {
+                case ValueType::kColorType: {
                     Color color = property->GetColor();
 
                     duk_push_object(context);
@@ -88,7 +88,7 @@ namespace server
                 }
             }
 
-            void JSUtils::SetProperty(duk_context* context, Ref<Property> property)
+            void JSUtils::SetProperty(duk_context* context, Ref<Value> property)
             {
                 switch (duk_get_type(context, -1))
                 {

@@ -1,6 +1,6 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
-#include <home-scripting/utils/Property.hpp>
+#include <home-scripting/utils/Value.hpp>
 #include <home-scripting/utils/Event.hpp>
 
 #include "main/JSDevice.hpp"
@@ -281,7 +281,7 @@ namespace server
                         uint32_t index;
 
                         // Add property
-                        Ref<Property> property = Property::Create(ParsePropertyType(type));
+                        Ref<Value> property = Value::Create(ParseValueType(type));
                         if (property != nullptr)
                         {
                             // Insert property
@@ -545,7 +545,7 @@ namespace server
                     return DUK_RET_ERROR;
             }
 
-            bool JSScript::InvokeImpl(const std::string& name, Ref<Property> parameter)
+            bool JSScript::InvokeImpl(const std::string& name, Ref<Value> parameter)
             {
                 assert(context != nullptr);
 
@@ -578,27 +578,27 @@ namespace server
 
                 if (index < script->propertyByIDList.size())
                 {
-                    Ref<Property> property = script->propertyByIDList[index];
+                    Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
                     switch (property->GetType())
                     {
-                    case PropertyType::kBooleanType:
+                    case ValueType::kBooleanType:
                         duk_push_boolean(context, property->GetBoolean());
                         return 1;
-                    case PropertyType::kIntegerType:
+                    case ValueType::kIntegerType:
                         duk_push_int(context, property->GetInteger());
                         return 1;
-                    case PropertyType::kNumberType:
+                    case ValueType::kNumberType:
                         duk_push_number(context, property->GetNumber());
                         return 1;
-                    case PropertyType::kStringType:
+                    case ValueType::kStringType:
                     {
                         std::string string = property->GetString();
                         duk_push_lstring(context, string.data(), string.size());
                         return 1;
                     }
-                    case PropertyType::kEndpointType:
+                    case ValueType::kEndpointType:
                     {
                         duk_push_object(context);
 
@@ -612,7 +612,7 @@ namespace server
 
                         return 1;
                     }
-                    case PropertyType::kColorType:
+                    case ValueType::kColorType:
                     {
                         duk_push_object(context);
 
@@ -645,33 +645,33 @@ namespace server
 
                 if (index < script->propertyByIDList.size() && duk_get_top(context) == 1)
                 {
-                    Ref<Property> property = script->propertyByIDList[index];
+                    Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
                     switch (property->GetType())
                     {
-                    case PropertyType::kBooleanType:
+                    case ValueType::kBooleanType:
                     {
                         property->SetBoolean(duk_to_boolean(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kIntegerType:
+                    case ValueType::kIntegerType:
                     {
                         property->SetInteger(duk_to_int(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kNumberType:
+                    case ValueType::kNumberType:
                     {
                         property->SetNumber(duk_to_number(context, -1));
                         duk_pop(context);
 
                         return 0;
                     }
-                    case PropertyType::kStringType:
+                    case ValueType::kStringType:
                     {
                         size_t length;
                         const char* string = duk_to_lstring(context, -1, &length);
@@ -680,7 +680,7 @@ namespace server
 
                         return 0;
                     }
-                    case PropertyType::kEndpointType:
+                    case ValueType::kEndpointType:
                     {
                         // Coerce value
                         duk_to_object(context, -1);
@@ -701,7 +701,7 @@ namespace server
 
                         return 0;
                     }
-                    case PropertyType::kColorType:
+                    case ValueType::kColorType:
                     {
                         // Coerce value
                         duk_to_object(context, -1);

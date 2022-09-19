@@ -7,7 +7,7 @@ namespace server
     namespace scripting
     {
         class Script;
-        class Property;
+        class Value;
         class Method;
 
         class Event : public boost::enable_shared_from_this<Event>
@@ -29,11 +29,11 @@ namespace server
 
             /// @brief Invoke event
             ///
-            void Invoke(Ref<Property> parameter);
+            void Invoke(Ref<Value> parameter);
 
             /// @brief Post invoke to worker
             ///
-            void PostInvoke(Ref<Property> parameter);
+            void PostInvoke(Ref<Value> parameter);
 
             /// @brief Remove event entry
             ///

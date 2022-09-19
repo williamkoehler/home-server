@@ -44,7 +44,7 @@ namespace server
                 attributeList.clear();
             }
 
-            Ref<Property> NativeScript::AddProperty(const std::string& name, Ref<Property> property)
+            Ref<Value> NativeScript::AddProperty(const std::string& name, Ref<Value> property)
             {
                 // Check existance
                 if (!propertyList.contains(name) && property != nullptr)

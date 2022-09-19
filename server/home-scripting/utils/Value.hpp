@@ -20,7 +20,7 @@ namespace server
             uint8_t red, green, blue;
         };
 
-        enum PropertyType : uint8_t
+        enum ValueType : uint8_t
         {
             kUnknownType,
             kBooleanType,
@@ -31,41 +31,39 @@ namespace server
             kColorType,
         };
 
-        std::string StringifyPropertyType(PropertyType type);
-        PropertyType ParsePropertyType(const std::string& type);
+        std::string StringifyValueType(ValueType type);
+        ValueType ParseValueType(const std::string& type);
 
-        /// @brief Thread safe property that can be read and written to from mutliple threads. Uses atomic operation and
-        /// spinlocks
-        class Property
+        class Value
         {
           public:
-            static Ref<Property> Create(PropertyType type);
+            static Ref<Value> Create(ValueType type);
 
-            virtual PropertyType GetType() const = 0;
+            virtual ValueType GetType() const = 0;
 
             inline bool IsBoolean() const
             {
-                return GetType() == PropertyType::kBooleanType;
+                return GetType() == ValueType::kBooleanType;
             }
             inline bool IsInteger() const
             {
-                return GetType() == PropertyType::kIntegerType;
+                return GetType() == ValueType::kIntegerType;
             }
             inline bool IsNumber() const
             {
-                return GetType() == PropertyType::kNumberType;
+                return GetType() == ValueType::kNumberType;
             }
             inline bool IsString() const
             {
-                return GetType() == PropertyType::kStringType;
+                return GetType() == ValueType::kStringType;
             }
             inline bool IsEndpoint() const
             {
-                return GetType() == PropertyType::kEndpointType;
+                return GetType() == ValueType::kEndpointType;
             }
             inline bool IsColor() const
             {
-                return GetType() == PropertyType::kColorType;
+                return GetType() == ValueType::kColorType;
             }
 
             virtual bool GetBoolean()
@@ -122,23 +120,23 @@ namespace server
             }
         };
 
-        class NullProperty : public Property
+        class NullValue : public Value
         {
           public:
-            static Ref<NullProperty> Create();
+            static Ref<NullValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
         };
 
-        class BooleanProperty : public Property
+        class BooleanValue : public Value
         {
           private:
             bool value;
 
           public:
-            static Ref<BooleanProperty> Create();
+            static Ref<BooleanValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual bool GetBoolean() override;
             virtual void SetBoolean(bool v) override;
 
@@ -146,15 +144,15 @@ namespace server
             virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
-        class IntegerProperty : public Property
+        class IntegerValue : public Value
         {
           private:
             int64_t value;
 
           public:
-            static Ref<IntegerProperty> Create();
+            static Ref<IntegerValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual int64_t GetInteger() override;
             virtual void SetInteger(int64_t v) override;
 
@@ -165,15 +163,15 @@ namespace server
             virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
-        class NumberProperty : public Property
+        class NumberValue : public Value
         {
           private:
             double value;
 
           public:
-            static Ref<NumberProperty> Create();
+            static Ref<NumberValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual int64_t GetInteger() override;
             virtual void SetInteger(int64_t v) override;
 
@@ -184,15 +182,15 @@ namespace server
             virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
-        class StringProperty : public Property
+        class StringValue : public Value
         {
           private:
             std::string value;
 
           public:
-            static Ref<StringProperty> Create();
+            static Ref<StringValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual std::string GetString() override;
             virtual void SetString(const std::string& v) override;
 
@@ -200,15 +198,15 @@ namespace server
             virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
-        class EndpointProperty : public Property
+        class EndpointValue : public Value
         {
           private:
             Endpoint value;
 
           public:
-            static Ref<EndpointProperty> Create();
+            static Ref<EndpointValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual Endpoint GetEndpoint() override;
             virtual void SetEndpoint(const Endpoint& v) override;
 
@@ -216,15 +214,15 @@ namespace server
             virtual bool JsonSet(rapidjson::Value& input) override;
         };
 
-        class ColorProperty : public Property
+        class ColorValue : public Value
         {
           private:
             Color value;
 
           public:
-            static Ref<ColorProperty> Create();
+            static Ref<ColorValue> Create();
 
-            virtual PropertyType GetType() const override;
+            virtual ValueType GetType() const override;
             virtual Color GetColor() override;
             virtual void SetColor(const Color& v) override;
 

@@ -27,7 +27,7 @@ namespace server
 
                 /// @brief Script properties ordered by id
                 /// 
-                boost::container::vector<Ref<Property>> propertyByIDList;
+                boost::container::vector<Ref<Value>> propertyByIDList;
 
                 /// @brief Script events ordered by id
                 /// 
@@ -64,7 +64,7 @@ namespace server
                 /// @return Successfulness
                 static duk_ret_t InvokeSafe(duk_context* context, void* udata);
 
-                bool InvokeImpl(const std::string& event, Ref<Property> parameter);
+                bool InvokeImpl(const std::string& event, Ref<Value> parameter);
 
                 static duk_ret_t GetProperty(duk_context* context);
                 static duk_ret_t SetProperty(duk_context* context);

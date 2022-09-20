@@ -9,6 +9,9 @@ extern "C"
     duk_ret_t duk_exec_timeout(void* udata);
 }
 
+#define DUK_TEST_ENTER(context) duk_idx_t top1 = duk_get_top(context);
+#define DUK_TEST_LEAVE(context, difference) duk_idx_t top2 = duk_get_top(context); assert((top2 - top1) == difference);
+
 namespace server
 {
     namespace scripting
@@ -47,30 +50,18 @@ namespace server
                 ///
                 robin_hood::unordered_node_map<duk_int_t, Ref<Controller>> controllerList;
 
-                /// @brief Initialize script safely
-                ///
-                /// @param context Duktape context
-                /// @param udata Userdata
-                /// @return Sucessfulness
-                static duk_ret_t InitializeSafe(duk_context* context, void* udata);
-
                 void InitializeAttributes();
                 void InitializeProperties();
                 void InitializeMethods();
                 void InitializeEvents();
                 void InitializeControllers();
 
-                bool Invoke(const std::string& method, Ref<Value> parameter);
+                bool InvokeHandler(const std::string& method, Ref<Value> parameter);
 
-                static duk_ret_t CreateTimer(duk_context* context);
-                static duk_ret_t CreateInterval(duk_context* context);
+                static duk_ret_t duk_get_property(duk_context* context);
+                static duk_ret_t duk_set_property(duk_context* context);
 
-                static duk_ret_t GetProperty(duk_context* context);
-                static duk_ret_t SetProperty(duk_context* context);
-
-                static duk_ret_t InvokeEvent(duk_context* context);
-
-                static duk_ret_t TerminateSafe(duk_context* context, void* udata);
+                static duk_ret_t duk_invoke_method(duk_context* context);
 
               public:
                 JSScript(Ref<View> view, Ref<JSScriptSource> source);

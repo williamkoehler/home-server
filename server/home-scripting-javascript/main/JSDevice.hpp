@@ -14,19 +14,17 @@ namespace server
             class JSDevice
             {
               private:
-                friend class JSHomeModule;
+                static duk_ret_t duk_constructor(duk_context* context);
 
-                static duk_ret_t Constructor(duk_context* context);
+                static duk_ret_t duk_is_valid(duk_context* context);
 
-                static duk_ret_t IsValid(duk_context* context);
-
-                static duk_ret_t GetName(duk_context* context);
-                static duk_ret_t SetName(duk_context* context);
+                static duk_ret_t duk_get_name(duk_context* context);
+                static duk_ret_t duk_set_name(duk_context* context);
 
               public:
-                static bool Import(duk_context* context);
+                static bool duk_import(duk_context* context);
 
-                static bool New(duk_context* context, Ref<DeviceView> deviceView);
+                static bool duk_new_device(duk_context* context, Ref<DeviceView> deviceView);
             };
         }
     }

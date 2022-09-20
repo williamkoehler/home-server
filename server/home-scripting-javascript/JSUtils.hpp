@@ -1,7 +1,6 @@
 #pragma once
 #include "common.hpp"
 #include "duktape.hpp"
-#include <home-scripting/utils/Value.hpp>
 
 namespace server
 {
@@ -17,27 +16,19 @@ namespace server
                 /// @param context
                 /// @return true Successful
                 /// @return false Failure
-                static bool Import(duk_context* context);
+                static bool duk_import(duk_context* context);
 
-                /// @brief Push property value to stack
+                /// @brief Print text to terminal
                 ///
-                /// @param context Duktape context
-                /// @param property Property
-                static void GetProperty(duk_context* context, Ref<Value> property);
+                static duk_ret_t duk_print(duk_context* context);
 
-                /// @brief Set property value from stack
+                /// @brief Create timer
                 ///
-                /// @param context Duktape context
-                /// @param property Property
-                static void SetProperty(duk_context* context, Ref<Value> property);
-            };
+                static duk_ret_t duk_create_timer(duk_context* context);
 
-            class JSEndpoint
-            {
-              private:
-                friend class JSUtils;
-
-                static duk_ret_t Constructor(duk_context* context);
+                /// @brief Create delay
+                ///
+                static duk_ret_t duk_create_delay(duk_context* context);
             };
         }
     }

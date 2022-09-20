@@ -8,18 +8,18 @@ namespace server
     {
         namespace javascript
         {
-            bool JSRoom::Import(duk_context* context)
+            bool JSRoom::duk_import(duk_context* context)
             {
                 assert(context != nullptr);
 
-                duk_push_c_function(context, JSRoom::Constructor, 1); // [ c_func ]
+                duk_push_c_function(context, JSRoom::duk_constructor, 1); // [ c_func ]
                 duk_push_object(context);                             // [ c_func object ]
 
                 // Register methods
                 static const duk_function_list_entry methods[] = {
-                    {"isValid", JSRoom::IsValid, 0},
-                    {"getName", JSRoom::GetName, 0},
-                    {"setName", JSRoom::SetName, 1},
+                    {"isValid", JSRoom::duk_is_valid, 0},
+                    {"getName", JSRoom::duk_get_name, 0},
+                    {"setName", JSRoom::duk_set_name, 1},
                     {nullptr, nullptr, 0},
                 };
 
@@ -32,7 +32,7 @@ namespace server
                 return true;
             }
 
-            duk_ret_t JSRoom::Constructor(duk_context* context)
+            duk_ret_t JSRoom::duk_constructor(duk_context* context)
             {
                 if (!duk_is_constructor_call(context))
                     return DUK_RET_ERROR;
@@ -54,7 +54,7 @@ namespace server
                 return 0;
             }
 
-            duk_ret_t JSRoom::IsValid(duk_context* context)
+            duk_ret_t JSRoom::duk_is_valid(duk_context* context)
             {
                 // Expect [ ]
                 if (duk_get_top(context) == 0)
@@ -85,7 +85,7 @@ namespace server
                 }
             }
 
-            duk_ret_t JSRoom::GetName(duk_context* context)
+            duk_ret_t JSRoom::duk_get_name(duk_context* context)
             {
                 // Expect [ ]
                 if (duk_get_top(context) == 0)
@@ -127,7 +127,7 @@ namespace server
                     return DUK_RET_ERROR;
                 }
             }
-            duk_ret_t JSRoom::SetName(duk_context* context)
+            duk_ret_t JSRoom::duk_set_name(duk_context* context)
             {
                 // Expect [ string ]
                 if (duk_get_top(context) == 1 && duk_is_string(context, -1))
@@ -177,7 +177,7 @@ namespace server
                 return 0;
             }
 
-            bool JSRoom::New(duk_context* context, Ref<RoomView> roomView)
+            bool JSRoom::duk_new_room(duk_context* context, Ref<RoomView> roomView)
             {
                 assert(context != nullptr);
                 assert(roomView != nullptr);

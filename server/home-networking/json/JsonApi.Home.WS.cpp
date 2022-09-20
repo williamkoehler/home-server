@@ -311,7 +311,7 @@ namespace server
         }
 
         void JsonApi::ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context)
+                                                             rapidjson::Document& output, ApiContext& context)
         {
             assert(input.IsObject() && output.IsObject());
 
@@ -372,7 +372,9 @@ namespace server
                 return;
             }
 
-            device->JsonGetState(output, allocator);
+            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
+            device->JsonGetState(state, allocator);
+            output.AddMember("state", state, allocator);
         }
         void JsonApi::ProcessJsonSetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                          rapidjson::Document& output, ApiContext& context)
@@ -381,9 +383,11 @@ namespace server
 
             // Process request
             rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
-            if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint())
+            rapidjson::Value::MemberIterator stateIt = input.FindMember("state");
+            if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() || stateIt == input.MemberEnd() ||
+                !stateIt->value.IsObject())
             {
-                context.Error("Missing id");
+                context.Error("Missing id and/or state");
                 context.Error(ApiError::kError_InvalidArguments);
                 return;
             }
@@ -402,8 +406,11 @@ namespace server
                 return;
             }
 
-            device->JsonSetState(input);
-            device->JsonGetState(output, allocator);
+            device->JsonSetState(stateIt->value);
+
+            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
+            device->JsonGetState(state, allocator);
+            output.AddMember("state", state, allocator);
         }
     }
 }

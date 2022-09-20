@@ -379,7 +379,7 @@ namespace server
                         duk_pop(context); // [ object enum key ]
 
                         // Push function
-                        duk_push_c_function(context, JSScript::duk_invoke_method, 0); // [ object enum key c_func ]
+                        duk_push_c_function(context, JSScript::duk_invoke_event, 0); // [ object enum key c_func ]
                         duk_set_magic(context, -1, index);
 
                         // Set event
@@ -651,7 +651,7 @@ namespace server
                 return 0;
             }
 
-            duk_ret_t JSScript::duk_invoke_method(duk_context* context)
+            duk_ret_t JSScript::duk_invoke_event(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
 

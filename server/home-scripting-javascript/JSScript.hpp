@@ -61,7 +61,7 @@ namespace server
                 static duk_ret_t duk_get_property(duk_context* context);
                 static duk_ret_t duk_set_property(duk_context* context);
 
-                static duk_ret_t duk_invoke_method(duk_context* context);
+                static duk_ret_t duk_invoke_event(duk_context* context);
 
               public:
                 JSScript(Ref<View> view, Ref<JSScriptSource> source);

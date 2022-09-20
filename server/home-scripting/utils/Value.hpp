@@ -6,7 +6,7 @@ namespace server
     namespace scripting
     {
         /// @brief Endpoint object (host:port)
-        /// 
+        ///
         struct Endpoint
         {
             std::string host;
@@ -14,7 +14,7 @@ namespace server
         };
 
         /// @brief Color object (red;green;blue)
-        /// 
+        ///
         struct Color
         {
             uint8_t red, green, blue;
@@ -23,6 +23,7 @@ namespace server
         enum ValueType : uint8_t
         {
             kUnknownType,
+            kNullType,
             kBooleanType,
             kIntegerType,
             kNumberType,
@@ -36,198 +37,199 @@ namespace server
 
         class Value
         {
+          private:
+            const ValueType type;
+
+            /// @brief Calculate value array size
+            ///
+            /// @tparam args Types
+            template <typename... args>
+            struct static_max;
+
+            template <typename arg>
+            struct static_max<arg>
+            {
+                static const size_t value = sizeof(arg);
+            };
+
+            template <typename arg1, typename arg2, typename... args>
+            struct static_max<arg1, arg2, args...>
+            {
+                static const size_t value =
+                    sizeof(arg1) >= sizeof(arg2) ? static_max<arg1, args...>::value : static_max<arg2, args...>::value;
+            };
+
+            uint8_t value[static_max<bool, int64_t, double_t, std::string, Endpoint, Color>::value];
+
           public:
+            explicit Value();
+            explicit Value(bool boolean);
+            explicit Value(int64_t integer);
+            explicit Value(double_t number);
+            explicit Value(const std::string& string);
+            explicit Value(const Endpoint& endpoint);
+            explicit Value(const Color& color);
+            ~Value();
             static Ref<Value> Create(ValueType type);
+            inline static Ref<Value> Create(bool boolean)
+            {
+                return boost::make_shared<Value>(boolean);
+            }
+            inline static Ref<Value> CreateBoolean(bool boolean = false)
+            {
+                return boost::make_shared<Value>(boolean);
+            }
+            inline static Ref<Value> Create(int64_t integer)
+            {
+                return boost::make_shared<Value>(integer);
+            }
+            inline static Ref<Value> CreateInteger(int64_t integer = 0l)
+            {
+                return boost::make_shared<Value>(integer);
+            }
+            inline static Ref<Value> Create(double_t number)
+            {
+                return boost::make_shared<Value>(number);
+            }
+            inline static Ref<Value> CreateNumber(double_t number = 0.0)
+            {
+                return boost::make_shared<Value>(number);
+            }
+            inline static Ref<Value> Create(const std::string& string)
+            {
+                return boost::make_shared<Value>(string);
+            }
+            inline static Ref<Value> CreateString(const std::string& string = std::string())
+            {
+                return boost::make_shared<Value>(string);
+            }
+            inline static Ref<Value> Create(const Endpoint& endpoint)
+            {
+                return boost::make_shared<Value>(endpoint);
+            }
+            inline static Ref<Value> CreateEndpoint(const Endpoint& endpoint = Endpoint{})
+            {
+                return boost::make_shared<Value>(endpoint);
+            }
+            inline static Ref<Value> Create(const Color& color)
+            {
+                return boost::make_shared<Value>(color);
+            }
+            inline static Ref<Value> CreateColor(const Color& color = Color{})
+            {
+                return boost::make_shared<Value>(color);
+            }
 
-            virtual ValueType GetType() const = 0;
+            inline ValueType GetType() const
+            {
+                return type;
+            };
 
+            inline bool IsNull() const
+            {
+                return type == ValueType::kNullType;
+            }
             inline bool IsBoolean() const
             {
-                return GetType() == ValueType::kBooleanType;
+                return type == ValueType::kBooleanType;
             }
             inline bool IsInteger() const
             {
-                return GetType() == ValueType::kIntegerType;
+                return type == ValueType::kIntegerType;
             }
             inline bool IsNumber() const
             {
-                return GetType() == ValueType::kNumberType;
+                return type == ValueType::kNumberType;
             }
             inline bool IsString() const
             {
-                return GetType() == ValueType::kStringType;
+                return type == ValueType::kStringType;
             }
             inline bool IsEndpoint() const
             {
-                return GetType() == ValueType::kEndpointType;
+                return type == ValueType::kEndpointType;
             }
             inline bool IsColor() const
             {
-                return GetType() == ValueType::kColorType;
+                return type == ValueType::kColorType;
             }
 
-            virtual bool GetBoolean()
+            inline bool& GetBoolean()
             {
-                return false;
+                assert(type == ValueType::kBooleanType);
+                return *(bool*)value;
             }
-            virtual int64_t GetInteger()
+            inline int64_t& GetInteger()
             {
-                return 0;
+                assert(type == ValueType::kIntegerType);
+                return *(int64_t*)value;
             }
-            virtual double GetNumber()
+            inline double& GetNumber()
             {
-                return 0.0;
+                assert(type == ValueType::kNumberType);
+                return *(double_t*)value;
             }
-            virtual std::string GetString()
+            inline std::string& GetString()
             {
-                return "";
+                assert(type == ValueType::kStringType);
+                return *(std::string*)value;
             }
-            virtual Endpoint GetEndpoint()
+            inline Endpoint& GetEndpoint()
             {
-                return {"", 0};
+                assert(type == ValueType::kEndpointType);
+                return *(Endpoint*)value;
             }
-            virtual Color GetColor()
+            inline Color& GetColor()
             {
-                return {0, 0, 0};
+                assert(type == ValueType::kColorType);
+                return *(Color*)value;
             }
 
-            virtual void SetBoolean(bool value)
+            inline void SetBoolean(bool v)
             {
+                assert(type == ValueType::kBooleanType);
+                *(bool*)value = v;
             }
-            virtual void SetInteger(int64_t value)
+            inline void SetInteger(int64_t v)
             {
+                assert(type == ValueType::kIntegerType);
+                *(int64_t*)value = v;
             }
-            virtual void SetNumber(double value)
+            inline void SetNumber(double v)
             {
+                assert(type == ValueType::kNumberType);
+                *(double_t*)value = v;
             }
-            virtual void SetString(const std::string& value)
+            inline void SetString(const std::string& v)
             {
+                assert(type == ValueType::kStringType);
+                *(std::string*)value = v;
             }
-            virtual void SetEndpoint(const Endpoint& endpoint)
+            inline void SetStringView(const std::string_view& v)
             {
+                assert(type == ValueType::kStringType);
+                *(std::string*)value = v;
             }
-            virtual void SetColor(const Color& color)
+            inline void SetEndpoint(const Endpoint& v)
             {
-            }
+                assert(type == ValueType::kEndpointType);
 
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator)
+                Endpoint& endpoint = *(Endpoint*)value;
+                endpoint.host = v.host;
+                endpoint.port = v.port;
+            }
+            inline void SetColor(const Color& v)
             {
-                return rapidjson::Value(rapidjson::kNullType);
+                assert(type == ValueType::kColorType);
+
+                Color& color = *(Color*)value;
+                color.red = v.red;
+                color.green = v.green;
+                color.blue = v.blue;
             }
-            virtual bool JsonSet(rapidjson::Value& input)
-            {
-                return false;
-            }
-        };
 
-        class NullValue : public Value
-        {
-          public:
-            static Ref<NullValue> Create();
-
-            virtual ValueType GetType() const override;
-        };
-
-        class BooleanValue : public Value
-        {
-          private:
-            bool value;
-
-          public:
-            static Ref<BooleanValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual bool GetBoolean() override;
-            virtual void SetBoolean(bool v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
-        };
-
-        class IntegerValue : public Value
-        {
-          private:
-            int64_t value;
-
-          public:
-            static Ref<IntegerValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual int64_t GetInteger() override;
-            virtual void SetInteger(int64_t v) override;
-
-            virtual double GetNumber() override;
-            virtual void SetNumber(double v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
-        };
-
-        class NumberValue : public Value
-        {
-          private:
-            double value;
-
-          public:
-            static Ref<NumberValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual int64_t GetInteger() override;
-            virtual void SetInteger(int64_t v) override;
-
-            virtual double GetNumber() override;
-            virtual void SetNumber(double v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
-        };
-
-        class StringValue : public Value
-        {
-          private:
-            std::string value;
-
-          public:
-            static Ref<StringValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual std::string GetString() override;
-            virtual void SetString(const std::string& v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
-        };
-
-        class EndpointValue : public Value
-        {
-          private:
-            Endpoint value;
-
-          public:
-            static Ref<EndpointValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual Endpoint GetEndpoint() override;
-            virtual void SetEndpoint(const Endpoint& v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
-        };
-
-        class ColorValue : public Value
-        {
-          private:
-            Color value;
-
-          public:
-            static Ref<ColorValue> Create();
-
-            virtual ValueType GetType() const override;
-            virtual Color GetColor() override;
-            virtual void SetColor(const Color& v) override;
-
-            virtual rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) override;
-            virtual bool JsonSet(rapidjson::Value& input) override;
+            rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator);
+            bool JsonSet(rapidjson::Value& input);
         };
     }
 }

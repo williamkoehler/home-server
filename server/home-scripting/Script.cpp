@@ -15,27 +15,27 @@ namespace server
         {
         }
 
-        Ref<Value> Script::GetProperty(const std::string& id)
+        Ref<Value> Script::GetProperty(const std::string& name)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Value>>::const_iterator it = propertyList.find(id);
+            const robin_hood::unordered_node_map<std::string, Ref<Value>>::const_iterator it = propertyList.find(name);
             if (it == propertyList.end())
                 return nullptr;
 
             return it->second;
         }
 
-        Ref<Method> Script::GetMethod(const std::string& id)
+        Ref<Method> Script::GetMethod(const std::string& name)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = methodList.find(id);
+            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = methodList.find(name);
             if (it == methodList.end())
                 return nullptr;
 
             return it->second;
         }
 
-        Ref<Event> Script::GetEvent(const std::string& id)
+        Ref<Event> Script::GetEvent(const std::string& name)
         {
-            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(id);
+            const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(name);
             if (it == eventList.end())
                 return nullptr;
 

@@ -40,7 +40,8 @@ namespace server
 
             /// @brief Invoke method
             ///
-            void Invoke(Ref<Value> parameter);
+            /// @return bool Successfulness
+            bool Invoke(Ref<Value> parameter);
 
             /// @brief Post invoke to worker
             ///

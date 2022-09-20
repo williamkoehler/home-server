@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "duktape.h"
+#include "duktape.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/tools/Controller.hpp>
 
@@ -22,25 +22,30 @@ namespace server
               private:
                 size_t startTime;
                 size_t maxTime;
-                Ref<duk_context> context;
+
+                struct ContextDeleter
+                {
+                    void operator()(void* context)
+                    {
+                        if (context != nullptr)
+                            duk_destroy_heap((duk_context*)context);
+                    }
+                };
+
+                std::unique_ptr<void, ContextDeleter> context;
                 uint64_t checksum;
 
                 /// @brief Script properties ordered by id
-                /// 
+                ///
                 boost::container::vector<Ref<Value>> propertyByIDList;
 
                 /// @brief Script events ordered by id
-                /// 
+                ///
                 boost::container::vector<Ref<Event>> eventByIDList;
 
                 /// @brief Script controllers
-                /// 
+                ///
                 robin_hood::unordered_node_map<duk_int_t, Ref<Controller>> controllerList;
-
-                /// @brief Prepare script timeout
-                /// 
-                /// @param maxTime Max execution time in milliseconds
-                void PrepareTimeout(size_t maxTime = 5000);
 
                 /// @brief Initialize script safely
                 ///
@@ -49,22 +54,16 @@ namespace server
                 /// @return Sucessfulness
                 static duk_ret_t InitializeSafe(duk_context* context, void* udata);
 
-                bool InitializeImpl();
-
                 void InitializeAttributes();
                 void InitializeProperties();
                 void InitializeMethods();
                 void InitializeEvents();
                 void InitializeControllers();
 
-                /// @brief Invoke event safely
-                ///
-                /// @param context Duktape context
-                /// @param udata Userdata
-                /// @return Successfulness
-                static duk_ret_t InvokeSafe(duk_context* context, void* udata);
+                bool Invoke(const std::string& method, Ref<Value> parameter);
 
-                bool InvokeImpl(const std::string& event, Ref<Value> parameter);
+                static duk_ret_t CreateTimer(duk_context* context);
+                static duk_ret_t CreateInterval(duk_context* context);
 
                 static duk_ret_t GetProperty(duk_context* context);
                 static duk_ret_t SetProperty(duk_context* context);
@@ -73,8 +72,6 @@ namespace server
 
                 static duk_ret_t TerminateSafe(duk_context* context, void* udata);
 
-                bool TerminateImpl();
-
               public:
                 JSScript(Ref<View> view, Ref<JSScriptSource> source);
                 virtual ~JSScript();
@@ -82,9 +79,9 @@ namespace server
                 /// @brief Get duktape context
                 ///
                 /// @return Duktape context
-                inline Ref<duk_context> GetDuktape()
+                inline duk_context* GetDuktapeContext() const
                 {
-                    return context;
+                    return (duk_context*)context.get();
                 }
 
                 /// @brief Initialize script
@@ -92,10 +89,10 @@ namespace server
                 /// @return Successful
                 virtual bool Initialize() override;
 
-                /// @brief Terminate script
+                /// @brief Prepare script timeout
                 ///
-                /// @return Successful
-                virtual bool Terminate() override;
+                /// @param maxTime Max execution time in milliseconds
+                void PrepareTimeout(size_t maxTime = 5000);
 
                 /// @brief Check if time has passed
                 ///
@@ -108,6 +105,11 @@ namespace server
 
                     return elapsedTime > maxTime;
                 }
+
+                /// @brief Terminate script
+                ///
+                /// @return Successful
+                virtual bool Terminate() override;
             };
         }
     }

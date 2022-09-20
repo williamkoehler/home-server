@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "duktape.h"
+#include "duktape.hpp"
 #include <home-scripting/utils/Value.hpp>
 
 namespace server

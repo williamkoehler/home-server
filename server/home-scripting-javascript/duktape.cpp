@@ -180,7 +180,7 @@
 #define DUK_INTERNAL_H_INCLUDED
 
 /*
- *  The 'duktape.h' header provides the public API, but also handles all
+ *  The 'duktape.hpp' header provides the public API, but also handles all
  *  compiler and platform specific feature detection, Duktape feature
  *  resolution, inclusion of system headers, etc.  These have been merged
  *  because the public API is also dependent on e.g. detecting appropriate
@@ -194,7 +194,7 @@
  */
 
 #define DUK_COMPILING_DUKTAPE
-#include "duktape.h"
+#include "duktape.hpp"
 
 /*
  *  Duktape includes (other than duk_features.h)
@@ -8981,7 +8981,7 @@ struct duk_hproxy {
 #if !defined(DUK_HEAP_H_INCLUDED)
 #define DUK_HEAP_H_INCLUDED
 
-/* alloc function typedefs in duktape.h */
+/* alloc function typedefs in duktape.hpp */
 
 /*
  *  Heap flags
@@ -10089,7 +10089,7 @@ DUK_INTERNAL_DECL duk_bool_t duk_fb_is_full(duk_fixedbuffer *fb);
 #define DUK_ERROR_H_INCLUDED
 
 /*
- *  Error codes: defined in duktape.h
+ *  Error codes: defined in duktape.hpp
  *
  *  Error codes are used as a shorthand to throw exceptions from inside
  *  the implementation.  The appropriate ECMAScript object is constructed
@@ -10557,7 +10557,7 @@ DUK_INTERNAL_DECL duk_bool_t duk_fb_is_full(duk_fixedbuffer *fb);
  *  NOTE: since the assert macro doesn't take a heap/context argument, there's
  *  no way to look up a heap/context specific fatal error handler which may have
  *  been given by the application.  Instead, assertion failures always use the
- *  internal default fatal error handler; it can be replaced via duk_config.h
+ *  internal default fatal error handler; it can be replaced via duk_config.hpp
  *  and then applies to all Duktape heaps.
  */
 
@@ -12659,7 +12659,7 @@ DUK_INTERNAL DUK_COLD void duk_default_fatal_handler(void *udata, const char *ms
 	msg = msg ? msg : "NULL";
 
 #if defined(DUK_USE_FATAL_HANDLER)
-	/* duk_config.h provided a custom default fatal handler. */
+	/* duk_config.hpp provided a custom default fatal handler. */
 	DUK_D(DUK_DPRINT("custom default fatal error handler called: %s", msg));
 	DUK_USE_FATAL_HANDLER(udata, msg);
 #elif defined(DUK_USE_CPP_EXCEPTIONS)
@@ -34650,7 +34650,7 @@ DUK_INTERNAL duk_ret_t duk_bi_date_prototype_toprimitive(duk_hthread *thr) {
 
 /* #include duk_internal.h -> already included */
 
-/* The necessary #includes are in place in duk_config.h. */
+/* The necessary #includes are in place in duk_config.hpp. */
 
 /* Buffer sizes for some UNIX calls.  Larger than strictly necessary
  * to avoid Valgrind errors.
@@ -35001,7 +35001,7 @@ DUK_INTERNAL duk_double_t duk_bi_date_get_monotonic_time_clock_gettime(void) {
 
 /* #include duk_internal.h -> already included */
 
-/* The necessary #includes are in place in duk_config.h. */
+/* The necessary #includes are in place in duk_config.hpp. */
 
 #if defined(DUK_USE_DATE_NOW_WINDOWS) || defined(DUK_USE_DATE_TZO_WINDOWS)
 /* Shared Windows helpers. */
@@ -38869,7 +38869,7 @@ DUK_LOCAL void duk__json_enc_fastint_tval(duk_json_enc_ctx *js_ctx, duk_tval *tv
 	DUK_ASSERT(DUK_TVAL_IS_FASTINT(tv));
 	v = DUK_TVAL_GET_FASTINT(tv);
 
-	/* XXX: There are no format strings in duk_config.h yet, could add
+	/* XXX: There are no format strings in duk_config.hpp yet, could add
 	 * one for formatting duk_int64_t.  For now, assumes "%lld" and that
 	 * "long long" type exists.  Could also rely on C99 directly but that
 	 * won't work for older MSVC.
@@ -80404,7 +80404,7 @@ DUK_LOCAL DUK_NOINLINE DUK_HOT void duk__js_execute_bytecode_inner(duk_hthread *
 
 	/* Optimized reg/const access macros assume sizeof(duk_tval) to be
 	 * either 8 or 16.  Heap allocation checks this even without asserts
-	 * enabled now because it can't be autodetected in duk_config.h.
+	 * enabled now because it can't be autodetected in duk_config.hpp.
 	 */
 #if 1
 #if defined(DUK_USE_PACKED_TVAL)

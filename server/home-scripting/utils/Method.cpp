@@ -19,12 +19,14 @@ namespace server
             return boost::make_shared<Method>(name, script, callback);
         }
 
-        void Method::Invoke(Ref<Value> parameter)
+        bool Method::Invoke(Ref<Value> parameter)
         {
             Ref<Script> r = script.lock();
 
             if (r != nullptr)
-                (r.get()->*callback)(name, parameter);
+                return (r.get()->*callback)(name, parameter);
+
+            return false;
         }
 
         void Method::PostInvoke(Ref<Value> parameter)

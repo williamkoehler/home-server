@@ -193,13 +193,13 @@
 #define DUK_GIT_DESCRIBE                  "03d4d72-dirty"
 #define DUK_GIT_BRANCH                    "HEAD"
 
-/* External duk_config.h provides platform/compiler/OS dependent
+/* External duk_config.hpp provides platform/compiler/OS dependent
  * typedefs and macros, and DUK_USE_xxx config options so that
  * the rest of Duktape doesn't need to do any feature detection.
  * DUK_VERSION is defined before including so that configuration
  * snippets can react to it.
  */
-#include "duk_config.h"
+#include "duk_config.hpp"
 
 /*
  *  Avoid C++ name mangling
@@ -234,7 +234,7 @@ struct duk_function_list_entry;
 struct duk_number_list_entry;
 struct duk_time_components;
 
-/* duk_context is now defined in duk_config.h because it may also be
+/* duk_context is now defined in duk_config.hpp because it may also be
  * referenced there by prototypes.
  */
 typedef struct duk_thread_state duk_thread_state;

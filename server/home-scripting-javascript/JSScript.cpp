@@ -1,7 +1,7 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
-#include <home-scripting/utils/Value.hpp>
 #include <home-scripting/utils/Event.hpp>
+#include <home-scripting/utils/Value.hpp>
 
 #include "main/JSDevice.hpp"
 #include "main/JSRoom.hpp"
@@ -12,7 +12,8 @@ extern "C"
     // This allows the interruption of any javascript code that runs too long
     duk_ret_t duk_exec_timeout(void* udata)
     {
-        return ((server::scripting::javascript::JSScript*)udata)->CheckTimeout();
+        server::scripting::javascript::JSScript* script = (server::scripting::javascript::JSScript*)udata;
+        return script->CheckTimeout();
     }
 }
 
@@ -65,6 +66,69 @@ namespace server
                 maxTime = maxTime;
             }
 
+            bool JSScript::Initialize()
+            {
+                // Check if compilation stage is needed
+                size_t cs = scriptSource->GetChecksum();
+                if (cs != checksum || context == nullptr)
+                {
+                    // Terminate script before reinitializing it
+                    if (context != nullptr)
+                        Terminate();
+
+                    try
+                    {
+                        // Initialize javascript runtime
+                        context = std::unique_ptr<duk_context, ContextDeleter>(
+                            duk_create_heap(nullptr, nullptr, nullptr, this, nullptr));
+                        if (context == nullptr)
+                        {
+                            checksum = 0;
+                            return false;
+                        }
+
+                        duk_context* c = GetDuktapeContext();
+
+                        // Prepare context
+                        {
+                            JSTuple tuple = {boost::dynamic_pointer_cast<JSScript>(shared_from_this())};
+                            if (duk_safe_call(c, JSScript::InitializeSafe, (void*)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
+                            {
+                                // TODO Error message duk_safe_to_string(context, -1);
+                                duk_pop(c);
+
+                                return false;
+                            }
+                            else
+                                duk_pop(c);
+                        }
+
+                        // Call initialize function
+                        if (duk_get_global_lstring(c, "initialize", 10)) // [ func ]
+                        {
+                            // Prepare timout
+                            PrepareTimeout(5000); // 5 seconds
+
+                            // Call function
+                            duk_call(c, 0); // [ bool ]
+                            duk_pop(c);
+                        }
+
+                        // Set checksum to prevent recompilation
+                        checksum = cs;
+                    }
+                    catch (std::exception e)
+                    {
+                        LOG_WARNING("Duktape: {0}", e.what());
+
+                        context = nullptr;
+                        checksum = 0;
+                    }
+                }
+
+                return true;
+            }
+
             duk_ret_t JSScript::InitializeSafe(duk_context* context, void* udata)
             {
                 auto& [script] = *(JSTuple*)udata;
@@ -80,6 +144,16 @@ namespace server
                             "print",
                             duk_print,
                             DUK_VARARGS,
+                        },
+                        {
+                            "createTimer",
+                            JSScript::CreateTimer,
+                            2,
+                        },
+                        {
+                            "createInterval",
+                            JSScript::CreateInterval,
+                            2,
                         },
                         {nullptr, nullptr, 0},
                     };
@@ -125,64 +199,10 @@ namespace server
                 return DUK_EXEC_SUCCESS;
             }
 
-            bool JSScript::InitializeImpl()
-            {
-                // Check if compilation stage is needed
-                size_t cs = scriptSource->GetChecksum();
-                if (cs != checksum || context == nullptr)
-                {
-                    // Terminate script before reinitializing it
-                    if (context != nullptr)
-                        TerminateImpl();
-
-                    // Initialize javascript runtime
-                    context = Ref<duk_context>(duk_create_heap(nullptr, nullptr, nullptr, this, nullptr),
-                                               [](duk_context* context) -> void { duk_destroy_heap(context); });
-                    if (context == nullptr)
-                    {
-                        checksum = 0;
-                        return false;
-                    }
-
-                    duk_context* c = context.get();
-
-                    // Prepare context
-                    {
-                        JSTuple tuple = {boost::dynamic_pointer_cast<JSScript>(shared_from_this())};
-                        if (duk_safe_call(c, JSScript::InitializeSafe, (void*)&tuple, 0, 1) != DUK_EXEC_SUCCESS)
-                        {
-                            // TODO Error message duk_safe_to_string(context, -1);
-                            LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(c, -1)));
-                            duk_pop(c);
-
-                            context = nullptr;
-                            checksum = 0;
-
-                            return false;
-                        }
-                        else
-                            duk_pop(c);
-                    }
-
-                    // Call initialize event
-                    {
-                        JSInvokeTuple tuple = {"initialize"};
-                        duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1);
-                        duk_pop(c);
-                    }
-
-                    // Set checksum to prevent recompilation
-                    checksum = cs;
-                }
-
-                return true;
-            }
-
             void JSScript::InitializeAttributes()
             {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
+                duk_context* c = GetDuktapeContext();
+                assert(c != nullptr);
 
 #ifndef NDEBUG
                 duk_idx_t top1 = duk_get_top(c);
@@ -248,9 +268,8 @@ namespace server
             }
             void JSScript::InitializeProperties()
             {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
+                duk_context* c = GetDuktapeContext();
+                assert(c != nullptr);
 
 #ifndef NDEBUG
                 duk_idx_t top1 = duk_get_top(c);
@@ -329,9 +348,8 @@ namespace server
             }
             void JSScript::InitializeMethods()
             {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
+                duk_context* c = GetDuktapeContext();
+                assert(c != nullptr);
 
 #ifndef NDEBUG
                 duk_idx_t top1 = duk_get_top(c);
@@ -361,8 +379,7 @@ namespace server
                             duk_put_global_lstring(c, function_name.data(), function_name.size()); // [ object enum ]
 
                             // Add method
-                            Ref<Method> method =
-                                Method::Create<JSScript>(name, shared_from_this(), &JSScript::InvokeImpl);
+                            Ref<Method> method = Method::Create<JSScript>(name, shared_from_this(), &JSScript::Invoke);
                             if (method != nullptr)
                                 methodList[name] = method;
                         }
@@ -386,9 +403,8 @@ namespace server
             }
             void JSScript::InitializeEvents()
             {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
+                duk_context* c = GetDuktapeContext();
+                assert(c != nullptr);
 
 #ifndef NDEBUG
                 duk_idx_t top1 = duk_get_top(c);
@@ -408,14 +424,14 @@ namespace server
                         const char* nameStr = duk_to_lstring(c, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        duk_dup_top(c); // [ object enum key key ]
+                        // duk_dup_top(c); // [ object enum key key ]
 
-                        // Read property from 'events'
-                        duk_get_prop(c, -4); // [ object enum key object ]
+                        // // Read property from 'events'
+                        // duk_get_prop(c, -4); // [ object enum key object ]
 
-                        size_t typeLength;
-                        const char* typeStr = duk_to_lstring(c, -1, &typeLength);
-                        std::string type = std::string(typeStr, typeLength);
+                        // size_t typeLength;
+                        // const char* typeStr = duk_to_lstring(c, -1, &typeLength);
+                        // std::string type = std::string(typeStr, typeLength);
 
                         uint32_t index;
 
@@ -442,9 +458,8 @@ namespace server
                         duk_set_magic(c, -1, index);
 
                         // Set event
-                        duk_def_prop(c, -5,
-                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_FORCE |
-                                         DUK_DEFPROP_HAVE_ENUMERABLE |
+                        duk_def_prop(c, -4,
+                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_FORCE | DUK_DEFPROP_HAVE_ENUMERABLE |
                                          DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
                     }
 
@@ -523,59 +538,195 @@ namespace server
                 // #endif
             }
 
-            duk_ret_t JSScript::InvokeSafe(duk_context* context, void* udata)
+            bool JSScript::Invoke(const std::string& name, Ref<Value> parameter)
+            {
+                duk_context* context = GetDuktapeContext();
+                assert(context != nullptr);
+
+                try
+                {
+                    // Get events object
+                    std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                    if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                    {
+                        // Prepare timout
+                        PrepareTimeout(5000); // 5 seconds
+
+                        // Call event function
+                        duk_call(context, 0); // [ bool ]
+
+                        // Get result
+                        bool result = duk_to_boolean(context, -1);
+                        duk_pop(context);
+
+                        return result;
+                    }
+                    else
+                        return false;
+                }
+                catch (std::runtime_error e)
+                {
+                    // TODO Error message duk_safe_to_string(context, -1);
+                    LOG_WARNING("Duktape: {0}", e.what());
+
+                    return false;
+                }
+            }
+
+            struct TimerTask
+            {
+                const WeakRef<JSScript> script;
+                boost::shared_ptr<boost::asio::deadline_timer> timer;
+                const std::string method;
+                const uint64_t interval;
+            };
+
+            void TimerHandler(const boost::system::error_code& ec, TimerTask task)
+            {
+                Ref<JSScript> script = task.script.lock();
+                if (script != nullptr && !ec)
+                {
+                    try
+                    {
+                        duk_context* context = script->GetDuktapeContext();
+                        // Call call function
+                        if (duk_get_global_lstring(context, task.method.data(), task.method.size())) // [ func ]
+                        {
+                            // Prepare timout
+                            script->PrepareTimeout(5000); // 5 seconds
+
+                            // Call function
+                            duk_call(context, 0); // [ bool ]
+
+                            if (duk_to_boolean(context, -1))
+                            {
+                                // Restart timer if true was returned
+                                boost::asio::deadline_timer& timer = *task.timer;
+                                timer.expires_from_now(boost::posix_time::seconds(task.interval));
+                                timer.async_wait(boost::bind(&TimerHandler, boost::placeholders::_1, std::move(task)));
+                            }
+
+                            duk_pop(context);
+                        }
+                    }
+                    catch (std::runtime_error e)
+                    {
+                    }
+                }
+            }
+            duk_ret_t JSScript::CreateTimer(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                auto& [event] = *(JSInvokeTuple*)udata;
-
-                // Get events object
-                std::string function_name = DUK_EVENT_FUNCTION_NAME(event);
-                if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                // Expect [ string number ]
+                if (duk_get_top(context) == 2 && duk_is_string(context, -2) && duk_is_number(context, -1))
                 {
-                    // Prepare timout
-                    script->PrepareTimeout(5000); // 5 seconds
+                    // Get method name
+                    size_t methodLength;
+                    const char* methodStr = duk_get_lstring(context, -2, &methodLength);
+                    std::string method = std::string(methodStr, methodLength);
 
-                    // Call event function
-                    duk_call(context, 0); // [ object ]
+                    // Get timer interval
+                    duk_uint_t interval = duk_get_uint(context, -1);
 
-                    return DUK_EXEC_SUCCESS;
+                    // Pop number and string
+                    duk_pop_2(context);
+
+                    Ref<Worker> worker = Worker::GetInstance();
+                    assert(worker != nullptr);
+
+                    // Create timer task
+                    TimerTask task = TimerTask{
+                        .script = Ref<JSScript>(boost::dynamic_pointer_cast<JSScript>(script->shared_from_this())),
+                        .timer = boost::make_shared<boost::asio::deadline_timer>(worker->GetContext()),
+                        .method = std::move(method),
+                        .interval = interval,
+                    };
+
+                    // Start timer
+                    boost::asio::deadline_timer& timer = *task.timer;
+                    timer.expires_from_now(boost::posix_time::seconds(task.interval));
+                    timer.async_wait(boost::bind(&TimerHandler, boost::placeholders::_1, std::move(task)));
+
+                    return 0;
                 }
                 else
+                {
+                    // Error
                     return DUK_RET_ERROR;
+                }
             }
 
-            bool JSScript::InvokeImpl(const std::string& name, Ref<Value> parameter)
+            void IntervalHandler(const boost::system::error_code& ec, TimerTask task)
             {
-                assert(context != nullptr);
-
-                duk_context* c = context.get();
-
-                // Invoke method
-                JSInvokeTuple tuple = {name};
-                if (duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1) ==
-                    DUK_EXEC_SUCCESS) // [ object ] or [ error ]
+                Ref<JSScript> script = task.script.lock();
+                if (script != nullptr && !ec)
                 {
-                    // Get result
-                    bool result = duk_to_boolean(c, -1);
-                    duk_pop(c);
+                    try
+                    {
+                        duk_context* context = script->GetDuktapeContext();
 
-                    return result;
+                        // Call call function
+                        if (duk_get_global_lstring(context, task.method.data(), task.method.size())) // [ func ]
+                        {
+                            // Prepare timout
+                            script->PrepareTimeout(5000); // 5 seconds
+
+                            // Call function
+                            duk_call(context, 0); // [ bool ]
+                            duk_pop(context);
+                        }
+                    }
+                    catch (std::runtime_error e)
+                    {
+                    }
+                }
+            }
+            duk_ret_t JSScript::CreateInterval(duk_context* context)
+            {
+                JSScript* script = (JSScript*)duk_get_user_data(context);
+
+                // Expect [ string number ]
+                if (duk_get_top(context) == 2 && duk_is_string(context, -2) && duk_is_number(context, -1))
+                {
+                    // Get method name
+                    size_t methodLength;
+                    const char* methodStr = duk_get_lstring(context, -2, &methodLength);
+                    std::string method = std::string(methodStr, methodLength);
+
+                    // Get timer interval
+                    duk_uint_t interval = duk_get_uint(context, -1);
+
+                    Ref<Worker> worker = Worker::GetInstance();
+                    assert(worker != nullptr);
+
+                    // Create timer task
+                    TimerTask task = TimerTask{
+                        .script = Ref<JSScript>(boost::dynamic_pointer_cast<JSScript>(script->shared_from_this())),
+                        .timer = boost::make_shared<boost::asio::deadline_timer>(worker->GetContext()),
+                        .method = std::move(method),
+                        .interval = interval,
+                    };
+
+                    // Start timer
+                    boost::asio::deadline_timer& timer = *task.timer;
+                    timer.expires_from_now(boost::posix_time::seconds(task.interval));
+                    timer.async_wait(boost::bind(&IntervalHandler, boost::placeholders::_1, std::move(task)));
+
+                    return 0;
                 }
                 else
                 {
-                    // TODO Error message duk_safe_to_string(context, -1);
-                    LOG_WARNING("Duktape: {0}", std::string(duk_safe_to_string(c, -1)));
-
-                    return false;
+                    // Error
+                    return DUK_RET_ERROR;
                 }
             }
 
             duk_ret_t JSScript::GetProperty(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
-                uint32_t index = duk_get_current_magic(context);
 
+                uint32_t index = duk_get_current_magic(context);
                 if (index < script->propertyByIDList.size())
                 {
                     Ref<Value> property = script->propertyByIDList[index];
@@ -641,8 +792,8 @@ namespace server
             duk_ret_t JSScript::SetProperty(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
-                uint32_t index = duk_get_current_magic(context);
 
+                uint32_t index = duk_get_current_magic(context);
                 if (index < script->propertyByIDList.size() && duk_get_top(context) == 1)
                 {
                     Ref<Value> property = script->propertyByIDList[index];
@@ -732,8 +883,8 @@ namespace server
             duk_ret_t JSScript::InvokeEvent(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
-                uint32_t index = duk_get_current_magic(context);
 
+                uint32_t index = duk_get_current_magic(context);
                 if (index < script->eventByIDList.size() && duk_get_top(context) == 1)
                 {
                     Ref<Event> event = script->eventByIDList[index];
@@ -746,26 +897,22 @@ namespace server
                 return 0;
             }
 
-            duk_ret_t JSScript::TerminateSafe(duk_context* context, void* udata)
+            bool JSScript::Terminate()
             {
-                return DUK_EXEC_SUCCESS;
-            }
-
-            bool JSScript::TerminateImpl()
-            {
-                duk_context* c = context.get();
+                duk_context* c = GetDuktapeContext();
 
                 if (c != nullptr)
                 {
-
-                    // Call terminate event
+                    // Call terminate function
+                    if (duk_get_global_lstring(c, "terminate", 9)) // [ func ]
                     {
-                        JSInvokeTuple tuple = {"terminate"};
-                        duk_safe_call(c, JSScript::InvokeSafe, (void*)&tuple, 0, 1); // [ object ] or [ undefined ]
-                        duk_pop(c);                                                  // [ ]
-                    }
+                        // Prepare timout
+                        PrepareTimeout(5000); // 5 seconds
 
-                    return true;
+                        // Call function
+                        duk_call(c, 0); // [ bool ]
+                        duk_pop(c);
+                    }
                 }
 
                 // Destroy javascript runtime
@@ -774,14 +921,9 @@ namespace server
                 return true;
             }
 
-            bool JSScript::Initialize()
+            duk_ret_t JSScript::TerminateSafe(duk_context* context, void* udata)
             {
-                return InitializeImpl();
-            }
-
-            bool JSScript::Terminate()
-            {
-                return TerminateImpl();
+                return DUK_EXEC_SUCCESS;
             }
         }
     }

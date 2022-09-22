@@ -45,11 +45,11 @@ namespace server
                 duk_push_this(context); // [ string number this ]
 
                 // Set class
-                duk_push_lstring(context, "endpoint", 8); // [ number number number this string ]
-                duk_put_prop_lstring(context, -2, ClassProperty, ClassPropertySize); // [ number number number this ]
+                duk_push_lstring(context, "endpoint", 8); // [ string number  this string ]
+                duk_put_prop_lstring(context, -2, ClassProperty, ClassPropertySize); // [ string number this ]
 
                 // Set host
-                duk_dup(context, -3);                         // [ string number this number ]
+                duk_dup(context, -3);                         // [ string number this string ]
                 duk_put_prop_lstring(context, -2, "host", 4); // [ string number this ]
 
                 // Set port
@@ -212,7 +212,7 @@ namespace server
                     case CRC32("endpoint"):
                     {
                         // Get host
-                        duk_get_prop_lstring(context, idx - 1, "host", 4); // [ string ]
+                        duk_get_prop_lstring(context, idx, "host", 4); // [ string ]
 
                         size_t hostLength;
                         const char* hostStr = duk_to_lstring(context, -1, &hostLength);
@@ -221,7 +221,7 @@ namespace server
                         duk_pop(context); // [ ]
 
                         // Get port
-                        duk_get_prop_lstring(context, idx - 2, "port", 4); // [ number ]
+                        duk_get_prop_lstring(context, idx, "port", 4); // [ number ]
 
                         uint16_t port = duk_to_uint16(context, -1); // [ number ]
 

@@ -6,6 +6,7 @@
 #include "JSUtils.hpp"
 #include "main/JSDevice.hpp"
 #include "main/JSRoom.hpp"
+#include "utils/JSValue.hpp"
 
 extern "C"
 {
@@ -70,34 +71,37 @@ namespace server
                             return false;
                         }
 
-                        duk_context* c = GetDuktapeContext();
+                        duk_context* context = GetDuktapeContext();
 
                         // Prepare context
                         {
 
                             // Import utils module
-                            JSUtils::duk_import(c);
+                            JSUtils::duk_import(context);
+
+                            JSEndpoint::duk_import(context);
+                            JSColor::duk_import(context);
 
                             // Import main module
-                            JSRoom::duk_import(c);
-                            JSDevice::duk_import(c);
+                            JSRoom::duk_import(context);
+                            JSDevice::duk_import(context);
 
                             // Load script source
                             std::string data = scriptSource->GetContent();
-                            duk_push_lstring(c, (const char*)data.c_str(), data.size());
+                            duk_push_lstring(context, (const char*)data.c_str(), data.size());
 
                             std::string name = scriptSource->GetName();
-                            duk_push_lstring(c, (const char*)name.c_str(), name.size());
+                            duk_push_lstring(context, (const char*)name.c_str(), name.size());
 
                             // Compile
-                            duk_compile(c, 0);
+                            duk_compile(context, 0);
 
                             // Prepare timout
                             PrepareTimeout(5000); // 5 seconds
 
                             // Call script
-                            duk_call(c, 0);
-                            duk_pop(c);
+                            duk_call(context, 0);
+                            duk_pop(context);
 
                             // Initialize attributes
                             attributeList.clear();
@@ -119,14 +123,14 @@ namespace server
                         }
 
                         // Call initialize function
-                        if (duk_get_global_lstring(c, "initialize", 10)) // [ func ]
+                        if (duk_get_global_lstring(context, "initialize", 10)) // [ func ]
                         {
-                            // Prepare timout
-                            PrepareTimeout(5000); // 5 seconds
+                            // Prepare timeout
+                            PrepareTimeout(2000); // 5 seconds
 
                             // Call function
-                            duk_call(c, 0); // [ bool ]
-                            duk_pop(c);
+                            duk_call(context, 0); // [ bool ]
+                            duk_pop(context);     // [ ]
                         }
 
                         // Set checksum to prevent recompilation
@@ -469,15 +473,18 @@ namespace server
                     std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
                     if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
                     {
+                        // Push parameter
+                        JSValue::duk_push_value(context, parameter); // [ value ]
+
                         // Prepare timout
-                        PrepareTimeout(5000); // 5 seconds
+                        PrepareTimeout(1000); // 5 seconds
 
                         // Call event function
-                        duk_call(context, 0); // [ bool ]
+                        duk_call(context, 1); // [ bool ]
 
                         // Get result
                         bool result = duk_to_boolean(context, -1);
-                        duk_pop(context);
+                        duk_pop(context); // [ ]
 
                         return result;
                     }
@@ -503,62 +510,15 @@ namespace server
                     Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
-                    switch (property->GetType())
-                    {
-                    case ValueType::kBooleanType:
-                        duk_push_boolean(context, property->GetBoolean());
-                        return 1;
-                    case ValueType::kIntegerType:
-                        duk_push_int(context, property->GetInteger());
-                        return 1;
-                    case ValueType::kNumberType:
-                        duk_push_number(context, property->GetNumber());
-                        return 1;
-                    case ValueType::kStringType:
-                    {
-                        std::string string = property->GetString();
-                        duk_push_lstring(context, string.data(), string.size());
-                        return 1;
-                    }
-                    case ValueType::kEndpointType:
-                    {
-                        duk_push_object(context);
+                    JSValue::duk_push_value(context, property);
 
-                        Endpoint endpoint = property->GetEndpoint();
-
-                        duk_push_lstring(context, endpoint.host.data(), endpoint.host.size());
-                        duk_put_prop_lstring(context, -2, "host", 4);
-
-                        duk_push_int(context, endpoint.port);
-                        duk_put_prop_lstring(context, -2, "port", 4);
-
-                        return 1;
-                    }
-                    case ValueType::kColorType:
-                    {
-                        duk_push_object(context);
-
-                        Color color = property->GetColor();
-
-                        duk_push_int(context, color.red);
-                        duk_put_prop_lstring(context, -2, "red", 3);
-
-                        duk_push_int(context, color.green);
-                        duk_put_prop_lstring(context, -2, "green", 5);
-
-                        duk_push_int(context, color.blue);
-                        duk_put_prop_lstring(context, -2, "blue", 4);
-
-                        return 1;
-                    }
-                    default:
-                        break;
-                    }
+                    return 1; // [ value ]
                 }
-
-                // Error
-                duk_push_null(context);
-                return 1;
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
+                }
             }
             duk_ret_t JSScript::duk_set_property(duk_context* context)
             {
@@ -570,85 +530,15 @@ namespace server
                     Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
-                    switch (property->GetType())
-                    {
-                    case ValueType::kBooleanType:
-                    {
-                        property->SetBoolean(duk_to_boolean(context, -1));
-                        duk_pop(context);
+                    JSValue::duk_get_value(context, -1, property);
 
-                        return 0;
-                    }
-                    case ValueType::kIntegerType:
-                    {
-                        property->SetInteger(duk_to_int(context, -1));
-                        duk_pop(context);
-
-                        return 0;
-                    }
-                    case ValueType::kNumberType:
-                    {
-                        property->SetNumber(duk_to_number(context, -1));
-                        duk_pop(context);
-
-                        return 0;
-                    }
-                    case ValueType::kStringType:
-                    {
-                        size_t length;
-                        const char* string = duk_to_lstring(context, -1, &length);
-                        property->SetString(std::string(string, length));
-                        duk_pop(context);
-
-                        return 0;
-                    }
-                    case ValueType::kEndpointType:
-                    {
-                        // Coerce value
-                        duk_to_object(context, -1);
-
-                        // Get each property
-                        duk_get_prop_lstring(context, -1, "host", 4);
-                        duk_get_prop_lstring(context, -2, "port", 4);
-
-                        size_t hostLength;
-                        const char* host = duk_to_lstring(context, -2, &hostLength);
-
-                        // Set endpoint
-                        Endpoint endpoint = {std::string(host, hostLength), (uint16_t)duk_to_int(context, -1)};
-
-                        property->SetEndpoint(endpoint);
-
-                        duk_pop_3(context);
-
-                        return 0;
-                    }
-                    case ValueType::kColorType:
-                    {
-                        // Coerce value
-                        duk_to_object(context, -1);
-
-                        // Get each property
-                        duk_get_prop_lstring(context, -1, "red", 3);
-                        duk_get_prop_lstring(context, -2, "green", 5);
-                        duk_get_prop_lstring(context, -3, "blue", 4);
-
-                        // Set color
-                        Color color = {(uint8_t)duk_to_int(context, -3), (uint8_t)duk_to_int(context, -2),
-                                       (uint8_t)duk_to_int(context, -1)};
-                        property->SetColor(color);
-
-                        duk_pop_n(context, 4);
-
-                        return 0;
-                    }
-                    default:
-                        break;
-                    }
+                    return 0;
                 }
-
-                // Error
-                return 0;
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
+                }
             }
 
             duk_ret_t JSScript::duk_invoke_event(duk_context* context)
@@ -662,10 +552,14 @@ namespace server
                     assert(event != nullptr);
 
                     event->PostInvoke(nullptr);
-                }
 
-                // Error
-                return 0;
+                    return 0;
+                }
+                else
+                {
+                    // Error
+                    return DUK_RET_ERROR;
+                }
             }
 
             bool JSScript::Terminate()
@@ -677,12 +571,12 @@ namespace server
                     // Call terminate function
                     if (duk_get_global_lstring(c, "terminate", 9)) // [ func ]
                     {
-                        // Prepare timout
-                        PrepareTimeout(5000); // 5 seconds
+                        // Prepare timeout
+                        PrepareTimeout(2000); // 5 seconds
 
                         // Call function
                         duk_call(c, 0); // [ bool ]
-                        duk_pop(c);
+                        duk_pop(c);     // [ ]
                     }
                 }
 

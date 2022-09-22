@@ -35,7 +35,7 @@ namespace server
                 Ref<Method> AddMethod(const std::string& name, MethodCallback<> callback);
 
                 template <class T>
-                inline Ref<Method> AddMethod(const std::string& name, MethodCallback<> callback)
+                inline Ref<Method> AddMethod(const std::string& name, MethodCallback<T> callback)
                 {
                     return AddMethod(name, MethodCallbackConversion<T>{callback}.f2);
                 }

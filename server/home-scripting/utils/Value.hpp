@@ -25,7 +25,6 @@ namespace server
             kUnknownType,
             kNullType,
             kBooleanType,
-            kIntegerType,
             kNumberType,
             kStringType,
             kEndpointType,
@@ -59,66 +58,51 @@ namespace server
                     sizeof(arg1) >= sizeof(arg2) ? static_max<arg1, args...>::value : static_max<arg2, args...>::value;
             };
 
-            uint8_t value[static_max<bool, int64_t, double_t, std::string, Endpoint, Color>::value];
+            uint8_t value[static_max<bool, double_t, std::string, Endpoint, Color>::value];
 
           public:
             explicit Value();
             explicit Value(bool boolean);
-            explicit Value(int64_t integer);
             explicit Value(double_t number);
             explicit Value(const std::string& string);
+            explicit Value(const std::string_view& string);
             explicit Value(const Endpoint& endpoint);
             explicit Value(const Color& color);
             ~Value();
             static Ref<Value> Create(ValueType type);
-            inline static Ref<Value> Create(bool boolean)
+            inline static Ref<Value> CreateNull()
             {
-                return boost::make_shared<Value>(boolean);
+                return boost::make_shared<Value>();
             }
             inline static Ref<Value> CreateBoolean(bool boolean = false)
             {
                 return boost::make_shared<Value>(boolean);
             }
-            inline static Ref<Value> Create(int64_t integer)
-            {
-                return boost::make_shared<Value>(integer);
-            }
             inline static Ref<Value> CreateInteger(int64_t integer = 0l)
             {
-                return boost::make_shared<Value>(integer);
-            }
-            inline static Ref<Value> Create(double_t number)
-            {
-                return boost::make_shared<Value>(number);
+                return boost::make_shared<Value>((double_t)integer);
             }
             inline static Ref<Value> CreateNumber(double_t number = 0.0)
             {
                 return boost::make_shared<Value>(number);
             }
-            inline static Ref<Value> Create(const std::string& string)
-            {
-                return boost::make_shared<Value>(string);
-            }
             inline static Ref<Value> CreateString(const std::string& string = std::string())
             {
                 return boost::make_shared<Value>(string);
             }
-            inline static Ref<Value> Create(const Endpoint& endpoint)
+            inline static Ref<Value> CreateStringView(const std::string_view& string = std::string_view())
             {
-                return boost::make_shared<Value>(endpoint);
+                return boost::make_shared<Value>(string);
             }
             inline static Ref<Value> CreateEndpoint(const Endpoint& endpoint = Endpoint{})
             {
                 return boost::make_shared<Value>(endpoint);
             }
-            inline static Ref<Value> Create(const Color& color)
-            {
-                return boost::make_shared<Value>(color);
-            }
             inline static Ref<Value> CreateColor(const Color& color = Color{})
             {
                 return boost::make_shared<Value>(color);
             }
+            static Ref<Value> Create(rapidjson::Value& json);
 
             inline ValueType GetType() const
             {
@@ -135,7 +119,7 @@ namespace server
             }
             inline bool IsInteger() const
             {
-                return type == ValueType::kIntegerType;
+                return type == ValueType::kNumberType;
             }
             inline bool IsNumber() const
             {
@@ -154,32 +138,32 @@ namespace server
                 return type == ValueType::kColorType;
             }
 
-            inline bool& GetBoolean()
+            inline bool GetBoolean()
             {
                 assert(type == ValueType::kBooleanType);
                 return *(bool*)value;
             }
-            inline int64_t& GetInteger()
+            inline int64_t GetInteger()
             {
-                assert(type == ValueType::kIntegerType);
-                return *(int64_t*)value;
+                assert(type == ValueType::kNumberType);
+                return (int64_t)*(double_t*)value;
             }
-            inline double& GetNumber()
+            inline double_t GetNumber()
             {
                 assert(type == ValueType::kNumberType);
                 return *(double_t*)value;
             }
-            inline std::string& GetString()
+            inline const std::string& GetString()
             {
                 assert(type == ValueType::kStringType);
                 return *(std::string*)value;
             }
-            inline Endpoint& GetEndpoint()
+            inline const Endpoint& GetEndpoint()
             {
                 assert(type == ValueType::kEndpointType);
                 return *(Endpoint*)value;
             }
-            inline Color& GetColor()
+            inline const Color& GetColor()
             {
                 assert(type == ValueType::kColorType);
                 return *(Color*)value;
@@ -192,10 +176,10 @@ namespace server
             }
             inline void SetInteger(int64_t v)
             {
-                assert(type == ValueType::kIntegerType);
+                assert(type == ValueType::kNumberType);
                 *(int64_t*)value = v;
             }
-            inline void SetNumber(double v)
+            inline void SetNumber(double_t v)
             {
                 assert(type == ValueType::kNumberType);
                 *(double_t*)value = v;

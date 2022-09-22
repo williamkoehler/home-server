@@ -10,6 +10,8 @@ namespace server
         class Room;
         class Device;
 
+        class HomeView;
+
         class Home : public boost::enable_shared_from_this<Home>
         {
           private:
@@ -17,6 +19,8 @@ namespace server
 
             robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
             robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
+
+            Ref<HomeView> view;
 
             // Database
             bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);

@@ -198,13 +198,13 @@ namespace server
                 script->Initialize();
         }
 
-        void Device::Invoke(const std::string& id)
+        void Device::Invoke(const std::string& id, Ref<scripting::Value> parameter)
         {
             if (script != nullptr)
             {
                 Ref<scripting::Method> method = script->GetMethod(id);
                 if (method != nullptr)
-                    method->PostInvoke(nullptr);
+                    method->PostInvoke(parameter);
             }
         }
 

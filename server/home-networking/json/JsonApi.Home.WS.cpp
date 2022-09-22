@@ -318,8 +318,9 @@ namespace server
             // Process request
             rapidjson::Value::MemberIterator deviceIDIt = input.FindMember("id");
             rapidjson::Value::MemberIterator methodIt = input.FindMember("method");
+            rapidjson::Value::MemberIterator parameterIt = input.FindMember("parameter");
             if (deviceIDIt == input.MemberEnd() || !deviceIDIt->value.IsUint() || methodIt == input.MemberEnd() ||
-                !methodIt->value.IsString())
+                !methodIt->value.IsString() || parameterIt == input.MemberEnd())
             {
                 context.Error("Missing id and/or method");
                 context.Error(ApiError::kError_InvalidArguments);
@@ -340,8 +341,11 @@ namespace server
                 return;
             }
 
+            // Create parameter
+            Ref<scripting::Value> parameter = scripting::Value::Create(parameterIt->value);
+
             // Invoke method
-            device->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()));
+            device->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()), parameter);
         }
 
         void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,

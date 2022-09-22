@@ -1,6 +1,5 @@
 #pragma once
 #include "common.hpp"
-#include "duktape.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/tools/Controller.hpp>
 

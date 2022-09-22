@@ -98,7 +98,7 @@ namespace server
             /// @brief Invoke script method
             ///
             /// @param event Method name
-            void Invoke(const std::string& method);
+            void Invoke(const std::string& method, Ref<scripting::Value> parameter);
 
             /// @brief Terminate script
             ///

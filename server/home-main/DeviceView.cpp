@@ -40,5 +40,13 @@ namespace server
             if (r != nullptr)
                 r->SetName(v);
         }
+
+        void DeviceView::Invoke(const std::string& method, Ref<scripting::Value> parameter)
+        {
+            Ref<Device> r = device.lock();
+
+            if (r != nullptr)
+                r->Invoke(method, parameter);
+        }
     }
 }

@@ -6,6 +6,8 @@ namespace server
 {
     namespace scripting
     {
+        class Value;
+
         class DeviceView : public scripting::View
         {
           public:
@@ -31,6 +33,12 @@ namespace server
             ///
             /// @param v Device name
             virtual void SetName(const std::string& v) = 0;
+
+            /// @brief Invoke device method
+            /// 
+            /// @param method Method name
+            /// @param parameter Parameter
+            virtual void Invoke(const std::string& method, Ref<Value> parameter) = 0;
         };
     }
 }

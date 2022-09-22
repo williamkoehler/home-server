@@ -2,18 +2,27 @@
 #include <home-scripting/main/HomeView.hpp>
 #include <home-scripting/main/RoomView.hpp>
 
+#define ROOM_OBJECT ("Room")
+#define ROOM_ID_PROPERTY DUK_HIDDEN_SYMBOL("room_id")
+
 namespace server
 {
     namespace scripting
     {
         namespace javascript
         {
+            const char* RoomObject = ROOM_OBJECT;
+            const size_t RoomObjectSize = std::size(ROOM_OBJECT) - 1;
+
+            const char* RoomIDProperty = ROOM_ID_PROPERTY;
+            const size_t RoomIDPropertySize = std::size(ROOM_ID_PROPERTY) - 1;
+
             bool JSRoom::duk_import(duk_context* context)
             {
                 assert(context != nullptr);
 
                 duk_push_c_function(context, JSRoom::duk_constructor, 1); // [ c_func ]
-                duk_push_object(context);                             // [ c_func object ]
+                duk_push_object(context);                                 // [ c_func object ]
 
                 // Register methods
                 static const duk_function_list_entry methods[] = {
@@ -45,8 +54,8 @@ namespace server
                 duk_push_this(context); // [ number this ]
 
                 // Set unique id
-                duk_dup(context, -2);                        // [ number this number ]
-                duk_put_prop_string(context, -2, UNIQUE_ID); // [ number this ]
+                duk_dup(context, -2);                                                  // [ number this number ]
+                duk_put_prop_lstring(context, -2, RoomIDProperty, RoomIDPropertySize); // [ number this ]
 
                 // Pop this and number
                 duk_pop_2(context); // [ ]
@@ -60,8 +69,8 @@ namespace server
                 if (duk_get_top(context) == 0)
                 {
                     // Get id
-                    duk_push_this(context);                      // [ this ]
-                    duk_get_prop_string(context, -1, UNIQUE_ID); // [ this number ]
+                    duk_push_this(context);                                                // [ this ]
+                    duk_get_prop_lstring(context, -1, RoomIDProperty, RoomIDPropertySize); // [ this number ]
                     identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop 2
@@ -91,8 +100,8 @@ namespace server
                 if (duk_get_top(context) == 0)
                 {
                     // Get id
-                    duk_push_this(context);                      // [this]
-                    duk_get_prop_string(context, -1, UNIQUE_ID); // [this number]
+                    duk_push_this(context);                                                // [this]
+                    duk_get_prop_lstring(context, -1, RoomIDProperty, RoomIDPropertySize); // [this number]
                     identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop 2
@@ -137,8 +146,8 @@ namespace server
                     const char* name = duk_get_lstring(context, -1, &nameLength);
 
                     // Get id
-                    duk_push_this(context);                      // [ string this ]
-                    duk_get_prop_string(context, -1, UNIQUE_ID); // [ string this number ]
+                    duk_push_this(context);                                                // [ string this ]
+                    duk_get_prop_lstring(context, -1, RoomIDProperty, RoomIDPropertySize); // [ string this number ]
                     identifier_t roomID = (identifier_t)duk_get_uint(context, -1);
 
                     // Get home view
@@ -173,8 +182,6 @@ namespace server
                     // Error
                     return DUK_RET_ERROR;
                 }
-
-                return 0;
             }
 
             bool JSRoom::duk_new_room(duk_context* context, Ref<RoomView> roomView)
@@ -183,9 +190,9 @@ namespace server
                 assert(roomView != nullptr);
 
                 // New room object
-                duk_get_global_string(context, ROOM_OBJECT); // [function]
-                duk_push_uint(context, roomView->GetID());   // [function number]
-                duk_new(context, 1);                         // [object]
+                duk_get_global_lstring(context, RoomObject, RoomObjectSize); // [function]
+                duk_push_uint(context, roomView->GetID());                   // [function number]
+                duk_new(context, 1);                                         // [object]
 
                 return true;
             }

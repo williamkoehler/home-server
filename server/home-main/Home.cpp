@@ -55,15 +55,15 @@ namespace server
             }
 
             // Create home view
-            Ref<HomeView> homeView = boost::make_shared<HomeView>(home);
-            if (homeView == nullptr)
+            home->view = boost::make_shared<HomeView>(home);
+            if (home->view == nullptr)
             {
                 LOG_ERROR("Create home view.");
                 return nullptr;
             }
 
             // Set home view
-            scripting::ScriptManager::SetHomeView(homeView);
+            scripting::ScriptManager::SetHomeView(home->view);
 
             home->UpdateTimestamp();
 

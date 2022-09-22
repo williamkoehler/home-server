@@ -10,8 +10,6 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return "boolean";
-            case ValueType::kIntegerType:
-                return "integer";
             case ValueType::kNumberType:
                 return "number";
             case ValueType::kStringType:
@@ -30,8 +28,6 @@ namespace server
             {
             case CRC32("boolean"):
                 return ValueType::kBooleanType;
-            case CRC32("integer"):
-                return ValueType::kIntegerType;
             case CRC32("number"):
                 return ValueType::kNumberType;
             case CRC32("string"):
@@ -52,15 +48,15 @@ namespace server
         {
             new ((void*)value) bool(boolean);
         }
-        Value::Value(int64_t integer) : type(ValueType::kIntegerType)
-        {
-            new ((void*)value) int64_t(integer);
-        }
         Value::Value(double_t number) : type(ValueType::kNumberType)
         {
             new ((void*)value) double_t(number);
         }
         Value::Value(const std::string& string) : type(ValueType::kStringType)
+        {
+            new ((void*)value) std::string(string);
+        }
+        Value::Value(const std::string_view& string) : type(ValueType::kStringType)
         {
             new ((void*)value) std::string(string);
         }
@@ -96,8 +92,6 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return boost::make_shared<Value>(false);
-            case ValueType::kIntegerType:
-                return boost::make_shared<Value>(0l);
             case ValueType::kNumberType:
                 return boost::make_shared<Value>(0.0);
             case ValueType::kStringType:
@@ -110,6 +104,69 @@ namespace server
                 return boost::make_shared<Value>();
             }
         }
+        Ref<Value> Value::Create(rapidjson::Value& input)
+        {
+            switch (input.GetType())
+            {
+            case rapidjson::kTrueType:
+                return boost::make_shared<Value>(true);
+            case rapidjson::kFalseType:
+                return boost::make_shared<Value>(false);
+            case rapidjson::kNumberType:
+                return boost::make_shared<Value>(input.GetDouble());
+            case rapidjson::kStringType:
+                return boost::make_shared<Value>(std::string_view(input.GetString(), input.GetStringLength()));
+            case rapidjson::kObjectType:
+            {
+                rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
+                if (classIt != input.MemberEnd() && classIt->value.IsString())
+                {
+                    switch (crc32(classIt->value.GetString(), classIt->value.GetStringLength()))
+                    {
+                    case CRC32("endpoint"):
+                    {
+                        rapidjson::Value::MemberIterator hostIt = input.FindMember("host");
+                        rapidjson::Value::MemberIterator portIt = input.FindMember("port");
+                        if (hostIt != input.MemberEnd() && hostIt->value.IsString() && portIt != input.MemberEnd() &&
+                            portIt->value.IsUint())
+                        {
+                            Endpoint endpoint = Endpoint{
+                                .host = std::string(hostIt->value.GetString(), hostIt->value.GetStringLength()),
+                                .port = (uint16_t)portIt->value.GetUint(),
+                            };
+
+                            return boost::make_shared<Value>(endpoint);
+                        }
+                    }
+                    case CRC32("color"):
+                    {
+                        rapidjson::Value::MemberIterator rIt = input.FindMember("r");
+                        rapidjson::Value::MemberIterator gIt = input.FindMember("g");
+                        rapidjson::Value::MemberIterator bIt = input.FindMember("b");
+                        if (classIt != input.MemberEnd() && classIt->value.IsString() && rIt != input.MemberEnd() &&
+                            rIt->value.IsUint() && gIt != input.MemberEnd() && gIt->value.IsUint() &&
+                            bIt != input.MemberEnd() && bIt->value.IsUint())
+                        {
+                            Color color = Color{
+                                .red = (uint8_t)rIt->value.GetUint(),
+                                .green = (uint8_t)gIt->value.GetUint(),
+                                .blue = (uint8_t)bIt->value.GetUint(),
+                            };
+
+                            return boost::make_shared<Value>(color);
+                        }
+                    }
+                    }
+                }
+
+                break;
+            }
+            default:
+                break;
+            }
+
+            return boost::make_shared<Value>();
+        }
 
         rapidjson::Value Value::JsonGet(rapidjson::Document::AllocatorType& allocator)
         {
@@ -117,8 +174,6 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return rapidjson::Value(*(bool*)value);
-            case ValueType::kIntegerType:
-                return rapidjson::Value(*(int64_t*)value);
             case ValueType::kNumberType:
                 return rapidjson::Value(*(double_t*)value);
             case ValueType::kStringType:
@@ -164,10 +219,6 @@ namespace server
             case ValueType::kBooleanType:
                 if (input.IsBool())
                     *((bool*)value) = input.GetBool();
-                break;
-            case ValueType::kIntegerType:
-                if (input.IsInt())
-                    *((bool*)value) = input.GetInt64();
                 break;
             case ValueType::kNumberType:
                 if (input.IsNumber())

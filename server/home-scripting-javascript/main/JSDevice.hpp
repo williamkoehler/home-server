@@ -21,6 +21,8 @@ namespace server
                 static duk_ret_t duk_get_name(duk_context* context);
                 static duk_ret_t duk_set_name(duk_context* context);
 
+                static duk_ret_t duk_invoke(duk_context* context);
+
               public:
                 static bool duk_import(duk_context* context);
 

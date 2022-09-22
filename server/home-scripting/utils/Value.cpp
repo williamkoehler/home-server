@@ -291,5 +291,43 @@ namespace server
 
             return true;
         }
+
+        std::string Value::ToString()
+        {
+            switch (type)
+            {
+            case ValueType::kBooleanType:
+                return std::to_string(GetBoolean());
+            case ValueType::kNumberType:
+                return std::to_string(GetNumber());
+            case ValueType::kStringType:
+                return GetString();
+            case ValueType::kEndpointType:
+            {
+                std::stringstream ss;
+
+                const Endpoint& endpoint = GetEndpoint();
+
+                ss << "host: " << endpoint.host << std::endl;
+                ss << "port: " << endpoint.port;
+
+                return ss.str();
+            }
+            case ValueType::kColorType:
+            {
+                std::stringstream ss;
+
+                const Color& color = GetColor();
+
+                ss << "red  : " << color.red << std::endl;
+                ss << "green: " << color.green << std::endl;
+                ss << "blue : " << color.blue;
+
+                return ss.str();
+            }
+            default:
+                return "null";
+            }
+        }
     }
 }

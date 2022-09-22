@@ -146,7 +146,7 @@ namespace server
             inline int64_t GetInteger()
             {
                 assert(type == ValueType::kNumberType);
-                return (int64_t)*(double_t*)value;
+                return (int64_t) * (double_t*)value;
             }
             inline double_t GetNumber()
             {
@@ -211,6 +211,8 @@ namespace server
                 color.green = v.green;
                 color.blue = v.blue;
             }
+
+            std::string ToString();
 
             rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator);
             bool JsonSet(rapidjson::Value& input);

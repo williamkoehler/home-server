@@ -23,8 +23,13 @@ namespace server
 
             Ref<Script> JSScriptSource::CreateScript(Ref<View> view)
             {
-                return boost::make_shared<JSScript>(view,
-                                                    boost::dynamic_pointer_cast<JSScriptSource>(shared_from_this()));
+                Ref<Script> script =
+                    boost::make_shared<JSScript>(view, boost::dynamic_pointer_cast<JSScriptSource>(shared_from_this()));
+
+                // Keep weak reference to allow content update
+                scripts.push_back(script);
+
+                return script;
             }
         }
     }

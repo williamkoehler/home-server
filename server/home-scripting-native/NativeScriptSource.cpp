@@ -27,17 +27,27 @@ namespace server
                 try
                 {
                     // Create native script
-                    Ref<NativeScript> result = nullptr;
-                    callback(view, boost::dynamic_pointer_cast<NativeScriptSource>(shared_from_this()), &result);
+                    Ref<NativeScript> script = nullptr;
+                    callback(view, boost::dynamic_pointer_cast<NativeScriptSource>(shared_from_this()), &script);
 
-                    return result;
+                    if (script != nullptr)
+                    {
+                        // Keep weak reference to script
+                        scripts.push_back(script);
+
+                        return script;
+                    }
+                    else
+                    {
+                        LOG_ERROR("Native script '{0}' create callback returned an invalid script.", name);
+                        return nullptr;
+                    }
                 }
                 catch (std::exception e)
                 {
-                    LOG_ERROR("Failed to create script from native source.");
+                    LOG_ERROR("Exception was thrown while creating new native script '{0}'.", name);
+                    return nullptr;
                 }
-
-                return nullptr;
             }
         }
     }

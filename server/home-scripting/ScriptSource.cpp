@@ -1,4 +1,5 @@
 #include "ScriptSource.hpp"
+#include "Script.hpp"
 #include <home-database/Database.hpp>
 
 namespace server
@@ -94,6 +95,29 @@ namespace server
             {
                 content = v;
 
+                Ref<Worker> worker = Worker::GetInstance();
+                assert(worker != nullptr);
+
+                // Update scripts
+                for (boost::container::vector<WeakRef<Script>>::const_iterator it = scripts.begin();
+                     it != scripts.end(); it++)
+                {
+                    if (Ref<Script> script = it->lock())
+                    {
+                        worker->GetContext().dispatch(
+                            [=]() -> void
+                            {
+                                // Terminate script
+                                script->Terminate();
+
+                                // Initialize script
+                                script->Initialize();
+                            });
+                    }
+                    else
+                        it = scripts.erase(it); // Remove freed scripts
+                }
+
                 return true;
             }
 
@@ -105,7 +129,7 @@ namespace server
             assert(output.IsObject());
 
             output.AddMember("id", rapidjson::Value(id), allocator);
-            
+
             std::string languageStr = StringifyScriptLanguage(GetLanguage());
             output.AddMember("language", rapidjson::Value(languageStr.data(), languageStr.size(), allocator),
                              allocator);

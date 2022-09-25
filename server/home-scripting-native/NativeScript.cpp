@@ -117,23 +117,6 @@ namespace server
             {
                 eventList.clear();
             }
-
-            bool NativeScript::Initialize()
-            {
-                bool result;
-
-                // Initialize script
-                {
-                    result = Init();
-                }
-
-                return result;
-            }
-
-            bool NativeScript::Terminate()
-            {
-                return true;
-            }
         }
     }
 }

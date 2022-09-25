@@ -2,6 +2,8 @@
 #include "utils/Method.hpp"
 #include "utils/Value.hpp"
 
+#include "tasks/TimerTask.hpp"
+
 namespace server
 {
     namespace scripting
@@ -40,6 +42,40 @@ namespace server
                 return nullptr;
 
             return it->second;
+        }
+
+        bool Script::Initialize()
+        {
+            // Reset references
+            attributeList.clear();
+            propertyList.clear();
+            methodList.clear();
+            eventList.clear();
+
+            // Clear tasks
+            for (const WeakRef<Task>& task : taskList)
+            {
+                if (Ref<Task> r = task.lock())
+                    r->Cancel();
+            }
+            taskList.clear();
+
+            return true;
+        }
+
+        void Script::AddTimerTask(const std::string& method, size_t interval)
+        {
+            Ref<Task> task = TimerTask::Create(shared_from_this(), method, interval);
+            if (task != nullptr)
+                taskList.push_back(task);
+        }
+
+        void Script::CleanTasks()
+        {
+            taskList.erase(std::remove_if(taskList.begin(), taskList.end(),
+                                          [](const boost::weak_ptr<Task>& task) -> bool const
+                                          { return task.expired(); }),
+                           taskList.end());
         }
 
         void Script::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -83,7 +119,7 @@ namespace server
                 Ref<Value> property =
                     GetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
 
-                if(property != nullptr)
+                if (property != nullptr)
                     property->JsonSet(propertyIt->value);
             }
         }

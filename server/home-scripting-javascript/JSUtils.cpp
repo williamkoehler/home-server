@@ -60,51 +60,6 @@ namespace server
                 return 0;
             }
 
-            struct TimerTask
-            {
-                const WeakRef<JSScript> script;
-                boost::shared_ptr<boost::asio::deadline_timer> timer;
-                const std::string method;
-                const uint64_t interval;
-            };
-
-            void TimerHandler(const boost::system::error_code& ec, TimerTask task)
-            {
-                Ref<JSScript> script = task.script.lock();
-                if (script != nullptr && !ec)
-                {
-                    try
-                    {
-                        duk_context* context = script->GetDuktapeContext();
-                        if (context != nullptr)
-                        {
-                            // Call call function
-                            if (duk_get_global_lstring(context, task.method.data(), task.method.size())) // [ func ]
-                            {
-                                // Prepare timeout
-                                script->PrepareTimeout(5000); // 5 seconds
-
-                                // Call function
-                                duk_call(context, 0); // [ bool ]
-
-                                if (duk_to_boolean(context, -1))
-                                {
-                                    // Restart timer if true was returned
-                                    boost::asio::deadline_timer& timer = *task.timer;
-                                    timer.expires_from_now(boost::posix_time::seconds(task.interval));
-                                    timer.async_wait(
-                                        boost::bind(&TimerHandler, boost::placeholders::_1, std::move(task)));
-                                }
-
-                                duk_pop(context);
-                            }
-                        }
-                    }
-                    catch (std::runtime_error e)
-                    {
-                    }
-                }
-            }
             duk_ret_t JSUtils::duk_create_timer(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
@@ -127,17 +82,7 @@ namespace server
                     assert(worker != nullptr);
 
                     // Create timer task
-                    TimerTask task = TimerTask{
-                        .script = Ref<JSScript>(boost::dynamic_pointer_cast<JSScript>(script->shared_from_this())),
-                        .timer = boost::make_shared<boost::asio::deadline_timer>(worker->GetContext()),
-                        .method = std::move(method),
-                        .interval = interval,
-                    };
-
-                    // Start timer
-                    boost::asio::deadline_timer& timer = *task.timer;
-                    timer.expires_from_now(boost::posix_time::seconds(task.interval));
-                    timer.async_wait(boost::bind(&TimerHandler, boost::placeholders::_1, std::move(task)));
+                    script->AddTimerTask(method, interval);
 
                     return 0;
                 }
@@ -148,33 +93,6 @@ namespace server
                 }
             }
 
-            void DelayHandler(const boost::system::error_code& ec, TimerTask task)
-            {
-                Ref<JSScript> script = task.script.lock();
-                if (script != nullptr && !ec)
-                {
-                    try
-                    {
-                        duk_context* context = script->GetDuktapeContext();
-                        if (context != nullptr)
-                        {
-                            // Call call function
-                            if (duk_get_global_lstring(context, task.method.data(), task.method.size())) // [ func ]
-                            {
-                                // Prepare timeout
-                                script->PrepareTimeout(5000); // 5 seconds
-
-                                // Call function
-                                duk_call(context, 0); // [ bool ]
-                                duk_pop(context);
-                            }
-                        }
-                    }
-                    catch (std::runtime_error e)
-                    {
-                    }
-                }
-            }
             duk_ret_t JSUtils::duk_create_delay(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
@@ -190,21 +108,14 @@ namespace server
                     // Get timer interval
                     duk_uint_t interval = duk_get_uint(context, -1);
 
+                    // Pop number, and string
+                    duk_pop_2(context);
+
                     Ref<Worker> worker = Worker::GetInstance();
                     assert(worker != nullptr);
 
                     // Create timer task
-                    TimerTask task = TimerTask{
-                        .script = Ref<JSScript>(boost::dynamic_pointer_cast<JSScript>(script->shared_from_this())),
-                        .timer = boost::make_shared<boost::asio::deadline_timer>(worker->GetContext()),
-                        .method = std::move(method),
-                        .interval = interval,
-                    };
-
-                    // Start timer
-                    boost::asio::deadline_timer& timer = *task.timer;
-                    timer.expires_from_now(boost::posix_time::seconds(task.interval));
-                    timer.async_wait(boost::bind(&DelayHandler, boost::placeholders::_1, std::move(task)));
+                    script->AddTimerTask(method, interval);
 
                     return 0;
                 }

@@ -47,8 +47,6 @@ namespace server
                 checksum = XXH64(content.data(), content.size(), 0x323435367A683567);
             }
 
-            boost::container::vector<WeakRef<Script>> scripts;
-
           public:
             ScriptSource(identifier_t id, const std::string& name, ScriptUsage usage, const std::string_view& content);
             virtual ~ScriptSource();

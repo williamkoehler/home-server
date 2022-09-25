@@ -172,9 +172,6 @@ namespace server
             {
                 deviceList[device->GetID()] = device;
 
-                // Initialize device
-                device->Initialize();
-
                 return true;
             }
             else
@@ -208,9 +205,6 @@ namespace server
             if (device != nullptr)
             {
                 deviceList[device->GetID()] = device;
-
-                // Initialize device
-                device->Initialize();
             }
             else
             {
@@ -278,9 +272,6 @@ namespace server
                 assert(database != nullptr);
 
                 database->RemoveDevice(id);
-
-                // Terminate device
-                it->second->Terminate();
 
                 deviceList.erase(it);
 

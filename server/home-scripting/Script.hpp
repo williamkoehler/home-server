@@ -2,6 +2,7 @@
 #include "ScriptSource.hpp"
 #include "View.hpp"
 #include "common.hpp"
+#include "tasks/Task.hpp"
 #include "utils/Method.hpp"
 #include "utils/Value.hpp"
 
@@ -15,9 +16,13 @@ namespace server
         class Method;
         class Event;
 
+        class Task;
+
         class Script : public boost::enable_shared_from_this<Script>
         {
           protected:
+            friend class Task;
+
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
@@ -25,6 +30,8 @@ namespace server
             robin_hood::unordered_node_map<std::string, Ref<Value>> propertyList;
             robin_hood::unordered_node_map<std::string, Ref<Method>> methodList;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
+
+            boost::container::vector<WeakRef<Task>> taskList;
 
           public:
             Script(Ref<View> view, Ref<ScriptSource> scriptSource);
@@ -47,15 +54,21 @@ namespace server
             Ref<Method> GetMethod(const std::string& id);
             Ref<Event> GetEvent(const std::string& id);
 
-            /// @brief Initialize script (must be called by host thread)
+            /// @brief Initialize script (ONLY CALL ONCE AFTER CREATION)
             ///
-            /// @return Successful
-            virtual bool Initialize() = 0;
+            /// @return Successfulness
+            virtual bool Initialize();
 
-            /// @brief Terminate script (must be called by host thread)
+            /// @brief Add timer task
             ///
-            /// @return Successful
-            virtual bool Terminate() = 0;
+            /// @param method Method name
+            /// @param interval Interval
+            void AddTimerTask(const std::string& method, size_t interval);
+
+            /// @brief Remove finished tasks
+            /// @note This method is automatically called when a task finishes
+            ///
+            void CleanTasks();
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

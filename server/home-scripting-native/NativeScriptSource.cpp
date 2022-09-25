@@ -30,18 +30,10 @@ namespace server
                     Ref<NativeScript> script = nullptr;
                     callback(view, boost::dynamic_pointer_cast<NativeScriptSource>(shared_from_this()), &script);
 
-                    if (script != nullptr)
-                    {
-                        // Keep weak reference to script
-                        scripts.push_back(script);
-
-                        return script;
-                    }
-                    else
-                    {
+                    if (script == nullptr)
                         LOG_ERROR("Native script '{0}' create callback returned an invalid script.", name);
-                        return nullptr;
-                    }
+
+                    return script;
                 }
                 catch (std::exception e)
                 {

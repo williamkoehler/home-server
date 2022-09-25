@@ -91,18 +91,10 @@ namespace server
             /// @return Get device view of this object
             Ref<DeviceView> GetView();
 
-            /// @brief Initialize script
-            ///
-            void Initialize();
-
             /// @brief Invoke script method
             ///
             /// @param event Method name
             void Invoke(const std::string& method, Ref<scripting::Value> parameter);
-
-            /// @brief Terminate script
-            ///
-            void Terminate();
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

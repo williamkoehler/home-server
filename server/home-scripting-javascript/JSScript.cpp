@@ -36,12 +36,15 @@ namespace server
                 const std::string& method;
             };
 
-            JSScript::JSScript(Ref<View> view, Ref<JSScriptSource> source)
-                : Script(view, boost::static_pointer_cast<ScriptSource>(source)), context(nullptr)
+            JSScript::JSScript(Ref<View> view, Ref<JSScriptSource> scriptSource)
+                : Script(view, boost::static_pointer_cast<ScriptSource>(scriptSource)), context(nullptr)
             {
             }
             JSScript::~JSScript()
             {
+                // Clean script references
+                Ref<JSScriptSource> scriptSource = boost::dynamic_pointer_cast<JSScriptSource>(scriptSource);
+                scriptSource->CleanScripts();
             }
 
             void JSScript::PrepareTimeout(size_t t)
@@ -52,25 +55,15 @@ namespace server
 
             bool JSScript::Initialize()
             {
-                // Check if compilation stage is needed
-                size_t cs = scriptSource->GetChecksum();
-                if (cs != checksum || context == nullptr)
+                Script::Initialize();
+
+                try
                 {
-                    // Terminate script before reinitializing it
+                    // Initialize javascript runtime
+                    context = std::unique_ptr<duk_context, ContextDeleter>(
+                        duk_create_heap(nullptr, nullptr, nullptr, this, nullptr));
                     if (context != nullptr)
-                        Terminate();
-
-                    try
                     {
-                        // Initialize javascript runtime
-                        context = std::unique_ptr<duk_context, ContextDeleter>(
-                            duk_create_heap(nullptr, nullptr, nullptr, this, nullptr));
-                        if (context == nullptr)
-                        {
-                            checksum = 0;
-                            return false;
-                        }
-
                         duk_context* context = GetDuktapeContext();
 
                         // Prepare context
@@ -104,20 +97,16 @@ namespace server
                             duk_pop(context);
 
                             // Initialize attributes
-                            attributeList.clear();
                             InitializeAttributes();
 
                             // Initialize properties
-                            propertyList.clear();
                             propertyByIDList.clear();
                             InitializeProperties();
 
                             // Initialize methods
-                            methodList.clear();
                             InitializeMethods();
 
                             // Initialize events
-                            eventList.clear();
                             eventByIDList.clear();
                             InitializeEvents();
                         }
@@ -132,17 +121,15 @@ namespace server
                             duk_call(context, 0); // [ bool ]
                             duk_pop(context);     // [ ]
                         }
-
-                        // Set checksum to prevent recompilation
-                        checksum = cs;
                     }
-                    catch (std::runtime_error e)
-                    {
-                        LOG_WARNING("Duktape: {0}", e.what());
+                    else
+                        return false;
+                }
+                catch (std::runtime_error e)
+                {
+                    LOG_WARNING("Duktape: {0}", e.what());
 
-                        context = nullptr;
-                        checksum = 0;
-                    }
+                    context = nullptr;
                 }
 
                 return true;
@@ -560,30 +547,6 @@ namespace server
                     // Error
                     return DUK_RET_ERROR;
                 }
-            }
-
-            bool JSScript::Terminate()
-            {
-                duk_context* c = GetDuktapeContext();
-
-                if (c != nullptr)
-                {
-                    // Call terminate function
-                    if (duk_get_global_lstring(c, "terminate", 9)) // [ func ]
-                    {
-                        // Prepare timeout
-                        PrepareTimeout(2000); // 5 seconds
-
-                        // Call function
-                        duk_call(c, 0); // [ bool ]
-                        duk_pop(c);     // [ ]
-                    }
-                }
-
-                // Destroy javascript runtime
-                context = nullptr;
-
-                return true;
             }
         }
     }

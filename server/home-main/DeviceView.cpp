@@ -16,9 +16,7 @@ namespace server
 
         identifier_t DeviceView::GetID()
         {
-            Ref<Device> r = device.lock();
-
-            if (r != nullptr)
+            if (Ref<Device> r = device.lock())
                 return r->GetID();
 
             return 0;
@@ -26,26 +24,20 @@ namespace server
 
         std::string DeviceView::GetName()
         {
-            Ref<Device> r = device.lock();
-
-            if (r != nullptr)
+            if (Ref<Device> r = device.lock())
                 return r->GetName();
 
             return "";
         }
         void DeviceView::SetName(const std::string& v)
         {
-            Ref<Device> r = device.lock();
-
-            if (r != nullptr)
+            if (Ref<Device> r = device.lock())
                 r->SetName(v);
         }
 
         void DeviceView::Invoke(const std::string& method, Ref<scripting::Value> parameter)
         {
-            Ref<Device> r = device.lock();
-
-            if (r != nullptr)
+            if (Ref<Device> r = device.lock())
                 r->Invoke(method, parameter);
         }
     }

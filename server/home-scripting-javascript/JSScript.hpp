@@ -9,7 +9,9 @@ extern "C"
 }
 
 #define DUK_TEST_ENTER(context) duk_idx_t top1 = duk_get_top(context);
-#define DUK_TEST_LEAVE(context, difference) duk_idx_t top2 = duk_get_top(context); assert((top2 - top1) == difference);
+#define DUK_TEST_LEAVE(context, difference)                                                                            \
+    duk_idx_t top2 = duk_get_top(context);                                                                             \
+    assert((top2 - top1) == difference);
 
 namespace server
 {
@@ -35,7 +37,6 @@ namespace server
                 };
 
                 std::unique_ptr<void, ContextDeleter> context;
-                uint64_t checksum;
 
                 /// @brief Script properties ordered by id
                 ///
@@ -63,7 +64,7 @@ namespace server
                 static duk_ret_t duk_invoke_event(duk_context* context);
 
               public:
-                JSScript(Ref<View> view, Ref<JSScriptSource> source);
+                JSScript(Ref<View> view, Ref<JSScriptSource> scriptSource);
                 virtual ~JSScript();
 
                 /// @brief Get duktape context
@@ -73,11 +74,6 @@ namespace server
                 {
                     return (duk_context*)context.get();
                 }
-
-                /// @brief Initialize script
-                ///
-                /// @return Successful
-                virtual bool Initialize() override;
 
                 /// @brief Prepare script timeout
                 ///
@@ -96,10 +92,10 @@ namespace server
                     return elapsedTime > maxTime;
                 }
 
-                /// @brief Terminate script
+                /// @brief Initialize script
                 ///
-                /// @return Successful
-                virtual bool Terminate() override;
+                /// @return Successfulness
+                virtual bool Initialize() override;
             };
         }
     }

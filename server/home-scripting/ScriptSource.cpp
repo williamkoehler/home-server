@@ -95,29 +95,6 @@ namespace server
             {
                 content = v;
 
-                Ref<Worker> worker = Worker::GetInstance();
-                assert(worker != nullptr);
-
-                // Update scripts
-                for (boost::container::vector<WeakRef<Script>>::const_iterator it = scripts.begin();
-                     it != scripts.end(); it++)
-                {
-                    if (Ref<Script> script = it->lock())
-                    {
-                        worker->GetContext().dispatch(
-                            [=]() -> void
-                            {
-                                // Terminate script
-                                script->Terminate();
-
-                                // Initialize script
-                                script->Initialize();
-                            });
-                    }
-                    else
-                        it = scripts.erase(it); // Remove freed scripts
-                }
-
                 return true;
             }
 

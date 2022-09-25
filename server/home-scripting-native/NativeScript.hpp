@@ -16,10 +16,6 @@ namespace server
 
             class NativeScript : public Script
             {
-              private:
-                virtual bool Initialize() override;
-                virtual bool Terminate() override;
-
               protected:
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource);
                 virtual ~NativeScript();
@@ -47,8 +43,6 @@ namespace server
 
                 bool RemoveEvent(const std::string& name);
                 void ClearEvents();
-
-                virtual bool Init() = 0;
             };
         }
     }

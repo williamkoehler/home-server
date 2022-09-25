@@ -21,15 +21,43 @@ namespace server
                 return boost::make_shared<JSScriptSource>(id, name, usage, data);
             }
 
+            bool JSScriptSource::SetContent(const std::string_view& v)
+            {
+                if (ScriptSource::SetContent(v))
+                {
+                    // Re-Initialze scripts
+                    for (const WeakRef<JSScript>& script : scriptList)
+                    {
+                        if (Ref<JSScript> r = script.lock())
+                            r->Initialize(); // Re-Initialize
+                    }
+
+                    return true;
+                }
+                else
+                    return false;
+            }
+
             Ref<Script> JSScriptSource::CreateScript(Ref<View> view)
             {
-                Ref<Script> script =
+                Ref<JSScript> script =
                     boost::make_shared<JSScript>(view, boost::dynamic_pointer_cast<JSScriptSource>(shared_from_this()));
 
-                // Keep weak reference to allow content update
-                scripts.push_back(script);
+                if (script != nullptr)
+                {
+                    // Keep weak reference to scripts
+                    scriptList.push_back(script);
+                }
 
                 return script;
+            }
+
+            void JSScriptSource::CleanScripts()
+            {
+                scriptList.erase(std::remove_if(scriptList.begin(), scriptList.end(),
+                                                [](const boost::weak_ptr<JSScript>& script) -> bool const
+                                                { return script.expired(); }),
+                                 scriptList.end());
             }
         }
     }

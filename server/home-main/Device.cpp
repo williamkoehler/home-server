@@ -45,6 +45,9 @@ namespace server
                         LOG_ERROR("Create device script '{0}'", scriptSourceID);
                         return nullptr;
                     }
+
+                    // Initialize script
+                    device->script->Initialize();
                 }
             }
 
@@ -77,10 +80,6 @@ namespace server
 
             if (database->UpdateDevicePropScriptSource(id, scriptSourceID))
             {
-                // Terminate old script
-                if (script != nullptr)
-                    script->Terminate();
-
                 if (scriptSourceID != 0)
                 {
                     // Create script
@@ -192,12 +191,6 @@ namespace server
             return view;
         }
 
-        void Device::Initialize()
-        {
-            if (script != nullptr)
-                script->Initialize();
-        }
-
         void Device::Invoke(const std::string& id, Ref<scripting::Value> parameter)
         {
             if (script != nullptr)
@@ -206,12 +199,6 @@ namespace server
                 if (method != nullptr)
                     method->PostInvoke(parameter);
             }
-        }
-
-        void Device::Terminate()
-        {
-            if (script != nullptr)
-                script->Terminate();
         }
 
         void Device::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)

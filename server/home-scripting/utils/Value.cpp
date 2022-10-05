@@ -4,7 +4,7 @@ namespace server
 {
     namespace scripting
     {
-        std::string StringifyValueType(ValueType type)
+        std::string_view StringifyValueTypeConst(ValueType type)
         {
             switch (type)
             {
@@ -22,7 +22,7 @@ namespace server
                 return "unknown";
             }
         }
-        ValueType ParseValueType(const std::string& type)
+        ValueType ParseValueType(const std::string_view& type)
         {
             switch (crc32(type.data(), type.size()))
             {
@@ -319,9 +319,9 @@ namespace server
 
                 const Color& color = GetColor();
 
-                ss << "red  : " << color.red << std::endl;
-                ss << "green: " << color.green << std::endl;
-                ss << "blue : " << color.blue;
+                ss << "red  : " << (size_t)color.red << std::endl;
+                ss << "green: " << (size_t)color.green << std::endl;
+                ss << "blue : " << (size_t)color.blue;
 
                 return ss.str();
             }

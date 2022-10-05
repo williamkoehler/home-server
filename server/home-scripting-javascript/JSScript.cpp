@@ -71,9 +71,7 @@ namespace server
 
                             // Import utils module
                             JSUtils::duk_import(context);
-
-                            JSEndpoint::duk_import(context);
-                            JSColor::duk_import(context);
+                            JSValue::duk_import(context);
 
                             // Import main module
                             JSRoom::duk_import(context);
@@ -452,38 +450,39 @@ namespace server
             bool JSScript::InvokeHandler(const std::string& name, Ref<Value> parameter)
             {
                 duk_context* context = GetDuktapeContext();
-                assert(context != nullptr);
-
-                try
+                if (context != nullptr)
                 {
-                    // Get events object
-                    std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                    if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                    try
                     {
-                        // Push parameter
-                        JSValue::duk_push_value(context, parameter); // [ value ]
+                        // Get events object
+                        std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
+                        if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                        {
+                            // Push parameter
+                            JSValue::duk_new_value(context, parameter); // [ value ]
 
-                        // Prepare timout
-                        PrepareTimeout(1000); // 5 seconds
+                            // Prepare timout
+                            PrepareTimeout(1000); // 5 seconds
 
-                        // Call event function
-                        duk_call(context, 1); // [ bool ]
+                            // Call event function
+                            duk_call(context, 1); // [ bool ]
 
-                        // Get result
-                        bool result = duk_to_boolean(context, -1);
-                        duk_pop(context); // [ ]
+                            // Get result
+                            bool result = duk_to_boolean(context, -1);
+                            duk_pop(context); // [ ]
 
-                        return result;
+                            return result;
+                        }
+                        else
+                            return false;
                     }
-                    else
-                        return false;
-                }
-                catch (std::runtime_error e)
-                {
-                    // TODO Error message duk_safe_to_string(context, -1);
-                    LOG_WARNING("Duktape: {0}", e.what());
+                    catch (std::runtime_error e)
+                    {
+                        // TODO Error message duk_safe_to_string(context, -1);
+                        LOG_WARNING("Duktape: {0}", e.what());
 
-                    return false;
+                        return false;
+                    }
                 }
             }
 
@@ -497,7 +496,7 @@ namespace server
                     Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
-                    JSValue::duk_push_value(context, property);
+                    JSValue::duk_new_value(context, property);
 
                     return 1; // [ value ]
                 }

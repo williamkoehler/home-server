@@ -31,8 +31,16 @@ namespace server
             kColorType,
         };
 
-        std::string StringifyValueType(ValueType type);
-        ValueType ParseValueType(const std::string& type);
+        std::string_view StringifyValueTypeConst(ValueType type);
+        inline std::string StringifyValueType(ValueType type)
+        {
+            return std::string(StringifyValueTypeConst(type));
+        }
+        ValueType ParseValueType(const std::string_view& type);
+        inline ValueType ParseValueType(const std::string& type)
+        {
+            return ParseValueType(std::string_view(type));
+        }
 
         class Value
         {

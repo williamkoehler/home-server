@@ -7,12 +7,35 @@ namespace server
     {
         namespace native
         {
-            NativeScript::NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource)
-                : Script(view, scriptSource)
+            NativeScript::NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource,
+                                       UniqueRef<NativeScriptImpl> scriptImpl)
+                : Script(view, scriptSource), scriptImpl(std::move(scriptImpl))
             {
             }
             NativeScript::~NativeScript()
             {
+            }
+            Ref<Script> NativeScript::Create(Ref<View> view, Ref<NativeScriptSource> scriptSource)
+            {
+                UniqueRef<NativeScriptImpl> scriptImpl = scriptSource->GetCreateCallback()();
+
+                if (scriptImpl != nullptr)
+                {
+                    Ref<NativeScript> script =
+                        boost::make_shared<NativeScript>(view, scriptSource, std::move(scriptImpl));
+
+                    // Initialize script implementation
+                    script->scriptImpl->script = script;
+
+                    return script->shared_from_this();
+                }
+                else
+                    return nullptr;
+            }
+
+            bool NativeScript::Initialize()
+            {
+                return scriptImpl->Initialize();
             }
 
             bool NativeScript::AddAttribute(const std::string& name, const char* json)
@@ -64,24 +87,31 @@ namespace server
                 propertyList.clear();
             }
 
-            Ref<Method> NativeScript::AddMethod(const std::string& name, MethodCallback<> callback)
+            bool NativeScript::AddMethod(const std::string& name, MethodCallback<> callback)
             {
+                assert(callback != nullptr);
+
                 // Check existance
                 if (!methodList.contains(name))
                 {
-                    // Create method instance
-                    Ref<Method> e = Method::Create(name, shared_from_this(), callback);
-
                     // Add method to list
-                    if (e != nullptr)
-                    {
-                        methodList[name] = e;
-                        return e;
-                    }
+                    methodList[name] = callback;
+                    return true;
                 }
-
-                return nullptr;
+                else
+                    return false;
             }
+
+            bool NativeScript::Invoke(const std::string& name, Ref<Value> parameter)
+            {
+                robin_hood::unordered_node_map<std::string, MethodCallback<>>::const_iterator it =
+                    methodList.find(name);
+                if (it != methodList.end())
+                    return (scriptImpl.get()->*(it->second))(name, parameter);
+
+                return false;
+            }
+
             bool NativeScript::RemoveMethod(const std::string& name)
             {
                 return methodList.erase(name);

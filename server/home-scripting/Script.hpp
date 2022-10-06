@@ -3,7 +3,6 @@
 #include "View.hpp"
 #include "common.hpp"
 #include "tasks/Task.hpp"
-#include "utils/Method.hpp"
 #include "utils/Value.hpp"
 
 namespace server
@@ -13,7 +12,6 @@ namespace server
         class ScriptSource;
 
         class Value;
-        class Method;
         class Event;
 
         class Task;
@@ -28,7 +26,6 @@ namespace server
 
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
             robin_hood::unordered_node_map<std::string, Ref<Value>> propertyList;
-            robin_hood::unordered_node_map<std::string, Ref<Method>> methodList;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 
             boost::container::vector<WeakRef<Task>> taskList;
@@ -51,7 +48,6 @@ namespace server
             }
 
             Ref<Value> GetProperty(const std::string& id);
-            Ref<Method> GetMethod(const std::string& id);
             Ref<Event> GetEvent(const std::string& id);
 
             /// @brief Initialize script (ONLY CALL ONCE AFTER CREATION)
@@ -69,6 +65,19 @@ namespace server
             /// @note This method is automatically called when a task finishes
             ///
             void CleanTasks();
+
+            /// @brief Invoke method
+            ///
+            /// @param name Method name
+            /// @param parameter Parameter
+            /// @return Successfulness
+            virtual bool Invoke(const std::string& name, Ref<Value> parameter) = 0;
+
+            /// @brief Post invoke method
+            ///
+            /// @param name Method name
+            /// @param parameter Parameter
+            void PostInvoke(const std::string& name, Ref<Value> parameter);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

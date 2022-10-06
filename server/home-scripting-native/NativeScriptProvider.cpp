@@ -46,8 +46,7 @@ namespace server
                                     LOG_INFO("Registering library '{0}'", libraryFileName);
 
                                     //  Get lib informations
-                                    LibraryInformation lib;
-                                    library->get<GetLibraryInformationsCallback>(libraryFunction)(&lib);
+                                    LibraryInformation lib = library->get<GetLibraryInformationsCallback>(libraryFunction)();
 
                                     // Log library details
                                     {

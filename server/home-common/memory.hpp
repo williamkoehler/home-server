@@ -2,6 +2,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_unique.hpp>
 
 #ifdef _WIN32
 typedef INT_PTR ssize_t;
@@ -9,6 +10,9 @@ typedef INT_PTR ssize_t;
 
 template <class T>
 using Ref = boost::shared_ptr<T>;
+
+template<class T>
+using UniqueRef = std::unique_ptr<T>;
 
 template <class T>
 using WeakRef = boost::weak_ptr<T>;

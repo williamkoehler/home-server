@@ -9,21 +9,40 @@ namespace server
     {
         namespace native
         {
-            class NativeScriptSource;
-            class NativeScript;
+            class NativeScriptImpl;
 
-            using CreateScriptCallback = void(Ref<View> view, Ref<NativeScriptSource> scriptSource,
-                                              Ref<NativeScript>* result);
+            template <typename T = NativeScriptImpl>
+            using CreateScriptCallback = UniqueRef<T> (*)();
+
+            template <class T>
+            union CreateScriptCallbackConversion
+            {
+                CreateScriptCallback<T> f1;
+                CreateScriptCallback<> f2;
+            };
 
             /// @brief Script information necessary to dynamically create script instance
             ///
             struct ScriptInformation
             {
-                std::string scriptName; // Secondary name that links the script with corresponding database entry! THIS SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
+                std::string scriptName; // Secondary name that links the script with corresponding database entry!
+                                        // THIS SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
                 std::string name;
                 ScriptUsage usage;
 
-                CreateScriptCallback* callback;
+                CreateScriptCallback<> callback;
+
+                template <typename T>
+                inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
+                                               ScriptUsage usage, CreateScriptCallback<T> callback)
+                {
+                    return ScriptInformation{
+                        .scriptName = scriptName,
+                        .name = name,
+                        .usage = usage,
+                        .callback = (CreateScriptCallbackConversion<T>{callback}).f2,
+                    };
+                }
             };
 
             /// @brief Script library version (major.minor.patch.revision)
@@ -37,7 +56,7 @@ namespace server
                 uint32_t revision;
 
                 /// @brief Convert library version to string
-                /// 
+                ///
                 /// @return Library version
                 inline std::string ToString() const
                 {
@@ -53,7 +72,8 @@ namespace server
             ///
             struct LibraryInformation
             {
-                std::string libraryName; // Secondary name that links the script with corresponding database entry! THIS SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
+                std::string libraryName; // Secondary name that links the script with corresponding database entry! THIS
+                                         // SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
                 std::string name;
                 LibraryVersion version;
                 std::string license;
@@ -63,7 +83,7 @@ namespace server
                 boost::container::vector<ScriptInformation> scripts;
             };
 
-            using GetLibraryInformationsCallback = void(LibraryInformation* lib);
+            using GetLibraryInformationsCallback = LibraryInformation();
         }
     }
 }

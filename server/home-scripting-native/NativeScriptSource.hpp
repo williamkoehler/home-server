@@ -9,17 +9,19 @@ namespace server
     {
         namespace native
         {
+            class NativeScriptImpl;
+
             class NativeScriptSource : public ScriptSource
             {
               private:
-                CreateScriptCallback* callback;
+                CreateScriptCallback<> callback;
 
               public:
                 NativeScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
-                                   CreateScriptCallback* callback);
+                                   CreateScriptCallback<> callback);
                 virtual ~NativeScriptSource();
                 static Ref<NativeScriptSource> Create(identifier_t id, const std::string& name, ScriptUsage usage,
-                                                      CreateScriptCallback* callback);
+                                                      CreateScriptCallback<> callback);
 
                 /// @brief Get script language
                 ///
@@ -30,16 +32,24 @@ namespace server
                 }
 
                 /// @brief Prevent content from being overwritten, since it does not serve any purpose
-                /// 
-                /// @param data 
+                ///
+                /// @param data
                 /// @return Always false
                 virtual bool SetContent(const std::string_view& data) override
                 {
                     return false;
                 }
 
+                /// @brief Get create callback
+                ///
+                /// @return Callback
+                inline CreateScriptCallback<> GetCreateCallback() const
+                {
+                    return callback;
+                }
+
                 /// @brief Create native script
-                /// 
+                ///
                 /// @param view Sender view
                 /// @return Script or null in case of an error
                 virtual Ref<Script> CreateScript(Ref<View> view) override;

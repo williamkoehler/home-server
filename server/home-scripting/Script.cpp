@@ -1,6 +1,4 @@
 #include "Script.hpp"
-#include "utils/Method.hpp"
-#include "utils/Value.hpp"
 
 #include "tasks/TimerTask.hpp"
 
@@ -26,15 +24,6 @@ namespace server
             return it->second;
         }
 
-        Ref<Method> Script::GetMethod(const std::string& name)
-        {
-            const robin_hood::unordered_node_map<std::string, Ref<Method>>::const_iterator it = methodList.find(name);
-            if (it == methodList.end())
-                return nullptr;
-
-            return it->second;
-        }
-
         Ref<Event> Script::GetEvent(const std::string& name)
         {
             const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(name);
@@ -49,7 +38,6 @@ namespace server
             // Reset references
             attributeList.clear();
             propertyList.clear();
-            methodList.clear();
             eventList.clear();
 
             // Clear tasks
@@ -76,6 +64,14 @@ namespace server
                                           [](const boost::weak_ptr<Task>& task) -> bool const
                                           { return task.expired(); }),
                            taskList.end());
+        }
+
+        void Script::PostInvoke(const std::string& name, Ref<Value> parameter)
+        {
+            Ref<Worker> worker = Worker::GetInstance();
+            assert(worker != nullptr);
+
+            worker->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), name, parameter));
         }
 
         void Script::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)

@@ -58,8 +58,6 @@ namespace server
                 void InitializeEvents();
                 void InitializeControllers();
 
-                bool InvokeHandler(const std::string& method, Ref<Value> parameter);
-
                 static duk_ret_t duk_get_property(duk_context* context);
                 static duk_ret_t duk_set_property(duk_context* context);
 
@@ -98,6 +96,8 @@ namespace server
                 ///
                 /// @return Successfulness
                 virtual bool Initialize() override;
+
+                virtual bool Invoke(const std::string& name, Ref<Value> parameter) override;
             };
         }
     }

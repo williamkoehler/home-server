@@ -194,11 +194,7 @@ namespace server
         void Device::Invoke(const std::string& id, Ref<scripting::Value> parameter)
         {
             if (script != nullptr)
-            {
-                Ref<scripting::Method> method = script->GetMethod(id);
-                if (method != nullptr)
-                    method->PostInvoke(parameter);
-            }
+                script->PostInvoke(id, parameter);
         }
 
         void Device::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)

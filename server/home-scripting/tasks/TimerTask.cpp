@@ -36,12 +36,8 @@ namespace server
             {
                 if (Ref<Script> r = script.lock())
                 {
-                    Ref<Method> m = r->GetMethod(method);
-                    if (m != nullptr)
-                    {
-                        if (m->Invoke(nullptr))
-                            WaitAsync();
-                    }
+                    if (r->Invoke(method, Value::CreateNull()))
+                        WaitAsync();
                 }
             }
         }

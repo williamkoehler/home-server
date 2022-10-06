@@ -13,7 +13,13 @@ namespace server
         class Event : public boost::enable_shared_from_this<Event>
         {
           protected:
-            boost::container::vector<WeakRef<Method>> methodList;
+            struct EventEntry
+            {
+                WeakRef<Script> script;
+                std::string method;
+            };
+
+            boost::container::vector<EventEntry> entryList;
 
           public:
             Event();

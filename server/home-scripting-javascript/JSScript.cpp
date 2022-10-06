@@ -179,7 +179,7 @@ namespace server
                     // Iterate over attributes
                     duk_enum(context, -1, 0); // [ object enum ]
 
-                    while (duk_next(context, -1, 0)) // [ object enum key value ]
+                    while (duk_next(context, -1, 1)) // [ object enum key value ]
                     {
                         // Get name
                         size_t nameLength;
@@ -321,15 +321,6 @@ namespace server
                     if (duk_is_ecmascript_function(context, -1) && name.size() > 0 &&
                         name[0] != '_') // [ stash enum key func ]
                     {
-                        // Add method
-                        Ref<Method> method =
-                            Method::Create<JSScript>(name, shared_from_this(), &JSScript::InvokeHandler);
-                        if (method != nullptr)
-                        {
-                            // Insert method
-                            methodList[name] = method;
-                        }
-
                         // Set method
                         duk_def_prop(context, -4,
                                      DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_CLEAR_WEC |
@@ -469,7 +460,7 @@ namespace server
                 // #endif
             }
 
-            bool JSScript::InvokeHandler(const std::string& name, Ref<Value> parameter)
+            bool JSScript::Invoke(const std::string& name, Ref<Value> parameter)
             {
                 duk_context* context = GetDuktapeContext();
                 if (context != nullptr)

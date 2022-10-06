@@ -8,6 +8,8 @@ extern "C"
     duk_ret_t duk_exec_timeout(void* udata);
 }
 
+void duk_log_dump(duk_context* context);
+
 #define DUK_TEST_ENTER(context) duk_idx_t top1 = duk_get_top(context);
 #define DUK_TEST_LEAVE(context, difference)                                                                            \
     duk_idx_t top2 = duk_get_top(context);                                                                             \
@@ -78,7 +80,7 @@ namespace server
                 /// @brief Prepare script timeout
                 ///
                 /// @param maxTime Max execution time in milliseconds
-                void PrepareTimeout(size_t maxTime = 5000);
+                void PrepareTimeout(size_t maxTime = 100);
 
                 /// @brief Check if time has passed
                 ///

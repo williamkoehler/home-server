@@ -8,6 +8,13 @@
 #include "main/JSRoom.hpp"
 #include "utils/JSValue.hpp"
 
+#define ATTRIBUTES_PROPERTY ("attributes")
+#define PROPERTIES_PROPERTY ("properties")
+#define METHODS_PROPERTY ("methods")
+#define EVENTS_PROPERTY ("events")
+
+#define INITIALIZE_FUNCTION ("_initialize")
+
 extern "C"
 {
     // Interrupt function called by the duktape engine
@@ -19,7 +26,12 @@ extern "C"
     }
 }
 
-#define DUK_EVENT_FUNCTION_NAME(event) (DUK_HIDDEN_SYMBOL("event_") + event)
+void duk_log_dump(duk_context* context)
+{
+    duk_push_context_dump(context);
+    LOG_INFO("Dump: {}", std::string(duk_get_string(context, -1)));
+    duk_pop(context);
+}
 
 namespace server
 {
@@ -27,6 +39,18 @@ namespace server
     {
         namespace javascript
         {
+            const char* AttributesProperty = ATTRIBUTES_PROPERTY;
+            const size_t AttributesPropertySize = std::size(ATTRIBUTES_PROPERTY) - 1;
+
+            const char* PropertiesProperty = PROPERTIES_PROPERTY;
+            const size_t PropertiesPropertySize = std::size(PROPERTIES_PROPERTY) - 1;
+
+            const char* EventsProperty = EVENTS_PROPERTY;
+            const size_t EventsPropertySize = std::size(EVENTS_PROPERTY) - 1;
+
+            const char* InitializeFunction = INITIALIZE_FUNCTION;
+            const size_t InitializeFunctionSize = std::size(INITIALIZE_FUNCTION) - 1;
+
             struct JSTuple
             {
                 Ref<JSScript> script;
@@ -85,35 +109,42 @@ namespace server
                             duk_push_lstring(context, (const char*)name.c_str(), name.size());
 
                             // Compile
-                            duk_compile(context, 0);
+                            duk_compile(context, 0); // [ func ]
 
                             // Prepare timout
                             PrepareTimeout(5000); // 5 seconds
 
                             // Call script
-                            duk_call(context, 0);
-                            duk_pop(context);
+                            duk_call(context, 0); // [ undefined ]
+                            duk_pop(context);     // [ ]
+                        }
+
+                        // Initialize
+                        {
+                            // Push global object
+                            duk_push_global_object(context); // [ object ]
 
                             // Initialize attributes
                             InitializeAttributes();
 
                             // Initialize properties
-                            propertyByIDList.clear();
                             InitializeProperties();
 
                             // Initialize methods
                             InitializeMethods();
 
                             // Initialize events
-                            eventByIDList.clear();
                             InitializeEvents();
+
+                            // Pop global
+                            duk_pop(context); // [ ]
                         }
 
-                        // Call initialize function
-                        if (duk_get_global_lstring(context, "initialize", 10)) // [ func ]
+                        // Call initialize
+                        if (duk_get_global_lstring(context, InitializeFunction, InitializeFunctionSize)) // [ func ]
                         {
                             // Prepare timeout
-                            PrepareTimeout(2000); // 5 seconds
+                            PrepareTimeout(500); // 500ms
 
                             // Call function
                             duk_call(context, 0); // [ bool ]
@@ -140,24 +171,23 @@ namespace server
 
                 DUK_TEST_ENTER(context);
 
-                duk_get_global_lstring(context, "attributes", 10); // [ object ]
+                // Get attributes object
+                duk_get_prop_lstring(context, -1, AttributesProperty, AttributesPropertySize); // [ object ]
 
                 if (duk_is_object(context, -1))
                 {
-                    // Iterate over every property in 'attributes'
+                    // Iterate over attributes
                     duk_enum(context, -1, 0); // [ object enum ]
 
-                    while (duk_next(context, -1, 0)) // [ object enum key ]
+                    while (duk_next(context, -1, 0)) // [ object enum key value ]
                     {
+                        // Get name
                         size_t nameLength;
-                        const char* nameStr = duk_to_lstring(context, -1, &nameLength);
+                        const char* nameStr = duk_to_lstring(context, -2, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        // Read property from 'attributes'
-                        duk_get_prop(context, -3); // [ object enum object ]
-
                         // Convert attribute to json
-                        duk_json_encode(context, -1); // [ object enum json ]
+                        duk_json_encode(context, -1); // [ object enum key json ]
 
                         size_t jsonLength;
                         const char* jsonStr = duk_to_lstring(context, -1, &jsonLength);
@@ -170,16 +200,16 @@ namespace server
 
                             // Add attribute to list
                             if (!document.HasParseError())
-                                attributeList[name] = std::move(document);
-                            else
                             {
-                                LOG_ERROR("Parsing duktape json.");
-                                LOG_CODE_MISSING("Add js error message.");
+                                // Insert attribute
+                                attributeList[name] = std::move(document);
                             }
+                            else
+                                duk_error(context, DUK_ERR_ERROR, "Invalid json.");
                         }
 
-                        // Pop json
-                        duk_pop(context); // [ object enum ]
+                        // Pop json, and key
+                        duk_pop_2(context); // [ object enum ]
                     }
 
                     // Pop enum
@@ -198,34 +228,34 @@ namespace server
                 duk_context* context = GetDuktapeContext();
                 assert(context != nullptr);
 
+                propertyByIDList.clear();
+
                 DUK_TEST_ENTER(context);
 
-                duk_get_global_lstring(context, "properties", 10); // [ object ]
+                // Get properties object
+                duk_get_prop_lstring(context, -1, PropertiesProperty, PropertiesPropertySize); // [ object ]
 
-                if (duk_is_object(context, -1))
+                if (duk_is_object(context, -1)) // [ object ]
                 {
-                    // Iterate over every property in 'properties'
+                    // Iterate over properties
                     duk_enum(context, -1, 0); // [ object enum ]
 
-                    while (duk_next(context, -1, 0)) // [ object enum key ]
+                    while (duk_next(context, -1, 1)) // [ object enum key value ]
                     {
+                        // Get name
                         size_t nameLength;
-                        const char* nameStr = duk_to_lstring(context, -1, &nameLength);
+                        const char* nameStr = duk_to_lstring(context, -2, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
 
-                        duk_dup_top(context); // [ object enum key key ]
-
-                        // Read property from 'properties'
-                        duk_get_prop(context, -4); // [ object enum key object ]
-
+                        // Get type
                         size_t typeLength;
-                        const char* typeStr = duk_to_lstring(context, -1, &typeLength);
-                        std::string type = std::string(typeStr, typeLength);
+                        const char* typeStr = duk_get_lstring(context, -1, &typeLength);
+                        ValueType type = ParseValueType(std::string_view(typeStr, typeLength));
 
                         uint32_t index;
 
                         // Add property
-                        Ref<Value> property = Value::Create(ParseValueType(type));
+                        Ref<Value> property = Value::Create(type);
                         if (property != nullptr)
                         {
                             // Insert property
@@ -233,27 +263,28 @@ namespace server
 
                             // Insert property id reference
                             index = (uint32_t)propertyByIDList.size();
-                            if (index >= 64)
+                            if (index >= 32)
                                 duk_error(context, DUK_ERR_ERROR, "Too many properties.");
 
                             propertyByIDList.push_back(property);
                         }
 
-                        // Pop object
+                        // Pop value
                         duk_pop(context); // [ object enum key ]
 
-                        // Push function
+                        // Push getter function
                         duk_push_c_function(context, JSScript::duk_get_property, 0); // [ object enum key c_func ]
                         duk_set_magic(context, -1, index);
+
+                        // Push setter function
                         duk_push_c_function(context, JSScript::duk_set_property,
                                             1); // [ object enum key c_func c_func ]
                         duk_set_magic(context, -1, index);
 
-                        // Set property getter and setter
+                        // Set properties
                         duk_def_prop(context, -5,
-                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_FORCE |
-                                         DUK_DEFPROP_HAVE_ENUMERABLE |
-                                         DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
+                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_CLEAR_EC |
+                                         DUK_DEFPROP_FORCE); // [ object enum ]
                     }
 
                     // Pop enum
@@ -274,46 +305,45 @@ namespace server
 
                 DUK_TEST_ENTER(context);
 
-                // Get methods object
-                duk_get_global_lstring(context, "methods", 7); // [ object ]
+                // Get stash
+                duk_push_global_stash(context); // [ stash ]
 
-                if (duk_is_object(context, -1))
+                // Iterate over methods
+                duk_enum(context, -2, 0); // [ stash enum ]
+
+                while (duk_next(context, -1, 1)) // [ stash enum key value ]
                 {
-                    // Iterate over every property in 'methods'
-                    duk_enum(context, -1, 0); // [ object enum ]
+                    // Get name
+                    size_t nameLength;
+                    const char* nameStr = duk_to_lstring(context, -2, &nameLength);
+                    std::string name = std::string(nameStr, nameLength);
 
-                    while (duk_next(context, -1, 0)) // [ object enum key ]
+                    if (duk_is_ecmascript_function(context, -1) && name.size() > 0 &&
+                        name[0] != '_') // [ stash enum key func ]
                     {
-                        size_t nameLength;
-                        const char* nameStr = duk_to_lstring(context, -1, &nameLength);
-                        std::string name = std::string(nameStr, nameLength);
-
-                        // Read property from 'methods'
-                        duk_get_prop(context, -3); // [ object enum func ]
-
-                        if (duk_is_function(context, -1))
+                        // Add method
+                        Ref<Method> method =
+                            Method::Create<JSScript>(name, shared_from_this(), &JSScript::InvokeHandler);
+                        if (method != nullptr)
                         {
-                            // Safe event as hidden variable
-                            std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                            duk_put_global_lstring(context, function_name.data(),
-                                                   function_name.size()); // [ object enum ]
-
-                            // Add method
-                            Ref<Method> method =
-                                Method::Create<JSScript>(name, shared_from_this(), &JSScript::InvokeHandler);
-                            if (method != nullptr)
-                                methodList[name] = method;
+                            // Insert method
+                            methodList[name] = method;
                         }
-                        else
-                            duk_pop(context); // [ object enum ]
-                    }
 
-                    // Pop enum
-                    duk_pop(context); // [ object ]
+                        // Set method
+                        duk_def_prop(context, -4,
+                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_CLEAR_WEC |
+                                         DUK_DEFPROP_FORCE); // [ stash object enum ]
+                    }
+                    else
+                    {
+                        // Pop value, and key
+                        duk_pop_2(context); // [ stash enum ]
+                    }
                 }
 
-                // Pop object
-                duk_pop(context); // [ ]
+                // Pop enum, and stash
+                duk_pop_2(context); // [ stash enum ]
 
                 DUK_TEST_LEAVE(context, 0);
             }
@@ -322,14 +352,16 @@ namespace server
                 duk_context* context = GetDuktapeContext();
                 assert(context != nullptr);
 
+                eventByIDList.clear();
+
                 DUK_TEST_ENTER(context);
 
                 // Get events object
-                duk_get_global_lstring(context, "events", 6); // [ object ]
+                duk_get_prop_lstring(context, -1, EventsProperty, EventsPropertySize); // [ object ]
 
-                if (duk_is_object(context, -1))
+                if (duk_is_object(context, -1)) // [ object ]
                 {
-                    // Iterate over every property in 'events'
+                    // Iterate over events
                     duk_enum(context, -1, 0); // [ object enum ]
 
                     while (duk_next(context, -1, 0)) // [ object enum key ]
@@ -337,15 +369,6 @@ namespace server
                         size_t nameLength;
                         const char* nameStr = duk_to_lstring(context, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
-
-                        // duk_dup_top(c); // [ object enum key key ]
-
-                        // // Read property from 'events'
-                        // duk_get_prop(c, -4); // [ object enum key object ]
-
-                        // size_t typeLength;
-                        // const char* typeStr = duk_to_lstring(c, -1, &typeLength);
-                        // std::string type = std::string(typeStr, typeLength);
 
                         uint32_t index;
 
@@ -357,15 +380,12 @@ namespace server
                             eventList[name] = event;
 
                             // Insert event id reference
-                            index = (uint32_t)propertyByIDList.size();
-                            if (index >= 64)
+                            index = (uint32_t)eventByIDList.size();
+                            if (index >= 32)
                                 duk_error(context, DUK_ERR_ERROR, "Too many events.");
 
                             eventByIDList.push_back(event);
                         }
-
-                        // Pop object
-                        duk_pop(context); // [ object enum key ]
 
                         // Push function
                         duk_push_c_function(context, JSScript::duk_invoke_event, 0); // [ object enum key c_func ]
@@ -373,8 +393,8 @@ namespace server
 
                         // Set event
                         duk_def_prop(context, -4,
-                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_FORCE | DUK_DEFPROP_HAVE_ENUMERABLE |
-                                         DUK_DEFPROP_HAVE_CONFIGURABLE); // [ object enum ]
+                                     DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_CLEAR_WEC |
+                                         DUK_DEFPROP_FORCE); // [ object enum ]
                     }
 
                     // Pop enum
@@ -385,6 +405,8 @@ namespace server
                 duk_pop(context); // [ ]
 
                 DUK_TEST_LEAVE(context, 0);
+
+                eventByIDList.shrink_to_fit();
             }
             void JSScript::InitializeControllers()
             {
@@ -454,27 +476,36 @@ namespace server
                 {
                     try
                     {
-                        // Get events object
-                        std::string function_name = DUK_EVENT_FUNCTION_NAME(name);
-                        if (duk_get_global_lstring(context, function_name.data(), function_name.size())) // [ func ]
+                        // Push stash
+                        duk_push_global_stash(context);
+
+                        // Get event
+                        if (duk_get_prop_lstring(context, -1, name.data(), name.size())) // [ stash func ]
                         {
                             // Push parameter
-                            JSValue::duk_new_value(context, parameter); // [ value ]
+                            JSValue::duk_new_value(context, parameter); // [ stash func value ]
 
                             // Prepare timout
-                            PrepareTimeout(1000); // 5 seconds
+                            PrepareTimeout(100); // 100ms
 
                             // Call event function
-                            duk_call(context, 1); // [ bool ]
+                            duk_call(context, 1); // [ stash bool ]
 
                             // Get result
                             bool result = duk_to_boolean(context, -1);
-                            duk_pop(context); // [ ]
+
+                            // Pop bool, and stash
+                            duk_pop_2(context); // [ ]
 
                             return result;
                         }
                         else
+                        {
+                            // Pop undefined, and stash
+                            duk_pop_2(context); // [ ]
+
                             return false;
+                        }
                     }
                     catch (std::runtime_error e)
                     {
@@ -484,6 +515,8 @@ namespace server
                         return false;
                     }
                 }
+                else
+                    return false;
             }
 
             duk_ret_t JSScript::duk_get_property(duk_context* context)

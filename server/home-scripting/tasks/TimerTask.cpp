@@ -24,7 +24,7 @@ namespace server
 
         void TimerTask::WaitAsync()
         {
-            timer.expires_from_now(boost::posix_time::seconds(interval));
+            timer.expires_from_now(boost::posix_time::seconds(std::max(interval, 1ul)));
             timer.async_wait(boost::bind(&TimerTask::TimerHandler,
                                          boost::dynamic_pointer_cast<TimerTask>(shared_from_this()),
                                          boost::placeholders::_1));

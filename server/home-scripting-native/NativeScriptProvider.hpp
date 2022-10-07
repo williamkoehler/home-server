@@ -45,7 +45,8 @@ namespace server
 
                 virtual boost::container::vector<StaticScriptSource> GetStaticScriptSources() override;
 
-                /// Does nothing. Every native script is static
+                /// @brief Does nothing. Every native script is static
+                ///
                 virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name,
                                                              ScriptUsage usage, const std::string_view& content) override;
             };

@@ -30,10 +30,6 @@ namespace server
                 UniqueRef<NativeScriptImpl> scriptImpl;
                 robin_hood::unordered_node_map<std::string, MethodCallback<>> methodList;
 
-                bool Initialize() override;
-
-                bool Invoke(const std::string& name, Ref<Value> parameter) override;
-
               public:
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource,
                              UniqueRef<NativeScriptImpl> scriptImpl);
@@ -55,6 +51,10 @@ namespace server
                 Ref<Event> AddEvent(const std::string& name);
                 bool RemoveEvent(const std::string& name);
                 void ClearEvents();
+
+                bool Initialize() override;
+
+                bool Invoke(const std::string& name, Ref<Value> parameter) override;
             };
 
             class NativeScriptImpl
@@ -72,6 +72,9 @@ namespace server
                 {
                 }
 
+                /// @brief Initialize script
+                ///
+                /// @return Successfulness
                 virtual bool Initialize() = 0;
 
                 /// @brief Add attribute

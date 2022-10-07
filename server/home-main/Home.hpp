@@ -24,8 +24,8 @@ namespace server
 
             // Database
             bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);
-            bool LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                            identifier_t controllerID, identifier_t roomID, const std::string_view& data);
+            bool LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID, identifier_t roomID,
+                            const std::string_view& data);
 
           public:
             Home();
@@ -78,12 +78,11 @@ namespace server
             /// @param type Device type
             /// @param name Name
             /// @param backendID Backend id
-            /// @param controllerID Controller id
             /// @param roomID Room id
             /// @param json JSON Data
             /// @return New device
-            Ref<Device> AddDevice(const std::string& name, identifier_t backendID, identifier_t controllerID,
-                                  identifier_t roomID, rapidjson::Value& json);
+            Ref<Device> AddDevice(const std::string& name, identifier_t backendID, identifier_t roomID,
+                                  rapidjson::Value& json);
 
             /// @brief Get device count
             /// @return Device count

@@ -11,17 +11,17 @@ namespace server
 {
     namespace main
     {
-        Device::Device(identifier_t id, const std::string& name, Ref<Device> controller, Ref<Room> room)
-            : id(id), name(name), script(nullptr), controller(std::move(controller)), room(std::move(room))
+        Device::Device(identifier_t id, const std::string& name, Ref<Room> room)
+            : id(id), name(name), script(nullptr), room(std::move(room))
         {
         }
         Device::~Device()
         {
         }
         Ref<Device> Device::Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                   Ref<Device> controller, Ref<Room> room)
+                                   Ref<Room> room)
         {
-            Ref<Device> device = boost::make_shared<Device>(id, name, std::move(controller), std::move(room));
+            Ref<Device> device = boost::make_shared<Device>(id, name, std::move(room));
 
             if (device != nullptr)
             {
@@ -115,48 +115,6 @@ namespace server
             return 0;
         }
 
-        Ref<Device> Device::GetController()
-        {
-            // boost::shared_lock_guard lock(mutex);
-            return controller.lock();
-        }
-        bool Device::SetController(Ref<Device> v)
-        {
-            Ref<Device> controllerRef = controller.lock();
-            identifier_t oldControllerID = controllerRef != nullptr ? controllerRef->GetID() : 0;
-            identifier_t controllerID = v != nullptr ? v->GetID() : 0;
-
-            // Cannot assign itself as controller
-            // This would lead to an infinite loop of death ;-)
-            if (id == controllerID)
-                return false;
-
-            // A controller cannot be controlled
-            // There cannot be a chain of controllers
-            if (v != nullptr)
-            {
-                if (v->GetController() != nullptr)
-                    return false;
-            }
-
-            Ref<Database> database = Database::GetInstance();
-            assert(database != nullptr);
-
-            if (database->UpdateDevicePropController(id, oldControllerID, controllerID))
-            {
-                controller = v;
-                return true;
-            }
-
-            return false;
-        }
-
-        identifier_t Device::GetControllerID()
-        {
-            Ref<Device> controllerRef = controller.lock();
-            return controllerRef != nullptr ? controllerRef->GetID() : 0;
-        }
-
         Ref<Room> Device::GetRoom()
         {
             return room.lock();
@@ -216,12 +174,6 @@ namespace server
                                                : rapidjson::Value(rapidjson::kNullType),
                              allocator);
 
-            Ref<Device> controllerRef = controller.lock();
-            output.AddMember("controllerid",
-                             controllerRef != nullptr ? rapidjson::Value(controllerRef->id)
-                                                      : rapidjson::Value(rapidjson::kNullType),
-                             allocator);
-
             Ref<Room> roomRef = room.lock();
             output.AddMember("roomid",
                              roomRef != nullptr ? rapidjson::Value(roomRef->GetID())
@@ -253,10 +205,6 @@ namespace server
             rapidjson::Value::MemberIterator scriptSourceIDIt = input.FindMember("scriptsourceid");
             if (scriptSourceIDIt != input.MemberEnd() && scriptSourceIDIt->value.IsUint())
                 SetScriptSourceID(scriptSourceIDIt->value.GetUint());
-
-            rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
-            if (controllerIDIt != input.MemberEnd() && controllerIDIt->value.IsUint())
-                SetController(home->GetDevice(controllerIDIt->value.GetUint()));
 
             rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
             if (roomIDIt != input.MemberEnd() && roomIDIt->value.IsUint())

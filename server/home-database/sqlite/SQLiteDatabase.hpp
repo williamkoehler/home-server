@@ -100,20 +100,18 @@ namespace server
         /// @return Successfulness
         virtual bool LoadDevices(
             const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       identifier_t controllerID, identifier_t roomID, const std::string_view& data)>&
-                callback) override;
+                                       identifier_t roomID, const std::string_view& data)>& callback) override;
 
         /// @brief Reserves new device entry in database
         /// @return Entry identifier or null in case of an error
         virtual identifier_t ReserveDevice() override;
 
         virtual bool UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                  identifier_t controllerID, identifier_t roomID) override;
+                                  identifier_t roomID) override;
 
         virtual bool UpdateDevicePropName(identifier_t id, const std::string& value,
                                           const std::string& newValue) override;
         virtual bool UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue) override;
-        virtual bool UpdateDevicePropController(identifier_t id, identifier_t value, identifier_t newValue) override;
         virtual bool UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue) override;
 
         virtual bool RemoveDevice(identifier_t id) override;

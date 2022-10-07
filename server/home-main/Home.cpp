@@ -46,8 +46,7 @@ namespace server
                 // Load devices
                 if (!database->LoadDevices(boost::bind(&Home::LoadDevice, home, boost::placeholders::_1,
                                                        boost::placeholders::_2, boost::placeholders::_3,
-                                                       boost::placeholders::_4, boost::placeholders::_5,
-                                                       boost::placeholders::_6)))
+                                                       boost::placeholders::_4, boost::placeholders::_5)))
                 {
                     LOG_ERROR("Loading devices.");
                     return nullptr;
@@ -157,15 +156,14 @@ namespace server
 
         //! Device
         bool Home::LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                              identifier_t controllerID, identifier_t roomID, const std::string_view& data)
+                              identifier_t roomID, const std::string_view& data)
         {
-            // Get controller and room
-            //! We don't care if no room nor controller is found, since it is allowed to be null
-            Ref<Device> controller = GetDevice(controllerID);
+            // Get room
+            //! We don't care if no room is found, since it is allowed to be null
             Ref<Room> room = GetRoom(roomID);
 
             // Create device
-            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(controller), std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(room));
 
             // Add device
             if (device != nullptr)
@@ -178,8 +176,8 @@ namespace server
                 return false;
         }
 
-        Ref<Device> Home::AddDevice(const std::string& name, identifier_t scriptSourceID, identifier_t controllerID,
-                                    identifier_t roomID, rapidjson::Value& json)
+        Ref<Device> Home::AddDevice(const std::string& name, identifier_t scriptSourceID, identifier_t roomID,
+                                    rapidjson::Value& json)
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -190,16 +188,15 @@ namespace server
                 return nullptr;
 
             // Update database
-            if (!database->UpdateDevice(id, name, scriptSourceID, controllerID, roomID))
+            if (!database->UpdateDevice(id, name, scriptSourceID, roomID))
                 return nullptr;
 
-            // Get controller and room
-            //! We don't care if no room nor controller is found, since it is allowed to be null
-            Ref<Device> controller = GetDevice(controllerID);
+            // Get room
+            //! We don't care if no room is found, since it is allowed to be null
             Ref<Room> room = GetRoom(roomID);
 
             // Create new device
-            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(controller), std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(room));
 
             // Add device
             if (device != nullptr)

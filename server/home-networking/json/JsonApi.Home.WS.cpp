@@ -178,13 +178,10 @@ namespace server
             // Process request
             rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
             rapidjson::Value::MemberIterator scriptSourceIDIt = input.FindMember("scriptsourceid");
-            rapidjson::Value::MemberIterator controllerIDIt = input.FindMember("controllerid");
             rapidjson::Value::MemberIterator roomIDIt = input.FindMember("roomid");
             if (!nameIt->value.IsString() || scriptSourceIDIt == input.MemberEnd() ||
                 (!scriptSourceIDIt->value.IsUint() && !scriptSourceIDIt->value.IsNull()) ||
-                controllerIDIt == input.MemberEnd() ||
-                (!controllerIDIt->value.IsUint() && !controllerIDIt->value.IsNull()) || roomIDIt == input.MemberEnd() ||
-                (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
+                roomIDIt == input.MemberEnd() || (!roomIDIt->value.IsUint() && !roomIDIt->value.IsNull()))
             {
                 context.Error("Missing name, scriptsourceid, controllerid, and/or roomid");
                 context.Error(ApiError::kError_InvalidArguments);
@@ -201,7 +198,6 @@ namespace server
             rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
             Ref<main::Device> device = home->AddDevice(
                 nameIt->value.GetString(), scriptSourceIDIt->value.IsUint() ? scriptSourceIDIt->value.GetUint() : 0,
-                controllerIDIt->value.IsUint() ? controllerIDIt->value.GetUint() : 0,
                 roomIDIt->value.IsUint() ? roomIDIt->value.GetUint() : 0, json);
             if (device == nullptr)
             {

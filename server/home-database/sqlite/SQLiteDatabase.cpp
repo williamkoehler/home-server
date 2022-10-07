@@ -60,7 +60,7 @@ namespace server
                 if (sqlite3_exec(
                         database->connection,
                         R"(create table if not exists devices)"
-                        R"((id integer not null primary key, name text, scriptsourceid integer not null, controllerid integer, roomid integer, data text not null, foreign key (controllerid) references devices (id), foreign key (roomid) references rooms (id)))",
+                        R"((id integer not null primary key, name text, scriptsourceid integer not null, roomid integer, data text not null, foreign key (roomid) references rooms (id)))",
                         nullptr, nullptr, &err) != SQLITE_OK)
                 {
                     LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
@@ -134,7 +134,8 @@ namespace server
             }
 
             callback(id, std::string((const char*)type, typeSize), std::string((const char*)name, nameSize),
-                     std::string((const char*)language, languageSize), std::string_view((const char*)content, contentSize));
+                     std::string((const char*)language, languageSize),
+                     std::string_view((const char*)content, contentSize));
         }
 
         sqlite3_finalize(statement);
@@ -559,14 +560,13 @@ namespace server
     //! Device
     bool SQLiteDatabase::LoadDevices(
         const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                   identifier_t controllerID, identifier_t roomID, const std::string_view& data)>&
-            callback)
+                                   identifier_t roomID, const std::string_view& data)>& callback)
     {
         // Insert into database
         sqlite3_stmt* statement;
 
         if (sqlite3_prepare_v2(connection,
-                               R"(select id, name, scriptsourceid, controllerid, roomid, data from devices)", -1,
+                               R"(select id, name, scriptsourceid, roomid, data from devices)", -1,
                                &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -590,12 +590,10 @@ namespace server
 
             identifier_t backendID = sqlite3_column_int64(statement, 2);
 
-            identifier_t controllerID = sqlite3_column_int64(statement, 3);
+            identifier_t roomID = sqlite3_column_int64(statement, 3);
 
-            identifier_t roomID = sqlite3_column_int64(statement, 4);
-
-            const unsigned char* data = sqlite3_column_text(statement, 5);
-            size_t dataSize = sqlite3_column_bytes(statement, 5);
+            const unsigned char* data = sqlite3_column_text(statement, 4);
+            size_t dataSize = sqlite3_column_bytes(statement, 4);
 
             // Check values
             if (name == nullptr || data == nullptr)
@@ -604,7 +602,7 @@ namespace server
                 continue;
             }
 
-            callback(id, std::string((const char*)name, nameSize), backendID, controllerID, roomID,
+            callback(id, std::string((const char*)name, nameSize), backendID, roomID,
                      std::string_view((const char*)data, dataSize));
         }
 
@@ -621,7 +619,7 @@ namespace server
                 connection,
                 R"(insert into devices values)"
                 R"(((select ifnull((select id+1 from devices where (id+1) not in (select id from devices) order by id asc limit 1), 1)),)"
-                R"(null, 0, null, null, "{}"))",
+                R"(null, 0, null, "{}"))",
                 -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -643,12 +641,12 @@ namespace server
     }
 
     bool SQLiteDatabase::UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                      identifier_t controllerID, identifier_t roomID)
+                                      identifier_t roomID)
     {
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, R"(replace into devices values (?, ?, ?, ?, ?, "{}"))", -1, &statement,
+        if (sqlite3_prepare_v2(connection, R"(replace into devices values (?, ?, ?, ?, "{}"))", -1, &statement,
                                nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
@@ -659,8 +657,7 @@ namespace server
         if (sqlite3_bind_int64(statement, 1, id) != SQLITE_OK ||
             sqlite3_bind_text(statement, 2, name.data(), name.size(), nullptr) != SQLITE_OK ||
             sqlite3_bind_int64(statement, 3, scriptSourceID) != SQLITE_OK ||
-            sqlite3_bind_int64(statement, 4, controllerID) != SQLITE_OK ||
-            sqlite3_bind_int64(statement, 5, roomID) != SQLITE_OK)
+            sqlite3_bind_int64(statement, 4, roomID) != SQLITE_OK)
         {
             LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
@@ -708,7 +705,8 @@ namespace server
         sqlite3_finalize(statement);
 
         return true;
-    }bool SQLiteDatabase::UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue)
+    }
+    bool SQLiteDatabase::UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue)
     {
         // Insert into database
         sqlite3_stmt* statement;
@@ -732,38 +730,6 @@ namespace server
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
             LOG_ERROR("Failing to update device script source.\n{0}", sqlite3_errmsg(connection));
-            sqlite3_finalize(statement);
-            return false;
-        }
-
-        sqlite3_finalize(statement);
-
-        return true;
-    }
-    bool SQLiteDatabase::UpdateDevicePropController(identifier_t id, identifier_t value, identifier_t newValue)
-    {
-        // Insert into database
-        sqlite3_stmt* statement;
-
-        if (sqlite3_prepare_v2(connection, R"(update devices set controllerid = ? where id = ?)", -1, &statement,
-                               nullptr) != SQLITE_OK)
-        {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
-            sqlite3_finalize(statement);
-            return false;
-        }
-
-        if (sqlite3_bind_int64(statement, 1, newValue) != SQLITE_OK ||
-            sqlite3_bind_int64(statement, 2, id) != SQLITE_OK)
-        {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
-            sqlite3_finalize(statement);
-            return false;
-        }
-
-        if (sqlite3_step(statement) != SQLITE_DONE)
-        {
-            LOG_ERROR("Failing to update device controller.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }

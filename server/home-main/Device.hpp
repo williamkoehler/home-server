@@ -17,16 +17,15 @@ namespace server
             std::string name;
             Ref<scripting::Script> script;
 
-            WeakRef<Device> controller;
             WeakRef<Room> room;
 
             Ref<DeviceView> view;
 
           public:
-            Device(identifier_t id, const std::string& name, Ref<Device> controller, Ref<Room> room);
+            Device(identifier_t id, const std::string& name, Ref<Room> room);
             virtual ~Device();
             static Ref<Device> Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                      Ref<Device> controller, Ref<Room> room);
+                                      Ref<Room> room);
 
             /// @brief Get device id
             ///
@@ -57,20 +56,6 @@ namespace server
             ///
             /// @return Script source id
             identifier_t GetScriptSourceID();
-
-            /// @brief Get controller
-            /// @return Controller (can be null)
-            Ref<Device> GetController();
-
-            /// @brief Set controller
-            /// @param v Controller (can be null)
-            /// @return Successfulness
-            bool SetController(Ref<Device> v);
-
-            /// @brief Get controller id
-            ///
-            /// @return identifier_t Controller id or zero
-            identifier_t GetControllerID();
 
             /// @brief Get room
             /// @return Room (can be null)

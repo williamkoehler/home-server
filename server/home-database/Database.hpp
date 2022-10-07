@@ -106,19 +106,17 @@ namespace server
         /// @return Successfulness
         virtual bool LoadDevices(
             const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       identifier_t controllerID, identifier_t roomID, const std::string_view& data)>&
-                callback) = 0;
+                                       identifier_t roomID, const std::string_view& data)>& callback) = 0;
 
         /// @brief Reserves new device entry in database
         /// @return Entry identifier or 0 in case of an error
         virtual identifier_t ReserveDevice() = 0;
 
         virtual bool UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                  identifier_t controllerID, identifier_t roomID) = 0;
+                                  identifier_t roomID) = 0;
 
         virtual bool UpdateDevicePropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
         virtual bool UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue) = 0;
-        virtual bool UpdateDevicePropController(identifier_t id, identifier_t value, identifier_t newValue) = 0;
         virtual bool UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue) = 0;
 
         virtual bool RemoveDevice(identifier_t id) = 0;

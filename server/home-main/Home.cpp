@@ -2,6 +2,7 @@
 #include "Device.hpp"
 #include "HomeView.hpp"
 #include "Room.hpp"
+#include "Service.hpp"
 #include <home-database/Database.hpp>
 #include <home-scripting/ScriptManager.hpp>
 
@@ -278,6 +279,82 @@ namespace server
                 return false;
         }
 
+        //! Service
+        bool Home::LoadService(identifier_t id, const std::string& name, identifier_t scriptSourceID,
+                               const std::string_view& data)
+        {
+            // Create service
+            Ref<Service> service = Service::Create(id, name, scriptSourceID);
+
+            // Add service
+            if (service != nullptr)
+            {
+                serviceList[service->GetID()] = service;
+
+                return true;
+            }
+            else
+                return false;
+        }
+
+        Ref<Service> Home::AddService(const std::string& name, identifier_t scriptSourceID, rapidjson::Value& json)
+        {
+            Ref<Database> database = Database::GetInstance();
+            assert(database != nullptr);
+
+            // Reserve room in database
+            identifier_t id = database->ReserveService();
+            if (id == 0)
+                return nullptr;
+
+            // Update database
+            if (!database->UpdateService(id, name, scriptSourceID))
+                return nullptr;
+
+            // Create new service
+            Ref<Service> service = Service::Create(id, name, scriptSourceID);
+
+            // Add service
+            if (service != nullptr)
+            {
+                serviceList[service->GetID()] = service;
+            }
+            else
+            {
+                database->RemoveService(id);
+                return nullptr;
+            }
+
+            return service;
+        }
+
+        Ref<Service> Home::GetService(identifier_t id)
+        {
+            const robin_hood::unordered_node_map<identifier_t, Ref<Service>>::const_iterator it = serviceList.find(id);
+            if (it == serviceList.end())
+                return nullptr;
+
+            return it->second;
+        }
+
+        bool Home::RemoveService(identifier_t id)
+        {
+            const robin_hood::unordered_node_map<identifier_t, Ref<Service>>::const_iterator it = serviceList.find(id);
+            if (it != serviceList.end())
+            {
+                Ref<Database> database = Database::GetInstance();
+                assert(database != nullptr);
+
+                database->RemoveService(id);
+
+                serviceList.erase(it);
+
+                return true;
+            }
+            else
+                return false;
+        }
+
         void Home::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
@@ -317,6 +394,23 @@ namespace server
             }
 
             output.AddMember("rooms", roomListJson, allocator);
+
+            // Services
+            rapidjson::Value serviceListJson = rapidjson::Value(rapidjson::kArrayType);
+            serviceListJson.Reserve(serviceList.size(), allocator);
+
+            for (auto& [id, service] : serviceList)
+            {
+                assert(service != nullptr);
+
+                rapidjson::Value serviceJson = rapidjson::Value(rapidjson::kObjectType);
+
+                service->JsonGet(serviceJson, allocator);
+
+                serviceListJson.PushBack(serviceJson, allocator);
+            }
+
+            output.AddMember("services", serviceListJson, allocator);
         }
     }
 }

@@ -192,6 +192,22 @@ namespace server
             return scriptSource->CreateScript(view);
         }
 
+        Ref<Script> ScriptManager::CreateServiceScript(identifier_t id, Ref<View> view)
+        {
+            const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
+                scriptSourceList.find(id);
+            if (it == scriptSourceList.end())
+                return nullptr;
+
+            Ref<ScriptSource> scriptSource = it->second;
+
+            // Verify type
+            if (scriptSource->GetUsage() != ScriptUsage::kServiceScriptUsage)
+                return nullptr;
+
+            return scriptSource->CreateScript(view);
+        }
+
         void ScriptManager::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());

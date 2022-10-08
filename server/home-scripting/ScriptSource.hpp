@@ -13,6 +13,7 @@ namespace server
         {
             kUnknownUsage,
             kDeviceScriptUsage,
+            kServiceScriptUsage,
         };
 
         std::string StringifyScriptUsage(ScriptUsage usage);

@@ -12,6 +12,8 @@ namespace server
             {
             case ScriptUsage::kDeviceScriptUsage:
                 return "device";
+            case ScriptUsage::kServiceScriptUsage:
+                return "service";
             default:
                 return "unknown";
             }
@@ -22,6 +24,8 @@ namespace server
             {
             case CRC32("device"):
                 return ScriptUsage::kDeviceScriptUsage;
+            case CRC32("service"):
+                return ScriptUsage::kServiceScriptUsage;
             default:
                 return ScriptUsage::kUnknownUsage;
             }

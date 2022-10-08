@@ -85,6 +85,7 @@ namespace server
             //! Script
 
             Ref<Script> CreateDeviceScript(identifier_t id, Ref<View> view);
+            Ref<Script> CreateServiceScript(identifier_t id, Ref<View> view);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
         };

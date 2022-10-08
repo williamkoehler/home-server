@@ -123,6 +123,28 @@ namespace server
 
         virtual size_t GetDeviceCount() = 0;
 
+        //! Service
+
+        /// @brief Load service from database
+        /// @param callback Callback for each service
+        /// @return Successfulness
+        virtual bool LoadServices(
+            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
+                                       const std::string_view& data)>& callback) = 0;
+
+        /// @brief Reserves new service entry in database
+        /// @return Entry identifier or 0 in case of an error
+        virtual identifier_t ReserveService() = 0;
+
+        virtual bool UpdateService(identifier_t id, const std::string& name, identifier_t scriptSourceID) = 0;
+
+        virtual bool UpdateServicePropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
+        virtual bool UpdateServicePropScriptSource(identifier_t id, identifier_t newValue) = 0;
+
+        virtual bool RemoveService(identifier_t id) = 0;
+
+        virtual size_t GetServiceCount() = 0;
+
         //! User
 
         /// @brief Load users from database

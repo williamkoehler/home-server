@@ -9,6 +9,7 @@ namespace server
     {
         class Room;
         class Device;
+        class Service;
 
         class HomeView;
 
@@ -19,6 +20,7 @@ namespace server
 
             robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
             robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
+            robin_hood::unordered_node_map<identifier_t, Ref<Service>> serviceList;
 
             Ref<HomeView> view;
 
@@ -26,6 +28,8 @@ namespace server
             bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);
             bool LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID, identifier_t roomID,
                             const std::string_view& data);
+            bool LoadService(identifier_t id, const std::string& name, identifier_t scriptSourceID,
+                             const std::string_view& data);
 
           public:
             Home();
@@ -112,6 +116,34 @@ namespace server
             /// @brief Remove device using its id
             /// @param id Device id
             bool RemoveDevice(identifier_t id);
+
+            //! Service
+
+            /// @brief Add new service
+            ///
+            /// @param type Service type
+            /// @param name Name
+            /// @param backendID Backend id
+            /// @param json JSON Data
+            /// @return New service
+            Ref<Service> AddService(const std::string& name, identifier_t backendID, rapidjson::Value& json);
+
+            /// @brief Get service count
+            /// @return Service count
+            inline size_t GetServiceCount()
+            {
+                // boost::shared_lock_guard lock(mutex);
+                return serviceList.size();
+            }
+
+            /// @brief Get service using its id
+            /// @param id Service id
+            /// @return Service or nullptr
+            Ref<Service> GetService(identifier_t id);
+
+            /// @brief Remove service using its id
+            /// @param id Service id
+            bool RemoveService(identifier_t id);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
         };

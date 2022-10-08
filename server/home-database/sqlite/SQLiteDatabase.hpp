@@ -118,6 +118,29 @@ namespace server
 
         virtual size_t GetDeviceCount() override;
 
+        //! Service
+
+        /// @brief Load service from database
+        /// @param callback Callback for each service
+        /// @return Successfulness
+        virtual bool LoadServices(
+            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
+                                       const std::string_view& data)>& callback) override;
+
+        /// @brief Reserves new service entry in database
+        /// @return Entry identifier or null in case of an error
+        virtual identifier_t ReserveService() override;
+
+        virtual bool UpdateService(identifier_t id, const std::string& name, identifier_t scriptSourceID) override;
+
+        virtual bool UpdateServicePropName(identifier_t id, const std::string& value,
+                                           const std::string& newValue) override;
+        virtual bool UpdateServicePropScriptSource(identifier_t id, identifier_t newValue) override;
+
+        virtual bool RemoveService(identifier_t id) override;
+
+        virtual size_t GetServiceCount() override;
+
         //! User
 
         /// @brief Load users from database

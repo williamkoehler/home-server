@@ -144,6 +144,19 @@ namespace server
             {"set-device?state", JsonApi::ProcessJsonSetDeviceStateMessageWS},
 
             {"rem-device", JsonApi::ProcessJsonRemoveDeviceMessageWS},
+
+            // Service
+            {"add-service", JsonApi::ProcessJsonAddServiceMessageWS},
+
+            {"inv-service", JsonApi::ProcessJsonInvokeServiceMethodMessageWS},
+
+            {"get-service", JsonApi::ProcessJsonGetServiceMessageWS},
+            {"get-service?state", JsonApi::ProcessJsonGetServiceStateMessageWS},
+
+            {"set-service", JsonApi::ProcessJsonSetServiceMessageWS},
+            {"set-service?state", JsonApi::ProcessJsonSetServiceStateMessageWS},
+
+            {"rem-service", JsonApi::ProcessJsonRemoveServiceMessageWS},
         };
 
         bool WSSession::ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input,

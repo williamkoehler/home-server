@@ -12,6 +12,7 @@ namespace server
             kHomeViewType,
             kRoomViewType,
             kDeviceViewType,
+            kServiceViewType,
         };
 
         class View

@@ -49,8 +49,8 @@ namespace server
             JSScript::~JSScript()
             {
                 // Clean script references
-                Ref<JSScriptSource> scriptSource = boost::dynamic_pointer_cast<JSScriptSource>(scriptSource);
-                scriptSource->CleanScripts();
+                Ref<JSScriptSource> s = boost::dynamic_pointer_cast<JSScriptSource>(scriptSource);
+                s->CleanScripts();
             }
 
             void JSScript::PrepareTimeout(size_t t)

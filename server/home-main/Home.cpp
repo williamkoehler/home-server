@@ -52,6 +52,15 @@ namespace server
                     LOG_ERROR("Loading devices.");
                     return nullptr;
                 }
+
+                // Load services
+                if (!database->LoadServices(boost::bind(&Home::LoadService, home, boost::placeholders::_1,
+                                                        boost::placeholders::_2, boost::placeholders::_3,
+                                                        boost::placeholders::_4)))
+                {
+                    LOG_ERROR("Loading services.");
+                    return nullptr;
+                }
             }
 
             // Create home view

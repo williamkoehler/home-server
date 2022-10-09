@@ -1,11 +1,10 @@
-#include "JSDevice.hpp"
+#include "JSHome.hpp"
 #include <home-scripting/main/DeviceView.hpp>
 #include <home-scripting/main/HomeView.hpp>
 
 #include "../utils/JSValue.hpp"
 
-#define DEVICE_OBJECT ("Device")
-#define DEVICE_ID_PROPERTY DUK_HIDDEN_SYMBOL("device_id")
+#include "../literals.hpp"
 
 namespace server
 {
@@ -13,38 +12,7 @@ namespace server
     {
         namespace javascript
         {
-            const char* DeviceObject = DEVICE_OBJECT;
-            const size_t DeviceObjectSize = std::size(DEVICE_OBJECT) - 1;
-
-            const char* DeviceIDProperty = DEVICE_ID_PROPERTY;
-            const size_t DeviceIDPropertySize = std::size(DEVICE_ID_PROPERTY) - 1;
-
-            bool JSDevice::duk_import(duk_context* context)
-            {
-                assert(context != nullptr);
-
-                duk_push_c_function(context, JSDevice::duk_constructor, 1); // [ c_func ]
-                duk_push_object(context);                                   // [ c_func object ]
-
-                // Register methods
-                static const duk_function_list_entry methods[] = {
-                    {"isValid", JSDevice::duk_is_valid, 0},
-                    {"getName", JSDevice::duk_get_name, 0},
-                    {"setName", JSDevice::duk_set_name, 1},
-                    {"invoke", JSDevice::duk_invoke, 2},
-                    {nullptr, nullptr, 0},
-                };
-
-                duk_put_function_list(context, -1, methods); // [ c_func object ]
-
-                // Register prototype and constructor
-                duk_put_prop_lstring(context, -2, "prototype", 9);
-                duk_put_global_string(context, DEVICE_OBJECT);
-
-                return true;
-            }
-
-            duk_ret_t JSDevice::duk_constructor(duk_context* context)
+            duk_ret_t duk_device_constructor(duk_context* context)
             {
                 if (!duk_is_constructor_call(context))
                     return DUK_RET_ERROR;
@@ -58,7 +26,7 @@ namespace server
 
                 // Set unique id
                 duk_dup(context, -2);                                                      // [ number this number ]
-                duk_put_prop_lstring(context, -2, DeviceIDProperty, DeviceIDPropertySize); // [ number this ]
+                duk_put_prop_lstring(context, -2, DEVICE_ID_PROPERTY, DEVICE_ID_PROPERTY_SIZE); // [ number this ]
 
                 // Pop this and number
                 duk_pop_2(context); // [ ]
@@ -66,14 +34,14 @@ namespace server
                 return 0;
             }
 
-            duk_ret_t JSDevice::duk_is_valid(duk_context* context)
+            duk_ret_t duk_device_is_valid(duk_context* context)
             {
                 // Expect [ ]
                 if (duk_get_top(context) == 0)
                 {
                     // Get id
                     duk_push_this(context);                                                    // [ this ]
-                    duk_get_prop_lstring(context, -1, DeviceIDProperty, DeviceIDPropertySize); // [ this number ]
+                    duk_get_prop_lstring(context, -1, DEVICE_ID_PROPERTY, DEVICE_ID_PROPERTY_SIZE); // [ this number ]
                     identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop 2
@@ -97,14 +65,14 @@ namespace server
                 }
             }
 
-            duk_ret_t JSDevice::duk_get_name(duk_context* context)
+            duk_ret_t duk_device_get_name(duk_context* context)
             {
                 // Expect [ ]
                 if (duk_get_top(context) == 0)
                 {
                     // Get id
                     duk_push_this(context);                                                    // [this]
-                    duk_get_prop_lstring(context, -1, DeviceIDProperty, DeviceIDPropertySize); // [this number]
+                    duk_get_prop_lstring(context, -1, DEVICE_ID_PROPERTY, DEVICE_ID_PROPERTY_SIZE); // [this number]
                     identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop 2
@@ -139,7 +107,7 @@ namespace server
                     return DUK_RET_ERROR;
                 }
             }
-            duk_ret_t JSDevice::duk_set_name(duk_context* context)
+            duk_ret_t duk_device_set_name(duk_context* context)
             {
                 // Expect [ string ]
                 if (duk_get_top(context) == 1 && duk_is_string(context, -1))
@@ -151,7 +119,7 @@ namespace server
 
                     // Get id
                     duk_push_this(context);                                                    // [ string this ]
-                    duk_get_prop_lstring(context, -1, DeviceIDProperty, DeviceIDPropertySize); // [ string this number ]
+                    duk_get_prop_lstring(context, -1, DEVICE_ID_PROPERTY, DEVICE_ID_PROPERTY_SIZE); // [ string this number ]
                     identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop this, number and string
@@ -185,7 +153,7 @@ namespace server
                 }
             }
 
-            duk_ret_t JSDevice::duk_invoke(duk_context* context)
+            duk_ret_t duk_device_invoke(duk_context* context)
             {
                 // Expect [ string value ]
                 if (duk_get_top(context) == 2 && duk_is_string(context, -2))
@@ -196,13 +164,13 @@ namespace server
                     std::string name = std::string(nameStr, nameLength);
 
                     // Get value
-                    Ref<Value> value = JSValue::duk_get_value(context, -1);
+                    Ref<Value> value = duk_get_value(context, -1);
                     assert(value != nullptr);
 
                     // Get id
                     duk_push_this(context); // [ string value this ]
-                    duk_get_prop_lstring(context, -1, DeviceIDProperty,
-                                         DeviceIDPropertySize); // [ string value this number ]
+                    duk_get_prop_lstring(context, -1, DEVICE_ID_PROPERTY,
+                                         DEVICE_ID_PROPERTY_SIZE); // [ string value this number ]
                     identifier_t deviceID = (identifier_t)duk_get_uint(context, -1);
 
                     // Pop number, this, value, and string
@@ -236,13 +204,13 @@ namespace server
                 }
             }
 
-            bool JSDevice::duk_new_device(duk_context* context, Ref<DeviceView> deviceView)
+            bool duk_new_device(duk_context* context, Ref<DeviceView> deviceView)
             {
                 assert(context != nullptr);
                 assert(deviceView != nullptr);
 
                 // New device object
-                duk_get_global_lstring(context, DeviceObject, DeviceObjectSize); // [function]
+                duk_get_global_lstring(context, DEVICE_OBJECT, DEVICE_OBJECT_SIZE); // [function]
                 duk_push_uint(context, deviceView->GetID());                     // [function number]
                 duk_new(context, 1);                                             // [object]
 

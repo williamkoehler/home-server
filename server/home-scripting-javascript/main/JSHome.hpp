@@ -9,23 +9,11 @@ namespace server
     {
         namespace javascript
         {
-            /// @brief JavaScript Home wrapper 
-            /// 
-            class JSHome
-            {
-              private:
-                static duk_ret_t duk_constructor(duk_context* context);
+            bool duk_new_home(duk_context* context);
+            bool duk_new_room(duk_context* context, Ref<RoomView> roomView);
+            bool duk_new_device(duk_context* context, Ref<DeviceView> deviceView);
 
-                static duk_ret_t duk_is_valid(duk_context* context);
-
-                static duk_ret_t duk_get_name(duk_context* context);
-                static duk_ret_t duk_set_name(duk_context* context);
-
-              public:
-                static bool duk_import(duk_context* context);
-
-                static bool duk_new_home(duk_context* context);
-            };
+            bool duk_import_home(duk_context* context);
         }
     }
 }

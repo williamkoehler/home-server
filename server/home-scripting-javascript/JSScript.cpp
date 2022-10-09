@@ -4,16 +4,10 @@
 #include <home-scripting/utils/Value.hpp>
 
 #include "JSUtils.hpp"
-#include "main/JSDevice.hpp"
-#include "main/JSRoom.hpp"
+#include "main/JSHome.hpp"
 #include "utils/JSValue.hpp"
 
-#define ATTRIBUTES_PROPERTY ("attributes")
-#define PROPERTIES_PROPERTY ("properties")
-#define METHODS_PROPERTY ("methods")
-#define EVENTS_PROPERTY ("events")
-
-#define INITIALIZE_FUNCTION ("_initialize")
+#include "literals.hpp"
 
 extern "C"
 {
@@ -39,18 +33,6 @@ namespace server
     {
         namespace javascript
         {
-            const char* AttributesProperty = ATTRIBUTES_PROPERTY;
-            const size_t AttributesPropertySize = std::size(ATTRIBUTES_PROPERTY) - 1;
-
-            const char* PropertiesProperty = PROPERTIES_PROPERTY;
-            const size_t PropertiesPropertySize = std::size(PROPERTIES_PROPERTY) - 1;
-
-            const char* EventsProperty = EVENTS_PROPERTY;
-            const size_t EventsPropertySize = std::size(EVENTS_PROPERTY) - 1;
-
-            const char* InitializeFunction = INITIALIZE_FUNCTION;
-            const size_t InitializeFunctionSize = std::size(INITIALIZE_FUNCTION) - 1;
-
             struct JSTuple
             {
                 Ref<JSScript> script;
@@ -95,11 +77,10 @@ namespace server
 
                             // Import utils module
                             JSUtils::duk_import(context);
-                            JSValue::duk_import(context);
+                            duk_import_value(context);
 
                             // Import main module
-                            JSRoom::duk_import(context);
-                            JSDevice::duk_import(context);
+                            duk_import_home(context);
 
                             // Load script source
                             std::string data = scriptSource->GetContent();
@@ -141,7 +122,7 @@ namespace server
                         }
 
                         // Call initialize
-                        if (duk_get_global_lstring(context, InitializeFunction, InitializeFunctionSize)) // [ func ]
+                        if (duk_get_global_lstring(context, INITIALIZE_FUNCTION, INITIALIZE_FUNCTION_SIZE)) // [ func ]
                         {
                             // Prepare timeout
                             PrepareTimeout(500); // 500ms
@@ -172,7 +153,7 @@ namespace server
                 DUK_TEST_ENTER(context);
 
                 // Get attributes object
-                duk_get_prop_lstring(context, -1, AttributesProperty, AttributesPropertySize); // [ object ]
+                duk_get_prop_lstring(context, -1, ATTRIBUTES_PROPERTY, ATTRIBUTES_PROPERTY_SIZE); // [ object ]
 
                 if (duk_is_object(context, -1))
                 {
@@ -233,7 +214,7 @@ namespace server
                 DUK_TEST_ENTER(context);
 
                 // Get properties object
-                duk_get_prop_lstring(context, -1, PropertiesProperty, PropertiesPropertySize); // [ object ]
+                duk_get_prop_lstring(context, -1, PROPERTIES_PROPERTY, PROPERTIES_PROPERTY_SIZE); // [ object ]
 
                 if (duk_is_object(context, -1)) // [ object ]
                 {
@@ -283,8 +264,8 @@ namespace server
 
                         // Set properties
                         duk_def_prop(context, -5,
-                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_CLEAR_EC |
-                                         DUK_DEFPROP_FORCE); // [ object enum ]
+                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_CLEAR_C |
+                                         DUK_DEFPROP_SET_E | DUK_DEFPROP_FORCE); // [ object enum ]
                     }
 
                     // Pop enum
@@ -348,7 +329,7 @@ namespace server
                 DUK_TEST_ENTER(context);
 
                 // Get events object
-                duk_get_prop_lstring(context, -1, EventsProperty, EventsPropertySize); // [ object ]
+                duk_get_prop_lstring(context, -1, EVENTS_PROPERTY, EVENTS_PROPERTY_SIZE); // [ object ]
 
                 if (duk_is_object(context, -1)) // [ object ]
                 {
@@ -474,7 +455,7 @@ namespace server
                         if (duk_get_prop_lstring(context, -1, name.data(), name.size())) // [ stash func ]
                         {
                             // Push parameter
-                            JSValue::duk_new_value(context, parameter); // [ stash func value ]
+                            duk_new_value(context, parameter); // [ stash func value ]
 
                             // Prepare timout
                             PrepareTimeout(100); // 100ms
@@ -520,7 +501,7 @@ namespace server
                     Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
-                    JSValue::duk_new_value(context, property);
+                    duk_new_value(context, property);
 
                     return 1; // [ value ]
                 }
@@ -540,7 +521,7 @@ namespace server
                     Ref<Value> property = script->propertyByIDList[index];
                     assert(property != nullptr);
 
-                    JSValue::duk_get_value(context, -1, property);
+                    duk_get_value(context, -1, property);
 
                     return 0;
                 }

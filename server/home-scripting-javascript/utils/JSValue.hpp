@@ -9,24 +9,18 @@ namespace server
     {
         namespace javascript
         {
-            class JSValue
-            {
-              private:
-                static duk_ret_t duk_endpoint_constructor(duk_context* context);
-                static duk_ret_t duk_color_constructor(duk_context* context);
+            void duk_new_value(duk_context* context, Ref<Value> value);
 
-                static duk_ret_t duk_get_value_type(duk_context* context);
+            bool duk_new_endpoint(duk_context* context, const Endpoint& endpoint);
+            bool duk_new_color(duk_context* context, const Color& color);
+            bool duk_new_room_id(duk_context* context, identifier_t id);
+            bool duk_new_device_id(duk_context* context, identifier_t id);
+            bool duk_new_service_id(duk_context* context, identifier_t id);
 
-              public:
-                static bool duk_import(duk_context* context);
+            Ref<Value> duk_get_value(duk_context* context, duk_idx_t idx);
+            void duk_get_value(duk_context* context, duk_idx_t idx, Ref<Value> value);
 
-                static void duk_new_value(duk_context* context, Ref<Value> value);
-                static bool duk_new_endpoint(duk_context* context, const Endpoint& endpoint);
-                static bool duk_new_color(duk_context* context, const Color& color);
-
-                static Ref<Value> duk_get_value(duk_context* context, duk_idx_t idx);
-                static void duk_get_value(duk_context* context, duk_idx_t idx, Ref<Value> value);
-            };
+            bool duk_import_value(duk_context* context);
         }
     }
 }

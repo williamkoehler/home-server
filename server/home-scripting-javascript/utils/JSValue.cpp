@@ -1,20 +1,5 @@
 #include "JSValue.hpp"
-
-#define VALUE_OBJECT ("Value")
-
-#define COLOR_OBJECT ("Color")
-#define ENDPOINT_OBJECT ("Endpoint")
-
-#define TYPE_PROPERTY DUK_HIDDEN_SYMBOL("type")
-
-#define VALUE_PROPERTY DUK_HIDDEN_SYMBOL("v")
-
-#define HOST_PROPERTY ("host")
-#define PORT_PROPERTY ("port")
-
-#define RED_PROPERTY ("red")
-#define GREEN_PROPERTY ("green")
-#define BLUE_PROPERTY ("blue")
+#include "../literals.hpp"
 
 namespace server
 {
@@ -22,146 +7,53 @@ namespace server
     {
         namespace javascript
         {
-            const char* EndpointObject = ENDPOINT_OBJECT;
-            const size_t EndpointObjectSize = std::size(ENDPOINT_OBJECT) - 1;
+            duk_ret_t duk_endpoint_constructor(duk_context* context);
+            duk_ret_t duk_color_constructor(duk_context* context);
+            duk_ret_t duk_room_id_constructor(duk_context* context);
+            duk_ret_t duk_device_id_constructor(duk_context* context);
+            duk_ret_t duk_service_id_constructor(duk_context* context);
 
-            const char* ColorObject = COLOR_OBJECT;
-            const size_t ColorObjectSize = std::size(COLOR_OBJECT) - 1;
-
-            const char* TypeProperty = TYPE_PROPERTY;
-            const size_t TypePropertySize = std::size(TYPE_PROPERTY) - 1;
-
-            const char* HostProperty = HOST_PROPERTY;
-            const size_t HostPropertySize = std::size(HOST_PROPERTY) - 1;
-
-            const char* PortProperty = PORT_PROPERTY;
-            const size_t PortPropertySize = std::size(PORT_PROPERTY) - 1;
-
-            const char* RedProperty = RED_PROPERTY;
-            const size_t RedPropertySize = std::size(RED_PROPERTY) - 1;
-
-            const char* GreenProperty = GREEN_PROPERTY;
-            const size_t GreenPropertySize = std::size(GREEN_PROPERTY) - 1;
-
-            const char* BlueProperty = BLUE_PROPERTY;
-            const size_t BluePropertySize = std::size(BLUE_PROPERTY) - 1;
-
-            duk_ret_t JSValue::duk_endpoint_constructor(duk_context* context)
-            {
-                if (!duk_is_constructor_call(context))
-                    return DUK_RET_ERROR;
-
-                // Expect [ number number number ] ([ red green blue ])
-                duk_idx_t argc = duk_get_top(context);
-                if (argc != 2 || !duk_is_string(context, 0) || !duk_is_number(context, 1))
-                {
-                    duk_pop_n(context, argc);
-                    duk_push_lstring(context, "", 0);
-                    duk_push_uint(context, 0);
-                }
-
-                // Push this
-                duk_push_this(context); // [ number number number this ]
-                duk_insert(context, 0); // [ this number number number ]
-
-                // Set class
-                duk_push_lstring(context, "endpoint", 8);                          // [ this string number string ]
-                duk_put_prop_lstring(context, -5, TypeProperty, TypePropertySize); // [ this string number ]
-
-                duk_put_prop_lstring(context, 0, "port", 4); // [ this string ]
-                duk_put_prop_lstring(context, 0, "host", 4); // [ this ]
-
-                // Seal
-                duk_seal(context, -1);
-
-                // Pop this
-                duk_pop(context); // [ ]
-
-                return 0;
-            }
-            bool JSValue::duk_new_endpoint(duk_context* context, const Endpoint& endpoint)
-            {
-                assert(context != nullptr);
-
-                // New endpoint object
-                duk_get_global_string(context, COLOR_OBJECT);                          // [ func ]
-                duk_push_lstring(context, endpoint.host.data(), endpoint.host.size()); // [ func string ]
-                duk_push_uint(context, endpoint.port);                                 // [ func string number ]
-                duk_new(context, 2);                                                   // [ object]
-
-                return true;
-            }
-
-            duk_ret_t JSValue::duk_color_constructor(duk_context* context)
-            {
-                if (!duk_is_constructor_call(context))
-                    return DUK_RET_ERROR;
-
-                // Expect [ number number number ] ([ red green blue ])
-                duk_idx_t argc = duk_get_top(context);
-                if (argc != 3 || !duk_is_number(context, 0) || !duk_is_number(context, 1) || !duk_is_number(context, 2))
-                {
-                    duk_pop_n(context, argc);
-                    duk_push_uint(context, 0);
-                    duk_push_uint(context, 0);
-                    duk_push_uint(context, 0);
-                }
-
-                // Push this
-                duk_push_this(context); // [ number number number this ]
-                duk_insert(context, 0); // [ this number number number ]
-
-                // Set class
-                duk_push_lstring(context, "color", 5); // [ this number number number string ]
-                duk_put_prop_lstring(context, -5, TypeProperty, TypePropertySize); // [ this number number number ]
-
-                duk_put_prop_lstring(context, 0, "blue", 4);  // [ this number number ]
-                duk_put_prop_lstring(context, 0, "green", 5); // [ this number ]
-                duk_put_prop_lstring(context, 0, "red", 3);   // [ this ]
-
-                // Seal
-                duk_seal(context, -1);
-
-                // Pop this
-                duk_pop(context); // [ ]
-
-                return 0;
-            }
-            bool JSValue::duk_new_color(duk_context* context, const Color& color)
-            {
-                assert(context != nullptr);
-
-                // New color object
-                duk_get_global_string(context, COLOR_OBJECT); // [ func ]
-                duk_get_uint(context, color.red);             // [ func number ]
-                duk_get_uint(context, color.green);           // [ func number number ]
-                duk_get_uint(context, color.blue);            // [ func number number number ]
-                duk_new(context, 3);                          // [ object ]
-
-                return true;
-            }
-
-            duk_ret_t JSValue::duk_get_value_type(duk_context* context)
+            duk_ret_t duk_get_value_type(duk_context* context)
             {
                 // Expect [ value ]
-                if (duk_get_top(context) != 0)
+                if (duk_get_top(context) != 1)
                     return DUK_RET_ERROR;
 
                 ValueType type = ValueType::kUnknownType;
 
-                // Push this
-                duk_push_this(context); // [ this ]
+                switch (duk_get_type(context, -1))
+                {
+                case DUK_TYPE_NULL:
+                    type = ValueType::kNullType;
+                    break;
+                case DUK_TYPE_BOOLEAN:
+                    type = ValueType::kBooleanType;
+                    break;
+                case DUK_TYPE_NUMBER:
+                    type = ValueType::kNumberType;
+                    break;
+                case DUK_TYPE_STRING:
+                    type = ValueType::kStringType;
+                    break;
+                case DUK_TYPE_OBJECT:
+                {
+                    // Get type
+                    duk_get_prop_lstring(context, -1, TYPE_PROPERTY, TYPE_PROPERTY_SIZE); // [ value string ]
 
-                // Get type
-                duk_get_prop_lstring(context, -1, TypeProperty, TypePropertySize); // [ this string ]
+                    size_t typeLength;
+                    const char* typeStr = duk_to_lstring(context, -1, &typeLength); // [ value string ]
 
-                size_t typeLength;
-                const char* typeStr = duk_to_lstring(context, -1, &typeLength); // [ string ]
+                    type = ParseValueType(std::string_view(typeStr, typeLength));
 
-                type = ParseValueType(std::string_view(typeStr, typeLength));
+                    // Pop type
+                    duk_pop(context); // [ value ]
+                }
+                default:
+                    break;
+                }
 
-                // Pop type, and this
-                duk_pop_2(context);
+                // Pop value
+                duk_pop(context); // [ ]
 
                 std::string_view type2 = StringifyValueTypeConst(type);
                 duk_push_lstring(context, type2.data(), type2.size()); // [ string ]
@@ -169,59 +61,7 @@ namespace server
                 return 1; // [ string ]
             }
 
-            bool JSValue::duk_import(duk_context* context)
-            {
-                assert(context != nullptr);
-
-                duk_push_global_object(context); // [ global ]
-
-                // Import endpoint
-                {
-                    // Push ctor
-                    duk_push_c_function(context, JSValue::duk_endpoint_constructor, DUK_VARARGS); // [ global c_func ]
-
-                    // Register prototype
-                    duk_push_object(context);                          // [ global c_func object ]
-                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
-
-                    // Put prop
-                    duk_push_lstring(context, EndpointObject, EndpointObjectSize); // [ global c_func string ]
-                    duk_def_prop(context, -3,
-                                 DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_HAVE_WEC | DUK_DEFPROP_CLEAR_WEC |
-                                     DUK_DEFPROP_FORCE); // [ global ]
-                }
-
-                // Import color
-                {
-                    // Push ctor
-                    duk_push_c_function(context, JSValue::duk_color_constructor, DUK_VARARGS); // [ global c_func ]
-
-                    // Register prototype
-                    duk_push_object(context);                          // [ global c_func object ]
-                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
-
-                    // Put prop
-                    duk_push_lstring(context, ColorObject, ColorObjectSize); // [ global c_func string ]
-                    duk_def_prop(context, -3,
-                                 DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_HAVE_WEC | DUK_DEFPROP_CLEAR_WEC |
-                                     DUK_DEFPROP_FORCE); // [ global ]
-                }
-
-                // Register methods
-                static const duk_function_list_entry methods[] = {
-                    {"getValueType", JSValue::duk_get_value_type, 0},
-                    {nullptr, nullptr, 0},
-                };
-
-                duk_put_function_list(context, -1, methods); // [ global ]
-
-                // Pop global
-                duk_pop(context);
-
-                return true;
-            }
-
-            void JSValue::duk_new_value(duk_context* context, Ref<Value> value)
+            void duk_new_value(duk_context* context, Ref<Value> value)
             {
                 if (value != nullptr)
                 {
@@ -251,6 +91,21 @@ namespace server
                         duk_new_color(context, color);
                         break;
                     }
+                    case ValueType::kRoomIDType:
+                    {
+                        duk_new_room_id(context, value->GetRoomID());
+                        break;
+                    }
+                    case ValueType::kDeviceIDType:
+                    {
+                        duk_new_device_id(context, value->GetDeviceID());
+                        break;
+                    }
+                    case ValueType::kServiceIDType:
+                    {
+                        duk_new_service_id(context, value->GetServiceID());
+                        break;
+                    }
                     default:
                         duk_push_null(context);
                         break;
@@ -262,7 +117,7 @@ namespace server
                 }
             }
 
-            Ref<Value> JSValue::duk_get_value(duk_context* context, duk_idx_t idx)
+            Ref<Value> duk_get_value(duk_context* context, duk_idx_t idx)
             {
                 switch (duk_get_type(context, idx))
                 {
@@ -281,7 +136,7 @@ namespace server
                     idx = duk_normalize_index(context, idx);
 
                     // Get type
-                    duk_get_prop_lstring(context, idx, TypeProperty, TypePropertySize); // [ string ]
+                    duk_get_prop_lstring(context, idx, TYPE_PROPERTY, TYPE_PROPERTY_SIZE); // [ string ]
 
                     size_t typeLength;
                     const char* typeStr = duk_get_lstring(context, -1, &typeLength); // [ string ]
@@ -292,17 +147,17 @@ namespace server
 
                     switch (typeHash)
                     {
-                    case CRC32("endpoint"):
+                    case CRC32(ENDPOINT_TYPE_NAME):
                     {
                         // Get host
-                        duk_get_prop_lstring(context, idx, "host", 4); // [ string ]
+                        duk_get_prop_lstring(context, idx, HOST_PROPERTY, HOST_PROPERTY_SIZE); // [ string ]
 
                         size_t hostLength;
                         const char* hostStr = duk_get_lstring(context, -1, &hostLength);
                         std::string host = std::string(hostStr, hostLength); // [ string ]
 
                         // Get port
-                        duk_get_prop_lstring(context, idx, "port", 4); // [ string number ]
+                        duk_get_prop_lstring(context, idx, PORT_PROPERTY, PORT_PROPERTY_SIZE); // [ string number ]
 
                         uint16_t port = (uint16_t)duk_get_uint(context, -1); // [ string number ]
 
@@ -313,12 +168,13 @@ namespace server
                             .port = port,
                         });
                     }
-                    case CRC32("color"):
+                    case CRC32(COLOR_TYPE_NAME):
                     {
                         // Get red, green, and blue
-                        duk_get_prop_lstring(context, idx, "red", 3);   // [ number ]
-                        duk_get_prop_lstring(context, idx, "green", 5); // [ number number ]
-                        duk_get_prop_lstring(context, idx, "blue", 4);  // [ number number number ]
+                        duk_get_prop_lstring(context, idx, RED_PROPERTY, RED_PROPERTY_SIZE);     // [ number ]
+                        duk_get_prop_lstring(context, idx, GREEN_PROPERTY, GREEN_PROPERTY_SIZE); // [ number number ]
+                        duk_get_prop_lstring(context, idx, BLUE_PROPERTY,
+                                             BLUE_PROPERTY_SIZE); // [ number number number ]
 
                         uint8_t red = (uint8_t)duk_get_uint(context, -3);
                         uint8_t green = (uint8_t)duk_get_uint(context, -2);
@@ -343,10 +199,15 @@ namespace server
 
                 return Value::CreateNull();
             }
-            void JSValue::duk_get_value(duk_context* context, duk_idx_t idx, Ref<Value> value)
+            void duk_get_value(duk_context* context, duk_idx_t idx, Ref<Value> value)
             {
                 switch (value->GetType())
                 {
+                case ValueType::kUnknownType:
+                case ValueType::kNullType:
+                    if (!duk_is_null_or_undefined(context, idx))
+                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected null or undefined.");
+                    break;
                 case ValueType::kBooleanType:
                     if (duk_is_boolean(context, idx))
                         value->SetBoolean(duk_get_boolean(context, idx));
@@ -376,7 +237,7 @@ namespace server
                     if (duk_is_object(context, idx))
                     {
                         // Get host
-                        duk_get_prop_lstring(context, idx - 1, "host", 4); // [ string ]
+                        duk_get_prop_lstring(context, idx, "host", 4); // [ string ]
 
                         size_t hostLength;
                         const char* hostStr = duk_to_lstring(context, -1, &hostLength);
@@ -385,7 +246,7 @@ namespace server
                         duk_pop(context); // [ ]
 
                         // Get port
-                        duk_get_prop_lstring(context, idx - 2, "port", 4); // [ number ]
+                        duk_get_prop_lstring(context, idx, "port", 4); // [ number ]
 
                         uint16_t port = duk_to_uint16(context, -1); // [ number ]
 
@@ -429,11 +290,138 @@ namespace server
                         duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
                     break;
                 }
-                default:
-                    if (!duk_is_null_or_undefined(context, idx))
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected null or undefined.");
+                case ValueType::kRoomIDType:
+                {
+                    if (duk_is_object(context, idx))
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
+                        duk_pop(context);                                                  // [ ]
+
+                        value->SetRoomID(id);
+                    }
+                    else
+                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
                     break;
                 }
+                case ValueType::kDeviceIDType:
+                {
+                    if (duk_is_object(context, idx))
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
+                        duk_pop(context);                                                  // [ ]
+
+                        value->SetDeviceID(id);
+                    }
+                    else
+                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
+                    break;
+                }
+                case ValueType::kServiceIDType:
+                {
+                    if (duk_is_object(context, idx))
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
+                        duk_pop(context);                                                  // [ ]
+
+                        value->SetServiceID(id);
+                    }
+                    else
+                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
+                    break;
+                }
+                }
+            }
+
+            bool duk_import_value(duk_context* context)
+            {
+                assert(context != nullptr);
+
+                duk_push_global_object(context); // [ global ]
+
+                // Import endpoint
+                {
+                    // Push ctor
+                    duk_push_c_function(context, duk_endpoint_constructor, DUK_VARARGS); // [ global c_func ]
+
+                    // Register prototype
+                    duk_push_object(context);                          // [ global c_func object ]
+                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
+
+                    // Put prop
+                    duk_put_prop_lstring(context, -2, ENDPOINT_OBJECT, ENDPOINT_OBJECT_SIZE); // [ global ]
+                }
+
+                // Import color
+                {
+                    // Push ctor
+                    duk_push_c_function(context, duk_color_constructor, DUK_VARARGS); // [ global c_func ]
+
+                    // Register prototype
+                    duk_push_object(context);                          // [ global c_func object ]
+                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
+
+                    // Put prop
+                   duk_put_prop_lstring(context, -2,COLOR_OBJECT, COLOR_OBJECT_SIZE); // [ global c_func string ]
+                }
+
+                // Import room id
+                {
+                    // Push ctor
+                    duk_push_c_function(context, duk_room_id_constructor, DUK_VARARGS); // [ global c_func ]
+
+                    // Register prototype
+                    duk_push_object(context);                          // [ global c_func object ]
+                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
+
+                    // Put prop
+                    duk_put_prop_lstring(context, -2, ROOM_ID_OBJECT, ROOM_ID_OBJECT_SIZE); // [ global ]
+                }
+
+                // Import device id
+                {
+                    // Push ctor
+                    duk_push_c_function(context, duk_device_id_constructor, DUK_VARARGS); // [ global c_func ]
+
+                    // Register prototype
+                    duk_push_object(context);                          // [ global c_func object ]
+                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
+
+                    // Put prop
+                   duk_put_prop_lstring(context, -2, DEVICE_ID_OBJECT, DEVICE_ID_OBJECT_SIZE); // [ global ]
+                }
+
+                // Import service id
+                {
+                    // Push ctor
+                    duk_push_c_function(context, duk_service_id_constructor, DUK_VARARGS); // [ global c_func ]
+
+                    // Register prototype
+                    duk_push_object(context);                          // [ global c_func object ]
+                    duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
+
+                    // Put prop
+                    duk_put_prop_lstring(context, -2, SERVICE_ID_OBJECT,
+                                         SERVICE_ID_OBJECT_SIZE); // [ global ]
+                }
+
+                // Register methods
+                static const duk_function_list_entry methods[] = {
+                    {"getValueType", duk_get_value_type, 1},
+                    {nullptr, nullptr, 0},
+                };
+
+                duk_put_function_list(context, -1, methods); // [ global ]
+
+                // Pop global
+                duk_pop(context);
+
+                return true;
             }
         }
     }

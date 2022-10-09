@@ -43,6 +43,19 @@ namespace server
                         .callback = (CreateScriptCallbackConversion<T>{callback}).f2,
                     };
                 }
+
+
+                template <typename T>
+                inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
+                                               ScriptUsage usage)
+                {
+                    return ScriptInformation{
+                        .scriptName = scriptName,
+                        .name = name,
+                        .usage = usage,
+                        .callback = (CreateScriptCallbackConversion<T>{&T::Create}).f2,
+                    };
+                }
             };
 
             /// @brief Script library version (major.minor.patch.revision)

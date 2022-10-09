@@ -29,6 +29,10 @@ namespace server
             kStringType,
             kEndpointType,
             kColorType,
+
+            kRoomIDType,
+            kDeviceIDType,
+            kServiceIDType,
         };
 
         std::string_view StringifyValueTypeConst(ValueType type);
@@ -66,7 +70,7 @@ namespace server
                     sizeof(arg1) >= sizeof(arg2) ? static_max<arg1, args...>::value : static_max<arg2, args...>::value;
             };
 
-            uint8_t value[static_max<bool, double_t, std::string, Endpoint, Color>::value];
+            uint8_t value[static_max<bool, double_t, std::string, Endpoint, Color, identifier_t>::value];
 
           public:
             explicit Value();
@@ -76,6 +80,7 @@ namespace server
             explicit Value(const std::string_view& string);
             explicit Value(const Endpoint& endpoint);
             explicit Value(const Color& color);
+            explicit Value(ValueType type);
             ~Value();
             static Ref<Value> Create(ValueType type);
             inline static Ref<Value> CreateNull()
@@ -109,6 +114,18 @@ namespace server
             inline static Ref<Value> CreateColor(const Color& color = Color{})
             {
                 return boost::make_shared<Value>(color);
+            }
+            inline static Ref<Value> CreateRoomID()
+            {
+                return boost::make_shared<Value>(ValueType::kRoomIDType);
+            }
+            inline static Ref<Value> CreateDeviceID()
+            {
+                return boost::make_shared<Value>(ValueType::kDeviceIDType);
+            }
+            inline static Ref<Value> CreateServiceID()
+            {
+                return boost::make_shared<Value>(ValueType::kServiceIDType);
             }
             static Ref<Value> Create(rapidjson::Value& json);
 
@@ -145,36 +162,63 @@ namespace server
             {
                 return type == ValueType::kColorType;
             }
+            inline bool IsRoomID() const
+            {
+                return type == ValueType::kRoomIDType;
+            }
+            inline bool IsDeviceID() const
+            {
+                return type == ValueType::kDeviceIDType;
+            }
+            inline bool IsServiceID() const
+            {
+                return type == ValueType::kServiceIDType;
+            }
 
-            inline bool GetBoolean()
+            inline bool GetBoolean() const
             {
                 assert(type == ValueType::kBooleanType);
                 return *(bool*)value;
             }
-            inline int64_t GetInteger()
+            inline int64_t GetInteger() const
             {
                 assert(type == ValueType::kNumberType);
                 return (int64_t) * (double_t*)value;
             }
-            inline double_t GetNumber()
+            inline double_t GetNumber() const
             {
                 assert(type == ValueType::kNumberType);
                 return *(double_t*)value;
             }
-            inline const std::string& GetString()
+            inline const std::string& GetString() const
             {
                 assert(type == ValueType::kStringType);
                 return *(std::string*)value;
             }
-            inline const Endpoint& GetEndpoint()
+            inline const Endpoint& GetEndpoint() const
             {
                 assert(type == ValueType::kEndpointType);
                 return *(Endpoint*)value;
             }
-            inline const Color& GetColor()
+            inline const Color& GetColor() const
             {
                 assert(type == ValueType::kColorType);
                 return *(Color*)value;
+            }
+            inline const identifier_t& GetRoomID() const
+            {
+                assert(type == ValueType::kRoomIDType);
+                return *(identifier_t*)value;
+            }
+            inline const identifier_t& GetDeviceID() const
+            {
+                assert(type == ValueType::kDeviceIDType);
+                return *(identifier_t*)value;
+            }
+            inline const identifier_t& GetServiceID() const
+            {
+                assert(type == ValueType::kServiceIDType);
+                return *(identifier_t*)value;
             }
 
             inline void SetBoolean(bool v)
@@ -218,6 +262,21 @@ namespace server
                 color.red = v.red;
                 color.green = v.green;
                 color.blue = v.blue;
+            }
+            inline void SetRoomID(const identifier_t& v)
+            {
+                assert(type == ValueType::kRoomIDType);
+                *(identifier_t*)value = v;
+            }
+            inline void SetDeviceID(const identifier_t& v)
+            {
+                assert(type == ValueType::kDeviceIDType);
+                *(identifier_t*)value = v;
+            }
+            inline void SetServiceID(const identifier_t& v)
+            {
+                assert(type == ValueType::kServiceIDType);
+                *(identifier_t*)value = v;
             }
 
             std::string ToString();

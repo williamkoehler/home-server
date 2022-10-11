@@ -7,15 +7,8 @@ steps:
   - name: build
     image: debian:latest
     commands:
-      - chmod +x bootstrap-debian.sh
+      - chmod +x bootstrap-debian.sh bootstrap-conan.sh bootstrap.sh
       - ./bootstrap-debian.sh
-      - chmod +x bootstrap-conan.sh
       - ./bootstrap-conan.sh
-      - >
-      cmake 
-        --no-warn-unused-cli 
-        -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang-11 
-        -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++-11 
-        -S./ -B./build 
-        -G "Unix Makefiles"
+      - ./bootstrap.sh
       - cd build; make -j 10

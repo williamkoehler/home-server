@@ -17,51 +17,17 @@ namespace server
             return boost::make_shared<Event>();
         }
 
-        void Event::Add(Ref<Script> script, const std::string& method)
+        boost::signals2::connection Event::Connect(Ref<Script> script, const std::string& method)
         {
             assert(script != nullptr);
 
-            if (script != nullptr)
-                entryList.push_back(EventEntry{.script = script, .method = method});
+            return signal.connect(
+                Signal::slot_type(&Script::PostInvoke, script.get(), method, boost::placeholders::_1).track(script));
         }
 
         void Event::Invoke(Ref<Value> parameter)
         {
-            for (boost::container::vector<EventEntry>::iterator it = entryList.begin(); it != entryList.end(); it++)
-            {
-                Ref<Script> script = it->script.lock();
-
-                if (script != nullptr)
-                    script->Invoke(it->method, parameter);
-                else
-                    it = entryList.erase(it);
-            }
-        }
-
-        void Event::PostInvoke(Ref<Value> parameter)
-        {
-            for (boost::container::vector<EventEntry>::iterator it = entryList.begin(); it != entryList.end(); it++)
-            {
-                Ref<Script> script = it->script.lock();
-
-                if (script != nullptr)
-                    script->PostInvoke(it->method, parameter);
-                else
-                    it = entryList.erase(it);
-            }
-        }
-
-        void Event::Remove(Ref<Script> script, const std::string& method)
-        {
-            assert(script != nullptr);
-
-            for (boost::container::vector<EventEntry>::iterator it = entryList.begin(); it != entryList.end(); it++)
-            {
-                Ref<Script> script2 = it->script.lock();
-
-                if (script2 == script || script2 == nullptr)
-                    it = entryList.erase(it);
-            }
+            signal(parameter);
         }
     }
 }

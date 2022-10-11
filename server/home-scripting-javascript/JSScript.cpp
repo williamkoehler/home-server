@@ -542,7 +542,7 @@ namespace server
                     Ref<Event> event = script->eventByIDList[index];
                     assert(event != nullptr);
 
-                    event->PostInvoke(nullptr);
+                    event->Invoke(nullptr);
 
                     return 0;
                 }

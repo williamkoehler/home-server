@@ -25,7 +25,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/out/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/out/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/out/bin")
 
-set(ENABLE_TESTS 1)
+set(ENABLE_TESTS 0)
 
-add_subdirectory("dependencies")
 add_subdirectory("server")

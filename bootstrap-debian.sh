@@ -2,13 +2,14 @@
 apt update
 
 # Install build essentials
-apt install -y build-essential
+apt install -y build-essential clang-11
 
 # Install cmake
 apt install -y cmake
 
-# Install cmake
-apt install -y ninja-build
+# Install python & conan
+apt install -y python3 python3-pip
+pip install conan
 
 # Install necessary packages
 apt install -y wget libc6-dev libsqlite3-dev libcurl4-openssl-dev libicu-dev

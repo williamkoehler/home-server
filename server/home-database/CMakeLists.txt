@@ -9,11 +9,10 @@ target_include_directories(home_database
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${Boost_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
 )
 target_link_libraries(home_database
     home_common
-    ${Boost_LIBRARIES}
+    ${CONAN_LIBS}
     ${SQLite3_LIBRARIES}
 )

@@ -9,8 +9,6 @@ target_include_directories(home_server
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${OPENSSL_INCLUDE_DIR}
-    ${Boost_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
 )
 target_link_libraries(home_server
@@ -21,10 +19,8 @@ target_link_libraries(home_server
     home_scripting_javascript
     home_users
     home_networking
-    xxhash
     dl
+    ${CONAN_LIBS}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${OPENSSL_LIBRARIES}
-    ${Boost_LIBRARIES}
     ${SQLite3_LIBRARIES}
 )

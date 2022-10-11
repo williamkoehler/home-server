@@ -1,0 +1,13 @@
+[requires]
+spdlog/1.10.0
+openssl/1.1.1m
+boost/1.80.0
+rapidjson/cci.20220822
+robin-hood-hashing/3.11.5
+xxhash/0.8.1
+cppcodec/0.2
+jwt-cpp/0.6.0
+stb/cci.20210910
+
+[generators]
+cmake

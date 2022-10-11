@@ -53,7 +53,7 @@ namespace server
             {
                 // Create JWT verifier
                 userManager->verifier =
-                    jwt::verify()
+                    jwt::verify<JWTTraits>()
                         .allow_algorithm(jwt::algorithm::hs256(
                             std::string(reinterpret_cast<const char*>(userManager->authenticationKey), AUTHKEY_SIZE)))
                         .with_issuer(issuer);
@@ -134,9 +134,8 @@ namespace server
             }
 
             // Check name
-            if (boost::range::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> user) {
-                    return name == user.second->GetName();
-                }) != userList.end())
+            if (boost::range::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> user)
+                                      { return name == user.second->GetName(); }) != userList.end())
             {
                 LOG_ERROR("User name already exists", name);
                 return nullptr;
@@ -184,9 +183,9 @@ namespace server
             // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
-                boost::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool {
-                    return pair.second->GetName() == name;
-                });
+                boost::find_if(userList,
+                               [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool
+                               { return pair.second->GetName() == name; });
             if (it == userList.end())
                 return nullptr;
 
@@ -198,9 +197,9 @@ namespace server
 
             // Search for user
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
-                boost::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool {
-                    return pair.second->GetName() == name;
-                });
+                boost::find_if(userList,
+                               [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool
+                               { return pair.second->GetName() == name; });
             if (it == userList.end())
                 return nullptr;
 
@@ -292,10 +291,10 @@ namespace server
 
             // boost::shared_lock_guard lock(mutex);
 
-            return jwt::create()
+            return jwt::create<JWTTraits>()
                 .set_issuer(issuer)
                 .set_type("JWT")
-                .set_payload_claim("id", jwt::claim(picojson::value(static_cast<int64_t>(user->GetID()))))
+                .set_payload_claim("id", user->GetID())
 #ifndef _DEBUG
                 .set_expires_at(jwt::date::clock::now() + std::chrono::hours(732))
 #endif
@@ -308,7 +307,7 @@ namespace server
 
             try
             {
-                jwt::decoded_jwt decoded = jwt::decode(token);
+                jwt::decoded_jwt decoded = jwt::decode<JWTTraits>(token);
 
 #ifndef _DEBUG
                 if (!decoded.has_expires_at())

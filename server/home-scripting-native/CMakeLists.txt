@@ -12,12 +12,10 @@ target_include_directories(home_scripting_native
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${Boost_INCLUDE_DIRS}
 )
 target_link_libraries(home_scripting_native
     home_common
     home_database
     home_scripting
-    xxhash
-    ${Boost_LIBRARIES}
+    ${CONAN_LIBS}
 )

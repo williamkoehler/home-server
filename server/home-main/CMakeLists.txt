@@ -12,11 +12,10 @@ target_include_directories(home_main
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${Boost_INCLUDE_DIRS}
 )
 target_link_libraries(home_main
     home_common
     home_database
     home_scripting
-    ${Boost_LIBRARIES}
+    ${CONAN_LIBS}
 )

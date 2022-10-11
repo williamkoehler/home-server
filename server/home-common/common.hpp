@@ -21,7 +21,7 @@ typedef uint32_t identifier_t;
 #include "boost.hpp"
 
 // Robin Hood (Hash Table, etc...)
-#include <robin-hood/robin_hood.h>
+#include <robin_hood.h>
 
 // RapidJSON (Json)
 #include <rapidjson/document.h>
@@ -44,9 +44,12 @@ namespace rapidjson
 }
 
 // XXHash (Fast hashing)
-#include <xxhash/xxhash.h>
+#include <xxhash.h>
 
 // Memory Management
 #include "memory.hpp"
+
+// Signals2
+#include <boost/signals2.hpp>
 
 #include "ApiContext.hpp"

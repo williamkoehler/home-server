@@ -1,7 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "robin-hood/robin_hood.h"
-#include <jwt-cpp/jwt.h>
+#include <jwt-cpp/traits/boost-json/traits.h>
 
 namespace server
 {
@@ -20,7 +19,9 @@ namespace server
             // Authentication
             uint8_t* authenticationKey = nullptr;
             std::string issuer;
-            jwt::verifier<jwt::default_clock> verifier;
+
+            typedef jwt::traits::boost_json JWTTraits;
+            jwt::verifier<jwt::default_clock, JWTTraits> verifier;
 
             void CalculateHash(std::string_view password, uint8_t* salt, uint8_t* digest);
 

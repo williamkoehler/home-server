@@ -12,7 +12,6 @@ target_include_directories(home_networking
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${Boost_INCLUDE_DIRS}
 )
 target_link_libraries(home_networking
     home_common
@@ -20,5 +19,5 @@ target_link_libraries(home_networking
     home_scripting
     home_main
     home_users
-    ${Boost_LIBRARIES}
+    ${CONAN_LIBS}
 )

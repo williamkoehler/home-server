@@ -13,7 +13,7 @@ target_include_directories(home_common
     "${PROJECT_SOURCE_DIR}/dependencies"
 )
 target_link_libraries(home_common
-
+    ${CONAN_LIBS}
 )
 
 target_precompile_headers(home_common PRIVATE "common.hpp")

@@ -10,9 +10,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(CTest)
 
 add_compile_definitions(OS_LINUX)
-find_package(Boost 1.75 REQUIRED COMPONENTS chrono filesystem system thread regex unit_test_framework)
+
+# Conan
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
 find_package(SQLite3 REQUIRED)
 
 # Only compiles on x64 platforms

@@ -9,10 +9,8 @@ target_include_directories(home_database
     PUBLIC
     "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
-    ${SQLite3_INCLUDE_DIRS}
 )
 target_link_libraries(home_database
     home_common
     ${CONAN_LIBS}
-    ${SQLite3_LIBRARIES}
 )

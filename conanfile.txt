@@ -3,6 +3,7 @@ spdlog/1.10.0
 openssl/1.1.1m
 boost/1.80.0
 rapidjson/cci.20220822
+sqlite3/3.39.4
 robin-hood-hashing/3.11.5
 xxhash/0.8.1
 cppcodec/0.2

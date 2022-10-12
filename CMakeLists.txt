@@ -16,7 +16,6 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 find_package(Threads REQUIRED)
-find_package(SQLite3 REQUIRED)
 
 # Only compiles on x64 platforms
 add_compile_definitions(SYS_X64)

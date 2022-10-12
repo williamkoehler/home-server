@@ -1,5 +1,6 @@
 #include "Database.hpp"
 #include "sqlite/SQLiteDatabase.hpp"
+#include "empty/EmptyDatabase.hpp"
 
 namespace server
 {
@@ -9,6 +10,8 @@ namespace server
         {
         case DatabaseType::kSQLiteDatabaseType:
             return "sqlite";
+        case DatabaseType::kEmptyDatabaseType:
+            return "empty";
         default:
             return "unknown";
         }
@@ -19,6 +22,8 @@ namespace server
         {
         case CRC32("sqlite"):
             return DatabaseType::kSQLiteDatabaseType;
+        case CRC32("empty"):
+            return DatabaseType::kEmptyDatabaseType;
         default:
             return DatabaseType::kUnknownDatabaseType;
         }
@@ -46,6 +51,9 @@ namespace server
         {
         case DatabaseType::kSQLiteDatabaseType:
             database = SQLiteDatabase::Create(db);
+            break;
+        case DatabaseType::kEmptyDatabaseType:
+            database = EmptyDatabase::Create();
             break;
         default:
             database = nullptr;

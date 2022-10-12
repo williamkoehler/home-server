@@ -6,6 +6,7 @@ namespace server
     enum class DatabaseType
     {
         kUnknownDatabaseType,
+        kEmptyDatabaseType,
         kSQLiteDatabaseType,
     };
 

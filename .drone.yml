@@ -12,3 +12,9 @@ steps:
       - ./bootstrap-conan.sh
       - ./bootstrap.sh
       - cd build; make -j 10
+    when:
+      event:
+        - cron
+      target:
+        include:
+          - weekly

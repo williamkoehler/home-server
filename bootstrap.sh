@@ -1,1 +1,1 @@
-cmake --no-warn-unused-cli -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang-11 -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++-11 -S./ -B./build -G "Unix Makefiles"
+cmake --no-warn-unused-cli -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/clang-13 -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/clang++-13 -S./ -B./build -G "Unix Makefiles"

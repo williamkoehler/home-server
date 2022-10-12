@@ -7,7 +7,6 @@ set_target_properties(home_database PROPERTIES OUTPUT_NAME "home.database")
 
 target_include_directories(home_database
     PUBLIC
-    "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
 )
 target_link_libraries(home_database

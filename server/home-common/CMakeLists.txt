@@ -10,7 +10,6 @@ target_compile_definitions(home_common
 )
 target_include_directories(home_common
     PUBLIC
-    "${PROJECT_SOURCE_DIR}/dependencies"
 )
 target_link_libraries(home_common
     ${CONAN_LIBS}

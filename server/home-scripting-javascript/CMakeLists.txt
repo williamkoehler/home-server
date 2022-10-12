@@ -10,7 +10,6 @@ target_compile_definitions(home_scripting_javascript
 )
 target_include_directories(home_scripting_javascript
     PUBLIC
-    "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
 )
 target_link_libraries(home_scripting_javascript

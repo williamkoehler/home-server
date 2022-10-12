@@ -10,7 +10,6 @@ target_compile_definitions(home_main
 )
 target_include_directories(home_main
     PUBLIC
-    "${PROJECT_SOURCE_DIR}/dependencies"
     "${PROJECT_SOURCE_DIR}/server"
 )
 target_link_libraries(home_main

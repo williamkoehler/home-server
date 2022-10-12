@@ -13,11 +13,16 @@ namespace server
             connection = nullptr;
         }
     }
-    Ref<SQLiteDatabase> SQLiteDatabase::Create(const std::string& db)
+    Ref<SQLiteDatabase> SQLiteDatabase::Create(std::string db)
     {
         Ref<SQLiteDatabase> database = boost::make_shared<SQLiteDatabase>();
         if (database != nullptr)
         {
+            // Find path
+            if (db.empty())
+                db = "home.sqlite3";
+            db = boost::filesystem::absolute(db, config::GetStateDirectory()).string();
+
             // Open / Create database
             if (sqlite3_open_v2(db.c_str(), &database->connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
                                 nullptr) != SQLITE_OK)

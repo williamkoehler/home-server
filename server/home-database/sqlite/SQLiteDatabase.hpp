@@ -13,7 +13,7 @@ namespace server
       public:
         SQLiteDatabase();
         virtual ~SQLiteDatabase();
-        static Ref<SQLiteDatabase> Create(const std::string& db = "home.sqlite3");
+        static Ref<SQLiteDatabase> Create(std::string db = "");
 
         /// @brief Load script sources from database
         ///

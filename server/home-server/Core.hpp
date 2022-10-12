@@ -1,14 +1,42 @@
 #pragma once
 #include "common.hpp"
+#include <home-common/Worker.hpp>
 #include <home-database/Database.hpp>
 #include <home-main/Home.hpp>
 #include <home-networking/NetworkManager.hpp>
 #include <home-scripting/ScriptManager.hpp>
-#include <home-common/Worker.hpp>
 #include <home-users/UserManager.hpp>
 
 namespace server
 {
+    struct CoreConfig
+    {
+        std::string name = "error-no-name";
+
+        struct
+        {
+            DatabaseType type = DatabaseType::kSQLiteDatabaseType;
+            std::string location;
+            std::string username;
+            std::string password;
+        } database;
+        
+        struct
+        {
+            std::string externalURL;
+            std::string address;
+            uint16_t port;
+        } networking;
+
+        struct
+        {
+            struct
+            {
+                std::string source;
+            } nativeScript;
+        } scripting;
+    };
+
     /// @brief The core of the server, that manages every part of the server
     ///
     class Core : public boost::enable_shared_from_this<Core>
@@ -21,9 +49,6 @@ namespace server
         std::string address;
         uint16_t port;
 
-        // Scripting
-        std::string nativeScriptDirectory;
-
         // Components
         Ref<Worker> worker;
         Ref<Database> database;
@@ -35,7 +60,7 @@ namespace server
         /// @brief Load configurations from file
         ///
         /// @return Successfulness
-        bool Load();
+        bool Load(CoreConfig& config);
 
       public:
         Core();

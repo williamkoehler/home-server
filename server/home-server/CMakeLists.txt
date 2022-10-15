@@ -20,3 +20,5 @@ target_link_libraries(home_server
     dl
     ${CONAN_LIBS}
 )
+
+target_precompile_headers(home_server PRIVATE "common.hpp")

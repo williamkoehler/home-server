@@ -18,3 +18,5 @@ target_link_libraries(home_main
     home_scripting
     ${CONAN_LIBS}
 )
+
+target_precompile_headers(home_main PRIVATE "common.hpp")

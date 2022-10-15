@@ -20,3 +20,5 @@ target_link_libraries(home_networking
     home_users
     ${CONAN_LIBS}
 )
+
+target_precompile_headers(home_networking PRIVATE "common.hpp")

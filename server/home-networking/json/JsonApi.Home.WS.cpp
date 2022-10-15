@@ -338,11 +338,9 @@ namespace server
                 return;
             }
 
-            // Create parameter
-            Ref<scripting::Value> parameter = scripting::Value::Create(parameterIt->value);
-
             // Invoke method
-            device->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()), parameter);
+            device->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
+                           scripting::Value::Create(parameterIt->value));
         }
 
         void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
@@ -587,11 +585,9 @@ namespace server
                 return;
             }
 
-            // Create parameter
-            Ref<scripting::Value> parameter = scripting::Value::Create(parameterIt->value);
-
             // Invoke method
-            service->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()), parameter);
+            service->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
+                            scripting::Value::Create(parameterIt->value));
         }
 
         void JsonApi::ProcessJsonGetServiceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,

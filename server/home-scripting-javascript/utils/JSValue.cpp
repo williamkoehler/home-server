@@ -61,75 +61,56 @@ namespace server
                 return 1; // [ string ]
             }
 
-            void duk_new_value(duk_context* context, Ref<Value> value)
+            void duk_new_value(duk_context* context, const Value& value)
             {
-                if (value != nullptr)
+                switch (value.GetType())
                 {
-                    switch (value->GetType())
-                    {
-                    case ValueType::kBooleanType:
-                        duk_push_boolean(context, value->GetBoolean());
-                        break;
-                    case ValueType::kNumberType:
-                        duk_push_number(context, value->GetNumber());
-                        break;
-                    case ValueType::kStringType:
-                    {
-                        const std::string& string = value->GetString();
-                        duk_push_lstring(context, string.data(), string.size());
-                        break;
-                    }
-                    case ValueType::kEndpointType:
-                    {
-                        const Endpoint& endpoint = value->GetEndpoint();
-                        duk_new_endpoint(context, endpoint);
-                        break;
-                    }
-                    case ValueType::kColorType:
-                    {
-                        const Color& color = value->GetColor();
-                        duk_new_color(context, color);
-                        break;
-                    }
-                    case ValueType::kRoomIDType:
-                    {
-                        duk_new_room_id(context, value->GetRoomID());
-                        break;
-                    }
-                    case ValueType::kDeviceIDType:
-                    {
-                        duk_new_device_id(context, value->GetDeviceID());
-                        break;
-                    }
-                    case ValueType::kServiceIDType:
-                    {
-                        duk_new_service_id(context, value->GetServiceID());
-                        break;
-                    }
-                    default:
-                        duk_push_null(context);
-                        break;
-                    }
+                case ValueType::kBooleanType:
+                    duk_push_boolean(context, value.GetBoolean());
+                    break;
+                case ValueType::kNumberType:
+                    duk_push_number(context, value.GetNumber());
+                    break;
+                case ValueType::kStringType:
+                {
+                    const std::string& string = value.GetString();
+                    duk_push_lstring(context, string.data(), string.size());
+                    break;
                 }
-                else
-                {
+                case ValueType::kEndpointType:
+                    duk_new_endpoint(context, value.GetEndpoint());
+                    break;
+                case ValueType::kColorType:
+                    duk_new_color(context, value.GetColor());
+                    break;
+                case ValueType::kRoomIDType:
+                    duk_new_room_id(context, value.GetRoomID());
+                    break;
+                case ValueType::kDeviceIDType:
+                    duk_new_device_id(context, value.GetDeviceID());
+                    break;
+                case ValueType::kServiceIDType:
+                    duk_new_service_id(context, value.GetServiceID());
+                    break;
+                default:
                     duk_push_null(context);
+                    break;
                 }
             }
 
-            Ref<Value> duk_get_value(duk_context* context, duk_idx_t idx)
+            Value duk_get_value(duk_context* context, duk_idx_t idx)
             {
                 switch (duk_get_type(context, idx))
                 {
                 case DUK_TYPE_BOOLEAN:
-                    return Value::CreateBoolean(duk_get_boolean(context, idx));
+                    return Value((bool)duk_get_boolean(context, idx));
                 case DUK_TYPE_NUMBER:
-                    return Value::CreateNumber(duk_get_number(context, idx));
+                    return Value(duk_get_number(context, idx));
                 case DUK_TYPE_STRING:
                 {
                     size_t stringLength;
                     const char* string = duk_get_lstring(context, idx, &stringLength);
-                    return Value::CreateStringView(std::string_view(string, stringLength));
+                    return Value(std::string_view(string, stringLength));
                 }
                 case DUK_TYPE_OBJECT:
                 {
@@ -163,7 +144,7 @@ namespace server
 
                         duk_pop_2(context); // [ ]
 
-                        return Value::CreateEndpoint(Endpoint{
+                        return Value(Endpoint{
                             .host = std::move(host),
                             .port = port,
                         });
@@ -183,11 +164,47 @@ namespace server
                         // Pop blue, green, and blue
                         duk_pop_3(context);
 
-                        return Value::CreateColor(Color{
+                        return Value(Color{
                             .red = red,
                             .green = green,
                             .blue = blue,
                         });
+                    }
+                    case CRC32(ROOM_TYPE_NAME):
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+
+                        identifier_t id = (uint8_t)duk_get_uint(context, -1);
+
+                        // Pop id
+                        duk_pop(context);
+
+                        return Value::Create<ValueType::kRoomIDType>(id);
+                    }
+                    case CRC32(DEVICE_TYPE_NAME):
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+
+                        identifier_t id = (uint8_t)duk_get_uint(context, -1);
+
+                        // Pop id
+                        duk_pop(context);
+
+                        return Value::Create<ValueType::kDeviceIDType>(id);
+                    }
+                    case CRC32(SERVICE_TYPE_NAME):
+                    {
+                        // Get id
+                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
+
+                        identifier_t id = (uint8_t)duk_get_uint(context, -1);
+
+                        // Pop id
+                        duk_pop(context);
+
+                        return Value::Create<ValueType::kServiceIDType>(id);
                     }
                     default:
                         break;
@@ -197,144 +214,91 @@ namespace server
                     break;
                 }
 
-                return Value::CreateNull();
+                return Value();
             }
-            void duk_get_value(duk_context* context, duk_idx_t idx, Ref<Value> value)
+
+            void duk_get_value(duk_context* context, duk_idx_t idx, Value& value)
             {
-                switch (value->GetType())
+                switch (value.GetType())
                 {
-                case ValueType::kUnknownType:
-                case ValueType::kNullType:
-                    if (!duk_is_null_or_undefined(context, idx))
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected null or undefined.");
-                    break;
                 case ValueType::kBooleanType:
-                    if (duk_is_boolean(context, idx))
-                        value->SetBoolean(duk_get_boolean(context, idx));
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected boolean.");
+                    value.SetBoolean(duk_to_boolean(context, idx));
                     break;
                 case ValueType::kNumberType:
-                    if (duk_is_number(context, idx))
-                        value->SetNumber(duk_get_number(context, idx));
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected number.");
-                    break;
+                    value.SetNumber(duk_to_number(context, idx));
                 case ValueType::kStringType:
                 {
-                    if (duk_is_string(context, idx))
-                    {
-                        size_t stringLength;
-                        const char* string = duk_get_lstring(context, idx, &stringLength);
-                        value->SetStringView(std::string_view(string, stringLength));
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected string.");
-                    break;
+                    size_t stringLength;
+                    const char* string = duk_get_lstring(context, idx, &stringLength);
+                    value.SetStringView(std::string_view(string, stringLength));
                 }
                 case ValueType::kEndpointType:
                 {
-                    if (duk_is_object(context, idx))
-                    {
-                        // Get host
-                        duk_get_prop_lstring(context, idx, "host", 4); // [ string ]
+                    Endpoint& endpoint = value.GetEndpoint();
 
-                        size_t hostLength;
-                        const char* hostStr = duk_to_lstring(context, -1, &hostLength);
-                        std::string host = std::string(hostStr, hostLength); // [ string ]
+                    // Get host
+                    duk_get_prop_lstring(context, idx, HOST_PROPERTY, HOST_PROPERTY_SIZE); // [ string ]
 
-                        duk_pop(context); // [ ]
+                    size_t hostLength;
+                    const char* hostStr = duk_get_lstring(context, -1, &hostLength);
+                    endpoint.host.assign(hostStr, hostLength);
 
-                        // Get port
-                        duk_get_prop_lstring(context, idx, "port", 4); // [ number ]
+                    // Get port
+                    duk_get_prop_lstring(context, idx, PORT_PROPERTY, PORT_PROPERTY_SIZE); // [ string number ]
 
-                        uint16_t port = duk_to_uint16(context, -1); // [ number ]
+                    endpoint.port = (uint16_t)duk_get_uint(context, -1); // [ string number ]
 
-                        duk_pop(context); // [ ]
-
-                        value->SetEndpoint(Endpoint{
-                            .host = std::move(host),
-                            .port = port,
-                        });
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
-                    break;
+                    duk_pop_2(context); // [ ]
                 }
                 case ValueType::kColorType:
                 {
-                    if (duk_is_object(context, idx))
-                    {
-                        // Get red
-                        duk_get_prop_lstring(context, idx, "red", 3);    // [ number ]
-                        uint8_t red = (uint8_t)duk_to_uint(context, -1); // [ number ]
-                        duk_pop(context);                                // [ ]
+                    Color& color = value.GetColor();
 
-                        // Get green
-                        duk_get_prop_lstring(context, idx, "green", 5);    // [ number ]
-                        uint8_t green = (uint8_t)duk_to_uint(context, -1); // [ number ]
-                        duk_pop(context);                                  // [ ]
+                    // Get red, green, and blue
+                    duk_get_prop_lstring(context, idx, RED_PROPERTY, RED_PROPERTY_SIZE);     // [ number ]
+                    duk_get_prop_lstring(context, idx, GREEN_PROPERTY, GREEN_PROPERTY_SIZE); // [ number number ]
+                    duk_get_prop_lstring(context, idx, BLUE_PROPERTY,
+                                         BLUE_PROPERTY_SIZE); // [ number number number ]
 
-                        // Get blue
-                        duk_get_prop_lstring(context, idx, "blue", 4);    // [ number ]
-                        uint8_t blue = (uint8_t)duk_to_uint(context, -1); // [ number ]
-                        duk_pop(context);                                 // [ ]
+                    color.red = (uint8_t)duk_get_uint(context, -3);
+                    color.green = (uint8_t)duk_get_uint(context, -2);
+                    color.blue = (uint8_t)duk_get_uint(context, -1);
 
-                        value->SetColor(Color{
-                            .red = red,
-                            .green = green,
-                            .blue = blue,
-                        });
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
-                    break;
+                    // Pop blue, green, and blue
+                    duk_pop_3(context);
                 }
                 case ValueType::kRoomIDType:
                 {
-                    if (duk_is_object(context, idx))
-                    {
-                        // Get id
-                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
-                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
-                        duk_pop(context);                                                  // [ ]
+                    // Get id
+                    duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
 
-                        value->SetRoomID(id);
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
-                    break;
+                    value.SetRoomID((uint8_t)duk_get_uint(context, -1));
+
+                    // Pop id
+                    duk_pop(context);
                 }
                 case ValueType::kDeviceIDType:
                 {
-                    if (duk_is_object(context, idx))
-                    {
-                        // Get id
-                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
-                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
-                        duk_pop(context);                                                  // [ ]
+                    // Get id
+                    duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
 
-                        value->SetDeviceID(id);
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
-                    break;
+                    value.SetDeviceID((uint8_t)duk_get_uint(context, -1));
+
+                    // Pop id
+                    duk_pop(context);
                 }
                 case ValueType::kServiceIDType:
                 {
-                    if (duk_is_object(context, idx))
-                    {
-                        // Get id
-                        duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
-                        uint8_t id = (uint8_t)duk_to_uint(context, -1);                    // [ number ]
-                        duk_pop(context);                                                  // [ ]
+                    // Get id
+                    duk_get_prop_lstring(context, idx, ID_PROPERTY, ID_PROPERTY_SIZE); // [ number ]
 
-                        value->SetServiceID(id);
-                    }
-                    else
-                        duk_error(context, DUK_ERR_TYPE_ERROR, "Expected object.");
-                    break;
+                    value.SetServiceID((uint8_t)duk_get_uint(context, -1));
+
+                    // Pop id
+                    duk_pop(context);
                 }
+                default:
+                    break;
                 }
             }
 
@@ -367,7 +331,7 @@ namespace server
                     duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
 
                     // Put prop
-                   duk_put_prop_lstring(context, -2,COLOR_OBJECT, COLOR_OBJECT_SIZE); // [ global c_func string ]
+                    duk_put_prop_lstring(context, -2, COLOR_OBJECT, COLOR_OBJECT_SIZE); // [ global c_func string ]
                 }
 
                 // Import room id
@@ -393,7 +357,7 @@ namespace server
                     duk_put_prop_lstring(context, -2, "prototype", 9); // [ global c_func ]
 
                     // Put prop
-                   duk_put_prop_lstring(context, -2, DEVICE_ID_OBJECT, DEVICE_ID_OBJECT_SIZE); // [ global ]
+                    duk_put_prop_lstring(context, -2, DEVICE_ID_OBJECT, DEVICE_ID_OBJECT_SIZE); // [ global ]
                 }
 
                 // Import service id

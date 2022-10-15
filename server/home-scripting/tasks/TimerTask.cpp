@@ -36,7 +36,7 @@ namespace server
             {
                 if (Ref<Script> r = script.lock())
                 {
-                    if (r->Invoke(method, Value::CreateNull()))
+                    if (r->Invoke(method, Value()))
                         WaitAsync();
                 }
             }

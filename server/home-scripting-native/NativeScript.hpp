@@ -1,6 +1,8 @@
 #pragma once
 #include "LibraryInformation.hpp"
 #include "common.hpp"
+#include "utils/Method.hpp"
+#include "utils/Property.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/utils/Event.hpp>
 #include <home-scripting/utils/Value.hpp>
@@ -14,21 +16,12 @@ namespace server
             class NativeScriptSource;
             class NativeScriptImpl;
 
-            template <class T = NativeScriptImpl>
-            using MethodCallback = bool (T::*)(const std::string& name, Ref<Value> parameter);
-
-            template <class T>
-            union MethodCallbackConversion
-            {
-                MethodCallback<T> f1;
-                MethodCallback<> f2;
-            };
-
             class NativeScript : public Script
             {
               private:
                 UniqueRef<NativeScriptImpl> scriptImpl;
-                robin_hood::unordered_node_map<std::string, MethodCallback<>> methodList;
+                robin_hood::unordered_node_map<std::string, Method> methodList;
+                robin_hood::unordered_node_map<std::string, Property> propertyList;
 
               public:
                 NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource,
@@ -40,11 +33,11 @@ namespace server
                 bool RemoveAttribute(const std::string& name);
                 void ClearAttributes();
 
-                Ref<Value> AddProperty(const std::string& name, Ref<Value> property);
+                bool AddProperty(const std::string& name, const Property& property);
                 bool RemoveProperty(const std::string& name);
                 void ClearProperties();
 
-                bool AddMethod(const std::string& name, MethodCallback<> callback);
+                bool AddMethod(const std::string& name, const Method& method);
                 bool RemoveMethod(const std::string& name);
                 void ClearMethods();
 
@@ -54,7 +47,10 @@ namespace server
 
                 bool Initialize() override;
 
-                bool Invoke(const std::string& name, Ref<Value> parameter) override;
+                virtual Value GetProperty(const std::string& name) override;
+                virtual void SetProperty(const std::string& name, const Value& value) override;
+
+                bool Invoke(const std::string& name, const Value& parameter) override;
             };
 
             class NativeScriptImpl
@@ -107,8 +103,8 @@ namespace server
                 ///
                 /// @param name Property name
                 /// @param property Value
-                /// @return Ref<Value> Value
-                inline Ref<Value> AddProperty(const std::string& name, Ref<Value> property)
+                /// @return Successfulness
+                inline bool AddProperty(const std::string& name, const Property& property)
                 {
                     return script->AddProperty(name, property);
                 }
@@ -132,11 +128,11 @@ namespace server
                 /// @brief Add method
                 ///
                 /// @param name Method name
-                /// @param callback Method callback
+                /// @param method Method
                 /// @return Successfulness
-                inline bool AddMethod(const std::string& name, MethodCallback<> callback)
+                inline bool AddMethod(const std::string& name, const Method& method)
                 {
-                    return script->AddMethod(name, callback);
+                    return script->AddMethod(name, method);
                 }
 
                 /// @brief Remove method
@@ -153,12 +149,6 @@ namespace server
                 inline void ClearMethods()
                 {
                     return script->ClearMethods();
-                }
-
-                template <class T>
-                inline bool AddMethod(const std::string& name, MethodCallback<T> callback)
-                {
-                    return script->AddMethod(name, MethodCallbackConversion<T>{callback}.f2);
                 }
 
                 /// @brief Add event

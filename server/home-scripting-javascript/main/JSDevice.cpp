@@ -164,8 +164,7 @@ namespace server
                     std::string name = std::string(nameStr, nameLength);
 
                     // Get value
-                    Ref<Value> value = duk_get_value(context, -1);
-                    assert(value != nullptr);
+                    Value value = duk_get_value(context, -1);
 
                     // Get id
                     duk_push_this(context); // [ string value this ]

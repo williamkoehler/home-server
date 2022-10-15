@@ -15,15 +15,6 @@ namespace server
         {
         }
 
-        Ref<Value> Script::GetProperty(const std::string& name)
-        {
-            const robin_hood::unordered_node_map<std::string, Ref<Value>>::const_iterator it = propertyList.find(name);
-            if (it == propertyList.end())
-                return nullptr;
-
-            return it->second;
-        }
-
         Ref<Event> Script::GetEvent(const std::string& name)
         {
             const robin_hood::unordered_node_map<std::string, Ref<Event>>::const_iterator it = eventList.find(name);
@@ -37,7 +28,7 @@ namespace server
         {
             // Reset references
             attributeList.clear();
-            propertyList.clear();
+            propertySet.clear();
             eventList.clear();
 
             // Clear tasks
@@ -66,7 +57,7 @@ namespace server
                            taskList.end());
         }
 
-        void Script::PostInvoke(const std::string& name, Ref<Value> parameter)
+        void Script::PostInvoke(const std::string& name, const Value& parameter)
         {
             Ref<Worker> worker = Worker::GetInstance();
             assert(worker != nullptr);
@@ -97,12 +88,12 @@ namespace server
         {
             assert(output.IsObject());
 
-            output.MemberReserve(propertyList.size(), allocator);
-            for (auto& [id, property] : propertyList)
+            output.MemberReserve(propertySet.size(), allocator);
+            for (const std::string& name : propertySet)
             {
                 // Add property
-                output.AddMember(rapidjson::Value(id.data(), id.size(), allocator), property->JsonGet(allocator),
-                                 allocator);
+                output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),
+                                 GetProperty(name).JsonGet(allocator), allocator);
             }
         }
         void Script::JsonSetState(rapidjson::Value& input)
@@ -112,11 +103,8 @@ namespace server
             for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
                  propertyIt++)
             {
-                Ref<Value> property =
-                    GetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
-
-                if (property != nullptr)
-                    property->JsonSet(propertyIt->value);
+                SetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()),
+                            Value::Create(propertyIt->value));
             }
         }
     }

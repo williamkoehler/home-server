@@ -149,7 +149,7 @@ namespace server
             return view;
         }
 
-        void Device::Invoke(const std::string& id, Ref<scripting::Value> parameter)
+        void Device::Invoke(const std::string& id, const scripting::Value& parameter)
         {
             if (script != nullptr)
                 script->PostInvoke(id, parameter);

@@ -119,7 +119,7 @@ namespace server
             return view;
         }
 
-        void Service::Invoke(const std::string& id, Ref<scripting::Value> parameter)
+        void Service::Invoke(const std::string& id, const scripting::Value& parameter)
         {
             if (script != nullptr)
                 script->PostInvoke(id, parameter);

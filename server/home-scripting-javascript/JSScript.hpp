@@ -42,7 +42,7 @@ namespace server
 
                 /// @brief Script properties ordered by id
                 ///
-                boost::container::vector<Ref<Value>> propertyByIDList;
+                robin_hood::unordered_node_map<std::string, Value> propertyList;
 
                 /// @brief Script events ordered by id
                 ///
@@ -97,7 +97,10 @@ namespace server
                 /// @return Successfulness
                 virtual bool Initialize() override;
 
-                virtual bool Invoke(const std::string& name, Ref<Value> parameter) override;
+                virtual Value GetProperty(const std::string& name) override;
+                virtual void SetProperty(const std::string& name, const Value& value) override;
+
+                virtual bool Invoke(const std::string& name, const Value& parameter) override;
             };
         }
     }

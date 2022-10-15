@@ -22,7 +22,7 @@ namespace server
             virtual std::string GetName() override;
             virtual void SetName(const std::string& v) override;
 
-            virtual void Invoke(const std::string& method, Ref<scripting::Value> parameter) override;
+            virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
         };
     }
 }

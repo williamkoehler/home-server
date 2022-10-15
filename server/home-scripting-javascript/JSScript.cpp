@@ -209,7 +209,7 @@ namespace server
                 duk_context* context = GetDuktapeContext();
                 assert(context != nullptr);
 
-                propertyByIDList.clear();
+                propertyList.clear();
 
                 DUK_TEST_ENTER(context);
 
@@ -233,22 +233,16 @@ namespace server
                         const char* typeStr = duk_get_lstring(context, -1, &typeLength);
                         ValueType type = ParseValueType(std::string_view(typeStr, typeLength));
 
-                        uint32_t index;
+                        uint32_t index = 0;
 
-                        // Add property
-                        Ref<Value> property = Value::Create(type);
-                        if (property != nullptr)
-                        {
-                            // Insert property
-                            propertyList[name] = property;
+                        // Insert property
+                        // propertyList[name] = Value(type);
+                        // propertySet.insert(name);
 
-                            // Insert property id reference
-                            index = (uint32_t)propertyByIDList.size();
-                            if (index >= 32)
-                                duk_error(context, DUK_ERR_ERROR, "Too many properties.");
-
-                            propertyByIDList.push_back(property);
-                        }
+                        // // Insert property id reference
+                        // index = (uint32_t)propertyList.size();
+                        // if (index >= 32)
+                        //     duk_error(context, DUK_ERR_ERROR, "Too many properties.");
 
                         // Pop value
                         duk_pop(context); // [ object enum key ]
@@ -277,7 +271,7 @@ namespace server
 
                 DUK_TEST_LEAVE(context, 0);
 
-                propertyByIDList.shrink_to_fit();
+                // propertyByIDList.shrink_to_fit();
             }
             void JSScript::InitializeMethods()
             {
@@ -441,7 +435,15 @@ namespace server
                 // #endif
             }
 
-            bool JSScript::Invoke(const std::string& name, Ref<Value> parameter)
+            Value JSScript::GetProperty(const std::string& name)
+            {
+                return Value();
+            }
+            void JSScript::SetProperty(const std::string& name, const Value& value)
+            {
+            }
+
+            bool JSScript::Invoke(const std::string& name, const Value& parameter)
             {
                 duk_context* context = GetDuktapeContext();
                 if (context != nullptr)
@@ -493,19 +495,18 @@ namespace server
 
             duk_ret_t JSScript::duk_get_property(duk_context* context)
             {
-                JSScript* script = (JSScript*)duk_get_user_data(context);
+                // JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                uint32_t index = duk_get_current_magic(context);
-                if (index < script->propertyByIDList.size())
-                {
-                    Ref<Value> property = script->propertyByIDList[index];
-                    assert(property != nullptr);
+                // uint32_t index = duk_get_current_magic(context);
+                // if (index < script->propertyList.size())
+                // {
+                //     const Value& property = script->propertyList[index];
 
-                    duk_new_value(context, property);
+                //     duk_new_value(context, property);
 
-                    return 1; // [ value ]
-                }
-                else
+                //     return 1; // [ value ]
+                // }
+                // else
                 {
                     // Error
                     return DUK_RET_ERROR;
@@ -513,19 +514,17 @@ namespace server
             }
             duk_ret_t JSScript::duk_set_property(duk_context* context)
             {
-                JSScript* script = (JSScript*)duk_get_user_data(context);
+                // JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                uint32_t index = duk_get_current_magic(context);
-                if (index < script->propertyByIDList.size() && duk_get_top(context) == 1)
-                {
-                    Ref<Value> property = script->propertyByIDList[index];
-                    assert(property != nullptr);
+                // uint32_t index = duk_get_current_magic(context);
+                // if (index < script->propertyList.size() && duk_get_top(context) == 1)
+                // {
+                //     Value& property = script->propertyList[index];
+                //     duk_get_value(context, -1, property);
 
-                    duk_get_value(context, -1, property);
-
-                    return 0;
-                }
-                else
+                //     return 0;
+                // }
+                // else
                 {
                     // Error
                     return DUK_RET_ERROR;
@@ -542,7 +541,7 @@ namespace server
                     Ref<Event> event = script->eventByIDList[index];
                     assert(event != nullptr);
 
-                    event->Invoke(nullptr);
+                    event->Invoke(duk_get_value(context, 0));
 
                     return 0;
                 }

@@ -35,7 +35,7 @@ namespace server
                 r->SetName(v);
         }
 
-        void DeviceView::Invoke(const std::string& method, Ref<scripting::Value> parameter)
+        void DeviceView::Invoke(const std::string& method, const scripting::Value& parameter)
         {
             if (Ref<Device> r = device.lock())
                 r->Invoke(method, parameter);

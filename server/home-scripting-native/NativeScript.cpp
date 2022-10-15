@@ -67,16 +67,17 @@ namespace server
                 attributeList.clear();
             }
 
-            Ref<Value> NativeScript::AddProperty(const std::string& name, Ref<Value> property)
+            bool NativeScript::AddProperty(const std::string& name, const Property& property)
             {
                 // Check existance
-                if (!propertyList.contains(name) && property != nullptr)
+                if (!propertyList.contains(name))
                 {
+                    // Add property to list
                     propertyList[name] = property;
-                    return property;
+                    return true;
                 }
 
-                return nullptr;
+                return false;
             }
             bool NativeScript::RemoveProperty(const std::string& name)
             {
@@ -87,27 +88,99 @@ namespace server
                 propertyList.clear();
             }
 
-            bool NativeScript::AddMethod(const std::string& name, MethodCallback<> callback)
+            bool NativeScript::AddMethod(const std::string& name, const Method& method)
             {
-                assert(callback != nullptr);
-
                 // Check existance
                 if (!methodList.contains(name))
                 {
                     // Add method to list
-                    methodList[name] = callback;
+                    methodList[name] = method;
                     return true;
                 }
                 else
                     return false;
             }
 
-            bool NativeScript::Invoke(const std::string& name, Ref<Value> parameter)
+            Value NativeScript::GetProperty(const std::string& name)
             {
-                robin_hood::unordered_node_map<std::string, MethodCallback<>>::const_iterator it =
-                    methodList.find(name);
+                robin_hood::unordered_node_map<std::string, Property>::const_iterator it = propertyList.find(name);
+                if (it != propertyList.end())
+                {
+                    const Property& property = it->second;
+                    if (property.GetGetter() != nullptr)
+                    {
+                        // Invoke getter according to property type
+                        switch (property.GetType())
+                        {
+                        case ValueType::kBooleanType:
+                            return Value((scriptImpl.get()->*(property.GetGetter<bool>()))());
+                        case ValueType::kNumberType:
+                            return Value((scriptImpl.get()->*(property.GetGetter<double>()))());
+                        case ValueType::kStringType:
+                            return Value((scriptImpl.get()->*(property.GetGetter<std::string>()))());
+                        case ValueType::kEndpointType:
+                            return Value((scriptImpl.get()->*(property.GetGetter<Endpoint>()))());
+                        case ValueType::kColorType:
+                            return Value((scriptImpl.get()->*(property.GetGetter<Color>()))());
+                        case ValueType::kRoomIDType:
+                            return Value::Create<ValueType::kRoomIDType>(
+                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                        case ValueType::kDeviceIDType:
+                            return Value::Create<ValueType::kDeviceIDType>(
+                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                        case ValueType::kServiceIDType:
+                            return Value::Create<ValueType::kServiceIDType>(
+                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                        default:
+                            break;
+                        }
+                    }
+                }
+
+                return Value();
+            }
+
+            void NativeScript::SetProperty(const std::string& name, const Value& value)
+            {
+            }
+
+            bool NativeScript::Invoke(const std::string& name, const Value& parameter)
+            {
+                robin_hood::unordered_node_map<std::string, Method>::const_iterator it = methodList.find(name);
                 if (it != methodList.end())
-                    return (scriptImpl.get()->*(it->second))(name, parameter);
+                {
+                    // Check method validity
+                    const Method& method = it->second;
+                    if (method.GetMethod() != nullptr && parameter.GetType() == method.GetParameterType())
+                    {
+                        // Invoke method according to parameter type
+                        switch (method.GetParameterType())
+                        {
+                        case ValueType::kBooleanType:
+                            return (scriptImpl.get()->*(method.GetMethod<bool>()))(name, parameter.GetBoolean());
+                        case ValueType::kNumberType:
+                            return (scriptImpl.get()->*(method.GetMethod<double>()))(name, parameter.GetNumber());
+                        case ValueType::kStringType:
+                            return (scriptImpl.get()->*(method.GetMethod<std::string>()))(name, parameter.GetString());
+                        case ValueType::kEndpointType:
+                            return (scriptImpl.get()->*(method.GetMethod<Endpoint>()))(name, parameter.GetEndpoint());
+                        case ValueType::kColorType:
+                            return (scriptImpl.get()->*(method.GetMethod<Color>()))(name, parameter.GetColor());
+                        case ValueType::kRoomIDType:
+                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name, parameter.GetRoomID());
+                        case ValueType::kDeviceIDType:
+                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name,
+                                                                                           parameter.GetDeviceID());
+                        case ValueType::kServiceIDType:
+                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name,
+                                                                                           parameter.GetServiceID());
+                        case ValueType::kNullType:
+                            return (scriptImpl.get()->*(method.GetMethod<Void>()))(name, Void());
+                        default:
+                            return false;
+                        }
+                    }
+                }
 
                 return false;
             }

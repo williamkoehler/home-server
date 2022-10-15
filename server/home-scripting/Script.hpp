@@ -25,7 +25,7 @@ namespace server
             const Ref<ScriptSource> scriptSource;
 
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
-            robin_hood::unordered_node_map<std::string, Ref<Value>> propertyList;
+            boost::container::set<std::string> propertySet;
             robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
 
             boost::container::vector<WeakRef<Task>> taskList;
@@ -47,7 +47,6 @@ namespace server
                 return scriptSource->GetID();
             }
 
-            Ref<Value> GetProperty(const std::string& id);
             Ref<Event> GetEvent(const std::string& id);
 
             /// @brief Initialize script (ONLY CALL ONCE AFTER CREATION)
@@ -66,18 +65,30 @@ namespace server
             ///
             void CleanTasks();
 
+            /// @brief Get property value
+            ///
+            /// @param name Property name
+            /// @return Value
+            virtual Value GetProperty(const std::string& name) = 0;
+
+            /// @brief Set property value
+            ///
+            /// @param name Property name
+            /// @param value Value
+            virtual void SetProperty(const std::string& name, const Value& value) = 0;
+
             /// @brief Invoke method
             ///
             /// @param name Method name
             /// @param parameter Parameter
             /// @return Successfulness
-            virtual bool Invoke(const std::string& name, Ref<Value> parameter) = 0;
+            virtual bool Invoke(const std::string& name, const Value& parameter) = 0;
 
             /// @brief Post invoke method
             ///
             /// @param name Method name
             /// @param parameter Parameter
-            void PostInvoke(const std::string& name, Ref<Value> parameter);
+            void PostInvoke(const std::string& name, const Value& parameter);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

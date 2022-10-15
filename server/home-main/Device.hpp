@@ -79,7 +79,7 @@ namespace server
             /// @brief Invoke script method
             ///
             /// @param event Method name
-            void Invoke(const std::string& method, Ref<scripting::Value> parameter);
+            void Invoke(const std::string& method, const scripting::Value& parameter);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

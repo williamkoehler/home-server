@@ -5,6 +5,12 @@ namespace server
 {
     namespace scripting
     {
+        /// @brief Void object
+        ///
+        struct Void
+        {
+        };
+
         /// @brief Endpoint object (host:port)
         ///
         struct Endpoint
@@ -49,7 +55,7 @@ namespace server
         class Value
         {
           private:
-            const ValueType type;
+            ValueType type;
 
             /// @brief Calculate value array size
             ///
@@ -81,53 +87,23 @@ namespace server
             explicit Value(const Endpoint& endpoint);
             explicit Value(const Color& color);
             explicit Value(ValueType type);
+            Value(const Value& other);
+            Value(Value&& other);
             ~Value();
-            static Ref<Value> Create(ValueType type);
-            inline static Ref<Value> CreateNull()
-            {
-                return boost::make_shared<Value>();
-            }
-            inline static Ref<Value> CreateBoolean(bool boolean = false)
-            {
-                return boost::make_shared<Value>(boolean);
-            }
-            inline static Ref<Value> CreateInteger(int64_t integer = 0l)
-            {
-                return boost::make_shared<Value>((double_t)integer);
-            }
-            inline static Ref<Value> CreateNumber(double_t number = 0.0)
-            {
-                return boost::make_shared<Value>(number);
-            }
-            inline static Ref<Value> CreateString(const std::string& string = std::string())
-            {
-                return boost::make_shared<Value>(string);
-            }
-            inline static Ref<Value> CreateStringView(const std::string_view& string = std::string_view())
-            {
-                return boost::make_shared<Value>(string);
-            }
-            inline static Ref<Value> CreateEndpoint(const Endpoint& endpoint = Endpoint{})
-            {
-                return boost::make_shared<Value>(endpoint);
-            }
-            inline static Ref<Value> CreateColor(const Color& color = Color{})
-            {
-                return boost::make_shared<Value>(color);
-            }
-            inline static Ref<Value> CreateRoomID()
-            {
-                return boost::make_shared<Value>(ValueType::kRoomIDType);
-            }
-            inline static Ref<Value> CreateDeviceID()
-            {
-                return boost::make_shared<Value>(ValueType::kDeviceIDType);
-            }
-            inline static Ref<Value> CreateServiceID()
-            {
-                return boost::make_shared<Value>(ValueType::kServiceIDType);
-            }
-            static Ref<Value> Create(rapidjson::Value& json);
+
+            /// @brief Create value
+            ///
+            /// @tparam type Value type
+            /// @tparam T Value
+            /// @return Value
+            template <ValueType type, typename T>
+            static inline Value Create(const T&);
+
+            /// @brief Create value from json
+            ///
+            /// @param json Json
+            /// @return Value
+            static Value Create(rapidjson::Value& json);
 
             inline ValueType GetType() const
             {
@@ -175,44 +151,92 @@ namespace server
                 return type == ValueType::kServiceIDType;
             }
 
-            inline bool GetBoolean() const
+            inline bool& GetBoolean()
             {
                 assert(type == ValueType::kBooleanType);
                 return *(bool*)value;
             }
+            inline const bool& GetBoolean() const
+            {
+                assert(type == ValueType::kBooleanType);
+                return *(bool*)value;
+            }
+
             inline int64_t GetInteger() const
             {
                 assert(type == ValueType::kNumberType);
                 return (int64_t) * (double_t*)value;
             }
-            inline double_t GetNumber() const
+
+            inline double_t& GetNumber()
             {
                 assert(type == ValueType::kNumberType);
                 return *(double_t*)value;
+            }
+            inline const double_t& GetNumber() const
+            {
+                assert(type == ValueType::kNumberType);
+                return *(double_t*)value;
+            }
+
+            inline std::string& GetString()
+            {
+                assert(type == ValueType::kStringType);
+                return *(std::string*)value;
             }
             inline const std::string& GetString() const
             {
                 assert(type == ValueType::kStringType);
                 return *(std::string*)value;
             }
+
+            inline Endpoint& GetEndpoint()
+            {
+                assert(type == ValueType::kEndpointType);
+                return *(Endpoint*)value;
+            }
             inline const Endpoint& GetEndpoint() const
             {
                 assert(type == ValueType::kEndpointType);
                 return *(Endpoint*)value;
+            }
+
+            inline Color& GetColor()
+            {
+                assert(type == ValueType::kColorType);
+                return *(Color*)value;
             }
             inline const Color& GetColor() const
             {
                 assert(type == ValueType::kColorType);
                 return *(Color*)value;
             }
+
+            inline identifier_t& GetRoomID()
+            {
+                assert(type == ValueType::kRoomIDType);
+                return *(identifier_t*)value;
+            }
             inline const identifier_t& GetRoomID() const
             {
                 assert(type == ValueType::kRoomIDType);
                 return *(identifier_t*)value;
             }
+
+            inline identifier_t& GetDeviceID()
+            {
+                assert(type == ValueType::kDeviceIDType);
+                return *(identifier_t*)value;
+            }
             inline const identifier_t& GetDeviceID() const
             {
                 assert(type == ValueType::kDeviceIDType);
+                return *(identifier_t*)value;
+            }
+
+            inline identifier_t& GetServiceID()
+            {
+                assert(type == ValueType::kServiceIDType);
                 return *(identifier_t*)value;
             }
             inline const identifier_t& GetServiceID() const
@@ -284,5 +308,59 @@ namespace server
             rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator);
             bool JsonSet(rapidjson::Value& input);
         };
+
+        template <>
+        inline Value Value::Create<ValueType::kBooleanType, bool>(const bool& boolean)
+        {
+            return Value(boolean);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kNumberType, double_t>(const double_t& number)
+        {
+            return Value(number);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kStringType, std::string>(const std::string& string)
+        {
+            return Value(string);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kEndpointType, Endpoint>(const Endpoint& endpoint)
+        {
+            return Value(endpoint);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kColorType, Color>(const Color& color)
+        {
+            return Value(color);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kRoomIDType, identifier_t>(const identifier_t& roomID)
+        {
+            Value value = Value(ValueType::kRoomIDType);
+            value.SetRoomID(roomID);
+            return std::move(value);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kDeviceIDType, identifier_t>(const identifier_t& deviceID)
+        {
+            Value value = Value(ValueType::kDeviceIDType);
+            value.SetDeviceID(deviceID);
+            return std::move(value);
+        }
+
+        template <>
+        inline Value Value::Create<ValueType::kServiceIDType, identifier_t>(const identifier_t& serviceID)
+        {
+            Value value = Value(ValueType::kServiceIDType);
+            value.SetServiceID(serviceID);
+            return std::move(value);
+        }
     }
 }

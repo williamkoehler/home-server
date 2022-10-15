@@ -35,7 +35,7 @@ namespace server
                 r->SetName(v);
         }
 
-        void ServiceView::Invoke(const std::string& method, Ref<scripting::Value> parameter)
+        void ServiceView::Invoke(const std::string& method, const scripting::Value& parameter)
         {
             if (Ref<Service> r = service.lock())
                 r->Invoke(method, parameter);

@@ -104,10 +104,10 @@ namespace server
                 new ((void*)value) std::string();
                 break;
             case ValueType::kEndpointType:
-                new ((void*)value) std::string();
+                new ((void*)value) Endpoint();
                 break;
             case ValueType::kColorType:
-                new ((void*)value) std::string();
+                new ((void*)value) Color();
                 break;
             case ValueType::kRoomIDType:
             case ValueType::kDeviceIDType:
@@ -117,6 +117,38 @@ namespace server
             default:
                 break;
             }
+        }
+        Value::Value(const Value& other) : type(other.type)
+        {
+            switch (type)
+            {
+            case ValueType::kBooleanType:
+                new ((void*)value) bool(*(bool*)other.value);
+                break;
+            case ValueType::kNumberType:
+                new ((void*)value) double_t(*(double_t*)other.value);
+                break;
+            case ValueType::kStringType:
+                new ((void*)value) std::string(*(std::string*)other.value);
+                break;
+            case ValueType::kEndpointType:
+                new ((void*)value) Endpoint(*(Endpoint*)other.value);
+                break;
+            case ValueType::kColorType:
+                new ((void*)value) Color(*(Color*)other.value);
+                break;
+            case ValueType::kRoomIDType:
+            case ValueType::kDeviceIDType:
+            case ValueType::kServiceIDType:
+                new ((void*)value) identifier_t(*(identifier_t*)other.value);
+                break;
+            default:
+                break;
+            }
+        }
+        Value::Value(Value&& other) : type(std::exchange(other.type, ValueType::kUnknownType))
+        {
+            memcpy(other.value, value, sizeof(value));
         }
         Value::~Value()
         {
@@ -136,22 +168,18 @@ namespace server
             }
         }
 
-        Ref<Value> Value::Create(ValueType type)
-        {
-            return boost::make_shared<Value>(type);
-        }
-        Ref<Value> Value::Create(rapidjson::Value& input)
+        Value Value::Create(rapidjson::Value& input)
         {
             switch (input.GetType())
             {
             case rapidjson::kTrueType:
-                return boost::make_shared<Value>(true);
+                return Value(true);
             case rapidjson::kFalseType:
-                return boost::make_shared<Value>(false);
+                return Value(false);
             case rapidjson::kNumberType:
-                return boost::make_shared<Value>(input.GetDouble());
+                return Value(input.GetDouble());
             case rapidjson::kStringType:
-                return boost::make_shared<Value>(std::string_view(input.GetString(), input.GetStringLength()));
+                return Value(std::string_view(input.GetString(), input.GetStringLength()));
             case rapidjson::kObjectType:
             {
                 rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
@@ -171,7 +199,7 @@ namespace server
                                 .port = (uint16_t)portIt->value.GetUint(),
                             };
 
-                            return boost::make_shared<Value>(endpoint);
+                            return Value(endpoint);
                         }
                     }
                     case CRC32(COLOR_TYPE_NAME):
@@ -188,41 +216,26 @@ namespace server
                                 .blue = (uint8_t)bIt->value.GetUint(),
                             };
 
-                            return boost::make_shared<Value>(color);
+                            return Value(color);
                         }
                     }
                     case CRC32(ROOM_ID_TYPE_NAME):
                     {
                         rapidjson::Value::MemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
-                        {
-                            Ref<Value> value = boost::make_shared<Value>(ValueType::kRoomIDType);
-                            value->SetRoomID(idIt->value.GetUint());
-
-                            return value;
-                        }
+                            return Value::Create<ValueType::kRoomIDType>(idIt->value.GetUint());
                     }
                     case CRC32(DEVICE_ID_TYPE_NAME):
                     {
                         rapidjson::Value::MemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
-                        {
-                            Ref<Value> value = boost::make_shared<Value>(ValueType::kDeviceIDType);
-                            value->SetRoomID(idIt->value.GetUint());
-
-                            return value;
-                        }
+                            return Value::Create<ValueType::kDeviceIDType>(idIt->value.GetUint());
                     }
                     case CRC32(SERVICE_ID_TYPE_NAME):
                     {
                         rapidjson::Value::MemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
-                        {
-                            Ref<Value> value = boost::make_shared<Value>(ValueType::kServiceIDType);
-                            value->SetRoomID(idIt->value.GetUint());
-
-                            return value;
-                        }
+                            return Value::Create<ValueType::kServiceIDType>(idIt->value.GetUint());
                     }
                     }
                 }
@@ -233,7 +246,7 @@ namespace server
                 break;
             }
 
-            return boost::make_shared<Value>();
+            return Value();
         }
 
         rapidjson::Value Value::JsonGet(rapidjson::Document::AllocatorType& allocator)

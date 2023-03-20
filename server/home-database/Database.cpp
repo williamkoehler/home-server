@@ -1,6 +1,6 @@
 #include "Database.hpp"
-#include "sqlite/SQLiteDatabase.hpp"
 #include "empty/EmptyDatabase.hpp"
+#include "sqlite/SQLiteDatabase.hpp"
 
 namespace server
 {
@@ -41,6 +41,10 @@ namespace server
     Ref<Database> Database::Create(DatabaseType type, const std::string& db, const std::string& username,
                                    const std::string& password)
     {
+        // Currently not in use, but will later be used to authenticate to databases such as postgres, etc...
+        (void)username;
+        (void)password;
+
         if (!instanceDatabase.expired())
             return Ref<Database>(instanceDatabase);
 

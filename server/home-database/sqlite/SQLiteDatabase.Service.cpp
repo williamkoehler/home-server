@@ -115,6 +115,8 @@ namespace server
     }
     bool SQLiteDatabase::UpdateServicePropName(identifier_t id, const std::string& value, const std::string& newValue)
     {
+        (void)value; // Will later be stored to allow history
+        
         // Insert into database
         sqlite3_stmt* statement;
 

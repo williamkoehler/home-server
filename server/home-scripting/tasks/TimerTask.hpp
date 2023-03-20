@@ -20,9 +20,9 @@ namespace server
             void TimerHandler(const boost::system::error_code& ec);
 
           public:
-            TimerTask(Ref<Script> script, const std::string& method, size_t interval);
+            TimerTask(const Ref<Script>& script, const std::string& method, size_t interval);
             virtual ~TimerTask();
-            static Ref<TimerTask> Create(Ref<Script> script, const std::string& method, size_t interval);
+            static Ref<TimerTask> Create(const Ref<Script>& script, const std::string& method, size_t interval);
 
             virtual void Cancel() override;
         };

@@ -16,25 +16,26 @@ namespace server
             boost::beast::http::request<boost::beast::http::string_body> request;
             rapidjson::StringBuffer responseBuffer;
 
-            void OnRead(boost::system::error_code error, size_t size);
-            
+            void OnRead(const boost::system::error_code& ec, size_t size);
+
             Ref<users::User> Authenticate();
-            
+
             void WriteError(const char* error);
 
-            void OnWrite(boost::system::error_code error, size_t size,
-                         boost::shared_ptr<boost::beast::http::response<boost::beast::http::empty_body>> response);
+            void OnWrite(
+                const boost::system::error_code& ec, size_t size,
+                const boost::shared_ptr<boost::beast::http::response<boost::beast::http::empty_body>>& response);
             void OnWriteString(
-                boost::system::error_code error, size_t size,
-                boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>> response);
+                const boost::system::error_code& ec, size_t size,
+                const boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>>& response);
             void OnWriteBuffer(
-                boost::system::error_code error, size_t size,
-                boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response);
+                const boost::system::error_code& ec, size_t size,
+                const boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>>& response);
 
-            void OnShutdown(boost::system::error_code error);
+            void OnShutdown(const boost::system::error_code& ec);
 
           public:
-            HTTPSession(Ref<tcp_socket_t> socket);
+            HTTPSession(const Ref<tcp_socket_t>& socket);
             virtual ~HTTPSession();
 
             void Run();

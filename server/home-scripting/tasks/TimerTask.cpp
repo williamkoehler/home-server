@@ -5,15 +5,17 @@ namespace server
 {
     namespace scripting
     {
-        TimerTask::TimerTask(Ref<Script> script, const std::string& method, size_t interval)
+        TimerTask::TimerTask(const Ref<Script>& script, const std::string& method, size_t interval)
             : Task(script), method(method), interval(interval), timer(Worker::GetInstance()->GetContext())
         {
         }
         TimerTask::~TimerTask()
         {
         }
-        Ref<TimerTask> TimerTask::Create(Ref<Script> script, const std::string& method, size_t interval)
+        Ref<TimerTask> TimerTask::Create(const Ref<Script>& script, const std::string& method, size_t interval)
         {
+            assert(script != nullptr);
+            
             Ref<TimerTask> task = boost::make_shared<TimerTask>(script, method, interval);
 
             if (task != nullptr)

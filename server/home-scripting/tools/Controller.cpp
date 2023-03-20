@@ -4,7 +4,7 @@ namespace server
 {
     namespace scripting
     {
-        Controller::Controller(Ref<Script> script) : script(script)
+        Controller::Controller(const Ref<Script>& script) : script(script)
         {
             assert(script != nullptr);
         }

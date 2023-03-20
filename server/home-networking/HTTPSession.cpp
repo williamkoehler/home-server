@@ -8,7 +8,7 @@ namespace server
 {
     namespace networking
     {
-        HTTPSession::HTTPSession(Ref<tcp_socket_t> socket) : strand(socket->get_executor()), socket(socket)
+        HTTPSession::HTTPSession(const Ref<tcp_socket_t>& socket) : strand(socket->get_executor()), socket(socket)
         {
         }
         HTTPSession::~HTTPSession()
@@ -24,9 +24,9 @@ namespace server
                                                                boost::placeholders::_1, boost::placeholders::_2)));
         }
 
-        void HTTPSession::OnRead(boost::system::error_code error, size_t size)
+        void HTTPSession::OnRead(const boost::system::error_code& ec, size_t size)
         {
-            if (error)
+            if (ec)
                 return;
 
             try
@@ -303,10 +303,12 @@ namespace server
         }
 
         void HTTPSession::OnWrite(
-            boost::system::error_code error, size_t size,
-            boost::shared_ptr<boost::beast::http::response<boost::beast::http::empty_body>> response)
+            const boost::system::error_code& ec, size_t size,
+            const boost::shared_ptr<boost::beast::http::response<boost::beast::http::empty_body>>& response)
         {
-            if (error)
+            (void)size;
+
+            if (ec)
                 return;
 
             if (response->keep_alive())
@@ -328,10 +330,12 @@ namespace server
             }
         }
         void HTTPSession::OnWriteString(
-            boost::system::error_code error, size_t size,
-            boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>> response)
+            const boost::system::error_code& ec, size_t size,
+            const boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>>& response)
         {
-            if (error)
+            (void)size;
+
+            if (ec)
                 return;
 
             if (response->keep_alive())
@@ -353,10 +357,12 @@ namespace server
             }
         }
         void HTTPSession::OnWriteBuffer(
-            boost::system::error_code error, size_t size,
-            boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response)
+            const boost::system::error_code& ec, size_t size,
+            const boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>>& response)
         {
-            if (error)
+            (void)size;
+
+            if (ec)
                 return;
 
             if (response->keep_alive())
@@ -378,9 +384,9 @@ namespace server
             }
         }
 
-        void HTTPSession::OnShutdown(boost::system::error_code error)
+        void HTTPSession::OnShutdown(const boost::system::error_code& ec)
         {
-            if (error)
+            if (ec)
                 return;
 
             // // At this point the session will close itself

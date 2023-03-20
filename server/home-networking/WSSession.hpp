@@ -18,29 +18,30 @@ namespace server
 
             boost::container::vector<Ref<rapidjson::StringBuffer>> messageQueue;
 
-            void OnAccept(boost::system::error_code error);
+            void OnAccept(const boost::system::error_code& ec);
 
-            void OnRead(boost::system::error_code error, size_t receivedBytes);
+            void OnRead(const boost::system::error_code& ec, size_t receivedBytes);
 
             bool ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input,
                                 rapidjson::Document& output);
 
-            void OnWrite(boost::system::error_code error, size_t sentBytes, Ref<rapidjson::StringBuffer> message);
+            void OnWrite(const boost::system::error_code& ec, size_t sentBytes,
+                         const Ref<rapidjson::StringBuffer>& message);
 
             void DoWSShutdown(boost::beast::websocket::close_code code = boost::beast::websocket::close_code::normal,
                               const char* reason = "");
-            void DoSSLShutdown(boost::system::error_code error);
-            void OnShutdown(boost::system::error_code error);
+            void DoSSLShutdown(const boost::system::error_code& ec);
+            void OnShutdown(const boost::system::error_code& ec);
 
           public:
-            WSSession(Ref<tcp_socket_t> socket, Ref<users::User> user);
+            WSSession(const Ref<tcp_socket_t>& socket, const Ref<users::User>& user);
             virtual ~WSSession();
 
             void Run(boost::beast::http::request<boost::beast::http::string_body>& request);
 
-            void Send(rapidjson::Document& document);
-            void Send(rapidjson::StringBuffer& buffer);
-            void Send(Ref<rapidjson::StringBuffer> buffer);
+            void Send(const rapidjson::Document& document);
+            void Send(const rapidjson::StringBuffer& buffer);
+            void Send(const Ref<rapidjson::StringBuffer>& buffer);
         };
     }
 }

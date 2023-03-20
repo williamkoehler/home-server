@@ -69,7 +69,7 @@ namespace server
             WeakRef<Room> room;
 
           public:
-            RoomView(Ref<Room> room);
+            RoomView(const Ref<Room>& room);
             virtual ~RoomView();
 
             virtual identifier_t GetID() const override;

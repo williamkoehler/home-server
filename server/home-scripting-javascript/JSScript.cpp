@@ -42,7 +42,7 @@ namespace server
                 const std::string& method;
             };
 
-            JSScript::JSScript(Ref<View> view, Ref<JSScriptSource> scriptSource)
+            JSScript::JSScript(const Ref<View>& view, const Ref<JSScriptSource>& scriptSource)
                 : Script(view, boost::static_pointer_cast<ScriptSource>(scriptSource)), context(nullptr)
             {
             }
@@ -252,8 +252,9 @@ namespace server
                 duk_pop(context); // [ ]
 
                 // Replace properties object by proxy
-                duk_push_object(context); // [ target ]
-                duk_push_object(context); // [ target handler ]
+                duk_push_lstring(context, PROPERTIES_PROPERTY, PROPERTIES_PROPERTY_SIZE); // [ key ]
+                duk_push_object(context);                                                 // [ key target ]
+                duk_push_object(context);                                                 // [ key target handler ]
 
                 static const duk_function_list_entry methods[] = {
                     {"get", duk_get_property, 2},
@@ -261,11 +262,12 @@ namespace server
                     {nullptr, nullptr, 0},
                 };
 
-                duk_put_function_list(context, -1, methods); // [ target handler ]
+                duk_put_function_list(context, -1, methods); // [ key target handler ]
 
-                duk_push_proxy(context, 0); // [ proxy ]
+                duk_push_proxy(context, 0); // [ key proxy ]
                 duk_def_prop(context, -2,
-                             DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_E | DUK_DEFPROP_CLEAR_WC | DUK_DEFPROP_FORCE);
+                             DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_E | DUK_DEFPROP_CLEAR_WC |
+                                 DUK_DEFPROP_FORCE); // [ key proxy ]
 
                 DUK_TEST_LEAVE(context, 0);
             }
@@ -329,8 +331,6 @@ namespace server
                         size_t nameLength;
                         const char* nameStr = duk_to_lstring(context, -1, &nameLength);
                         std::string name = std::string(nameStr, nameLength);
-
-                        uint32_t index;
 
                         // Add event
                         Event event = Event();

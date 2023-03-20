@@ -5,7 +5,7 @@ namespace server
 {
     namespace scripting
     {
-        HttpController::HttpController(Ref<Script> script, CallbackMethod<> callback)
+        HttpController::HttpController(const Ref<Script>& script, CallbackMethod<> callback)
             : Controller(script), callback(callback)
         {
         }
@@ -26,7 +26,7 @@ namespace server
             boost::beast::http::request<boost::beast::http::string_body> request;
             boost::beast::http::response<boost::beast::http::string_body> response;
 
-            void OnResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
+            void OnResolve(const boost::beast::error_code& ec, const boost::asio::ip::tcp::resolver::results_type& results)
             {
                 if (!ec)
                 {
@@ -55,7 +55,7 @@ namespace server
                     }
                 }
             }
-            void OnConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type)
+            void OnConnect(const boost::beast::error_code& ec, const boost::asio::ip::tcp::resolver::results_type::endpoint_type&)
             {
                 if (!ec)
                 {
@@ -85,8 +85,10 @@ namespace server
                     }
                 }
             }
-            void OnWrite(boost::beast::error_code ec, size_t bytes_transferred)
+            void OnWrite(const boost::beast::error_code& ec, size_t bytes_transferred)
             {
+                (void)bytes_transferred;
+                
                 if (!ec)
                 {
                     // Set timeout
@@ -115,8 +117,10 @@ namespace server
                     }
                 }
             }
-            void OnRead(boost::beast::error_code ec, size_t bytes_transferred)
+            void OnRead(const boost::beast::error_code& ec, size_t bytes_transferred)
             {
+                (void)bytes_transferred;
+                
                 if (!ec)
                 {
                     // Invoke event
@@ -130,10 +134,11 @@ namespace server
                     }
 
                     // Gracefully close the socket
-                    stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+                    boost::beast::error_code ec2;
+                    stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec2);
 
                     // not_connected happens sometimes so don't bother reporting it
-                    if (ec && ec != boost::beast::errc::not_connected)
+                    if (ec2 && ec2 != boost::beast::errc::not_connected)
                     {
                         // TODO: Error
                         LOG_CODE_MISSING("HTTP Shutdown error");
@@ -159,7 +164,7 @@ namespace server
             }
 
           public:
-            HttpControllerImpl(Ref<Script> script, CallbackMethod<> callback)
+            HttpControllerImpl(const Ref<Script>& script, CallbackMethod<> callback)
                 : HttpController(script, callback), resolver(Worker::GetInstance()->GetContext()),
                   stream(Worker::GetInstance()->GetContext())
             {
@@ -194,7 +199,7 @@ namespace server
             }
         };
 
-        bool Http::Send(Ref<Script> script, const std::string& host, uint16_t port, HttpMethod method,
+        bool Http::Send(const Ref<Script>& script, const std::string& host, uint16_t port, HttpMethod method,
                         const std::string& target, const std::string_view& content, CallbackMethod<> callback)
         {
             // Create new controller
@@ -233,7 +238,7 @@ namespace server
             boost::beast::http::request<boost::beast::http::string_body> request;
             boost::beast::http::response<boost::beast::http::string_body> response;
 
-            void OnResolve(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type results)
+            void OnResolve(const boost::beast::error_code& ec, const boost::asio::ip::tcp::resolver::results_type& results)
             {
                 if (!ec)
                 {
@@ -264,7 +269,7 @@ namespace server
                     }
                 }
             }
-            void OnConnect(boost::beast::error_code ec, boost::asio::ip::tcp::resolver::results_type::endpoint_type)
+            void OnConnect(const boost::beast::error_code& ec, const boost::asio::ip::tcp::resolver::results_type::endpoint_type&)
             {
                 if (!ec)
                 {
@@ -295,7 +300,7 @@ namespace server
                     }
                 }
             }
-            void OnHandshake(boost::beast::error_code ec)
+            void OnHandshake(const boost::beast::error_code& ec)
             {
                 if (!ec)
                 {
@@ -327,8 +332,10 @@ namespace server
                     }
                 }
             }
-            void OnWrite(boost::beast::error_code ec, size_t bytes_transferred)
+            void OnWrite(const boost::beast::error_code& ec, size_t bytes_transferred)
             {
+                (void)bytes_transferred;
+                
                 if (!ec)
                 {
                     boost::beast::tcp_stream& stream2 = stream.next_layer();
@@ -359,8 +366,10 @@ namespace server
                     }
                 }
             }
-            void OnRead(boost::beast::error_code ec, size_t bytes_transferred)
+            void OnRead(const boost::beast::error_code& ec, size_t bytes_transferred)
             {
+                (void)bytes_transferred;
+                
                 if (!ec)
                 {
                     // Invoke event
@@ -374,10 +383,11 @@ namespace server
                     }
 
                     // Gracefully close the socket
-                    stream.next_layer().socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+                    boost::beast::error_code ec2;
+                    stream.next_layer().socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec2);
 
                     // not_connected happens sometimes so don't bother reporting it
-                    if (ec && ec != boost::beast::errc::not_connected)
+                    if (ec2 && ec2 != boost::beast::errc::not_connected)
                     {
                         // TODO: Error
                         LOG_CODE_MISSING("HTTP Shutdown error");
@@ -403,7 +413,7 @@ namespace server
             }
 
           public:
-            HttpsControllerImpl(Ref<Script> script, CallbackMethod<> callback)
+            HttpsControllerImpl(const Ref<Script>& script, CallbackMethod<> callback)
                 : HttpController(script, callback),
                   resolver(Worker::GetInstance()->GetContext()),
                   stream(Worker::GetInstance()->GetContext(), sslContext)
@@ -439,7 +449,7 @@ namespace server
             }
         };
 
-        bool Https::Send(Ref<Script> script, const std::string& host, uint16_t port, HttpMethod method,
+        bool Https::Send(const Ref<Script>& script, const std::string& host, uint16_t port, HttpMethod method,
                          const std::string& target, const std::string_view& content, CallbackMethod<> callback)
         {
             // Create new controller

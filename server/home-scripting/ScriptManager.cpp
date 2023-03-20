@@ -26,7 +26,7 @@ namespace server
                 return nullptr;
 
             // Verify script providers
-            for (Ref<ScriptProvider> provider : providerList)
+            for (const Ref<ScriptProvider>& provider : providerList)
             {
                 if (provider == nullptr)
                 {
@@ -46,7 +46,7 @@ namespace server
                     boost::placeholders::_3, boost::placeholders::_4, boost::placeholders::_5));
 
                 // Load static script sources
-                for (Ref<ScriptProvider> provider : scriptManager->providerList)
+                for (const Ref<ScriptProvider>& provider : scriptManager->providerList)
                 {
                     // Get static script sources
                     boost::container::vector<StaticScriptSource> staticScriptSources =
@@ -72,7 +72,7 @@ namespace server
             return Ref<ScriptManager>(instanceScriptManager);
         }
 
-        void ScriptManager::SetHomeView(Ref<HomeView> homeView)
+        void ScriptManager::SetHomeView(const Ref<HomeView>& homeView)
         {
             assert(homeView != nullptr);
             instanceHomeView = homeView;
@@ -89,12 +89,12 @@ namespace server
 
             // Find provider
             const boost::container::vector<Ref<ScriptProvider>>::const_iterator it = boost::find_if(
-                providerList, [&](Ref<ScriptProvider> provider) -> bool { return provider->GetLanguage() == lang; });
+                providerList, [&](const Ref<ScriptProvider>& provider) -> bool { return provider->GetLanguage() == lang; });
 
             if (it == providerList.end())
                 return false;
 
-            Ref<ScriptProvider> provider = *it;
+            const Ref<ScriptProvider>& provider = *it;
             assert(provider != nullptr);
 
             // Create script source
@@ -116,12 +116,12 @@ namespace server
             // Find provider
             const boost::container::vector<Ref<ScriptProvider>>::const_iterator it = boost::find_if(
                 providerList,
-                [&](Ref<ScriptProvider> provider) -> bool { return provider->GetLanguage() == language; });
+                [&](const Ref<ScriptProvider>& provider) -> bool { return provider->GetLanguage() == language; });
 
             if (it == providerList.end())
                 return nullptr;
 
-            Ref<ScriptProvider> provider = *it;
+            const Ref<ScriptProvider>& provider = *it;
             assert(provider != nullptr);
 
             // Reserve script source
@@ -176,14 +176,14 @@ namespace server
                 return false;
         }
 
-        Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id, Ref<View> view)
+        Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id, const Ref<View>& view)
         {
             const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
                 return nullptr;
 
-            Ref<ScriptSource> scriptSource = it->second;
+            const Ref<ScriptSource>& scriptSource = it->second;
 
             // Verify type
             if (scriptSource->GetUsage() != ScriptUsage::kDeviceScriptUsage)
@@ -192,14 +192,14 @@ namespace server
             return scriptSource->CreateScript(view);
         }
 
-        Ref<Script> ScriptManager::CreateServiceScript(identifier_t id, Ref<View> view)
+        Ref<Script> ScriptManager::CreateServiceScript(identifier_t id, const Ref<View>& view)
         {
             const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
             if (it == scriptSourceList.end())
                 return nullptr;
 
-            Ref<ScriptSource> scriptSource = it->second;
+            const Ref<ScriptSource>& scriptSource = it->second;
 
             // Verify type
             if (scriptSource->GetUsage() != ScriptUsage::kServiceScriptUsage)

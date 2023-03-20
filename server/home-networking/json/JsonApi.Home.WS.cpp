@@ -11,6 +11,9 @@ namespace server
         void JsonApi::ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                   rapidjson::Document& output, ApiContext& context)
         {
+            (void)context;
+
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             Ref<main::Home> home = main::Home::GetInstance();
@@ -87,8 +90,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<main::Home> home = main::Home::GetInstance();
             assert(home != nullptr);
 
@@ -134,6 +135,7 @@ namespace server
         void JsonApi::ProcessJsonSetRoomMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                   rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -231,8 +233,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<main::Home> home = main::Home::GetInstance();
             assert(home != nullptr);
 
@@ -248,6 +248,7 @@ namespace server
         void JsonApi::ProcessJsonGetDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                     rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -278,6 +279,7 @@ namespace server
         void JsonApi::ProcessJsonSetDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                     rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -310,6 +312,7 @@ namespace server
         void JsonApi::ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                              rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -325,8 +328,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<main::Home> home = main::Home::GetInstance();
             assert(home != nullptr);
 
@@ -346,6 +347,7 @@ namespace server
         void JsonApi::ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                          rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -378,6 +380,7 @@ namespace server
         void JsonApi::ProcessJsonSetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                          rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -478,8 +481,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<main::Home> home = main::Home::GetInstance();
             assert(home != nullptr);
 
@@ -495,6 +496,7 @@ namespace server
         void JsonApi::ProcessJsonGetServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                      rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -525,6 +527,7 @@ namespace server
         void JsonApi::ProcessJsonSetServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                      rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -557,6 +560,7 @@ namespace server
         void JsonApi::ProcessJsonInvokeServiceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                               rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -572,8 +576,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<main::Home> home = main::Home::GetInstance();
             assert(home != nullptr);
 
@@ -593,6 +595,7 @@ namespace server
         void JsonApi::ProcessJsonGetServiceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                           rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request
@@ -625,6 +628,7 @@ namespace server
         void JsonApi::ProcessJsonSetServiceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                           rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Process request

@@ -35,6 +35,9 @@ namespace server
                 /// @return Always false
                 virtual bool SetContent(const std::string_view& data) override
                 {
+                    // No content to set
+                    (void)data;
+
                     return false;
                 }
 
@@ -50,7 +53,7 @@ namespace server
                 ///
                 /// @param view Sender view
                 /// @return Script or null in case of an error
-                virtual Ref<Script> CreateScript(Ref<View> view) override;
+                virtual Ref<Script> CreateScript(const Ref<View>& view) override;
             };
         }
     }

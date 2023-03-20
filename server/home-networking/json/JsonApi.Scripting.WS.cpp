@@ -10,6 +10,9 @@ namespace server
         void JsonApi::ProcessJsonGetScriptSourcesMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                            rapidjson::Document& output, ApiContext& context)
         {
+            (void)context;
+
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             // Build response
@@ -103,8 +106,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
             assert(scriptManager != nullptr);
 
@@ -119,6 +120,7 @@ namespace server
         void JsonApi::ProcessJsonGetScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                           rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             if (user->GetAccessLevel() < users::UserAccessLevel::kNormalUserAccessLevel)
@@ -155,6 +157,7 @@ namespace server
         void JsonApi::ProcessJsonSetScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                           rapidjson::Document& output, ApiContext& context)
         {
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             if (user->GetAccessLevel() < users::UserAccessLevel::kNormalUserAccessLevel)
@@ -173,8 +176,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
             assert(scriptManager != nullptr);
 
@@ -189,8 +190,9 @@ namespace server
             scriptSource->JsonSet(input);
         }
 
-        void JsonApi::ProcessJsonGetScriptSourceContentMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                              rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonGetScriptSourceContentMessageWS(const Ref<users::User>& user,
+                                                                 rapidjson::Document& input,
+                                                                 rapidjson::Document& output, ApiContext& context)
         {
             assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
@@ -226,8 +228,9 @@ namespace server
             // Build script source
             scriptSource->JsonGetContent(output, allocator);
         }
-        void JsonApi::ProcessJsonSetScriptSourceContentMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                              rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonSetScriptSourceContentMessageWS(const Ref<users::User>& user,
+                                                                 rapidjson::Document& input,
+                                                                 rapidjson::Document& output, ApiContext& context)
         {
             assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
@@ -248,8 +251,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
             assert(scriptManager != nullptr);
 

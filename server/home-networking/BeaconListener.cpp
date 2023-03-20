@@ -8,7 +8,7 @@ namespace server
         WeakRef<BeaconListener> instanceBeacon;
 
         BeaconListener::BeaconListener(const std::string& externalURL)
-            : nameCopy("missing in name in BeaconListener.cpp"), buffer(), externalUrlCopy(externalURL)
+            : nameCopy("missing in name in BeaconListener.cpp"), externalUrlCopy(externalURL), buffer()
         {
         }
         BeaconListener::~BeaconListener()
@@ -54,8 +54,10 @@ namespace server
                 boost::bind(&BeaconListener::OnReceive, this, boost::placeholders::_1, boost::placeholders::_2));
         }
 
-        void BeaconListener::OnReceive(boost::system::error_code ec, size_t size)
+        void BeaconListener::OnReceive(const boost::system::error_code& ec, size_t size)
         {
+            (void)size;
+
             if (!ec || ec == boost::asio::error::message_size)
             {
                 uint8_t digest[SHA256_DIGEST_LENGTH] = "";
@@ -79,14 +81,20 @@ namespace server
                 document.Accept(writer);
 
                 listener->async_send_to(boost::asio::buffer(message->GetString(), message->GetSize()), remoteEnpoint,
-                                       boost::bind(&BeaconListener::OnSend, this, boost::placeholders::_1,
-                                                   boost::placeholders::_2, message));
+                                        boost::bind(&BeaconListener::OnSend, this, boost::placeholders::_1,
+                                                    boost::placeholders::_2, message));
             }
 
             StartReceiving();
         }
-        void BeaconListener::OnSend(boost::system::error_code ec, size_t size, Ref<rapidjson::StringBuffer> message)
+        void BeaconListener::OnSend(const boost::system::error_code& ec, size_t size,
+                                    const Ref<rapidjson::StringBuffer>& message)
         {
+            (void)ec;
+            (void)size;
+            (void)message;
+
+            // Do nothing
         }
     }
 }

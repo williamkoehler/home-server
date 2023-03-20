@@ -8,6 +8,9 @@ namespace server
         void JsonApi::ProcessJsonGetUsersMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                    rapidjson::Document& output, ApiContext& context)
         {
+            (void)context;
+
+            assert(user != nullptr);
             assert(input.IsObject() && output.IsObject());
 
             Ref<users::UserManager> userManager = users::UserManager::GetInstance();
@@ -83,8 +86,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<users::UserManager> userManager = users::UserManager::GetInstance();
             assert(userManager != nullptr);
 
@@ -137,6 +138,8 @@ namespace server
         void JsonApi::ProcessJsonSetUserMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                   rapidjson::Document& output, ApiContext& context)
         {
+            (void)output;
+
             assert(user != nullptr);
             assert(input.IsObject());
 
@@ -156,8 +159,6 @@ namespace server
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
             Ref<users::UserManager> userManager = users::UserManager::GetInstance();
             assert(userManager != nullptr);
 
@@ -171,7 +172,8 @@ namespace server
 
             // Check if the user wants to change another user, since this
             // can only be done by an admin user
-            if (user->GetID() != user2->GetID() && user->GetAccessLevel() < users::UserAccessLevel::kAdministratorUserAccessLevel)
+            if (user->GetID() != user2->GetID() &&
+                user->GetAccessLevel() < users::UserAccessLevel::kAdministratorUserAccessLevel)
             {
                 context.Error(ApiError::kError_AccessLevelToLow);
                 return;

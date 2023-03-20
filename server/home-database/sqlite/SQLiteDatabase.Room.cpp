@@ -110,6 +110,8 @@ namespace server
     }
     bool SQLiteDatabase::UpdateRoomPropType(identifier_t id, const std::string& value, const std::string& newValue)
     {
+        (void)value; // Will later be stored to allow history
+
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -142,6 +144,8 @@ namespace server
     }
     bool SQLiteDatabase::UpdateRoomPropName(identifier_t id, const std::string& value, const std::string& newValue)
     {
+        (void)value; // Will later be stored to allow history
+
         // Insert into database
         sqlite3_stmt* statement;
 

@@ -3,7 +3,7 @@
 namespace server
 {
     ApiContext::ApiContext(rapidjson::Value& log, rapidjson::Document::AllocatorType& allocator)
-        : log(log), error(ApiError::kError_NoError), allocator(allocator)
+        : log(log), allocator(allocator), error(ApiError::kError_NoError)
     {
         assert(log.IsArray());
     }

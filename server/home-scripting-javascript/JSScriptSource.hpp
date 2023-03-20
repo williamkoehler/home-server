@@ -36,7 +36,7 @@ namespace server
                 ///
                 /// @param view Sender view
                 /// @return Script or null in case of an error
-                virtual Ref<Script> CreateScript(Ref<View> view) override;
+                virtual Ref<Script> CreateScript(const Ref<View>& view) override;
 
                 /// @brief Remove deleted scripts
                 /// @note This method is automatically called when a script is deleted

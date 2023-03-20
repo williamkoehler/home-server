@@ -9,6 +9,9 @@ using namespace server;
 
 int main(int argc, char** argv)
 {
+    (void)argc;
+    (void)argv;
+
     // Creating necessary folders
     boost::filesystem::create_directories(config::GetStateDirectory());
     boost::filesystem::create_directories(config::GetScriptDirectory());
@@ -22,28 +25,30 @@ int main(int argc, char** argv)
         // Log hello message
         {
             char line[14];
-            memset(line, 0, sizeof(line) - 1);
+            memset(line, ' ', sizeof(line) - 1);
             memcpy(line, SERVER_VERSION, strlen(SERVER_VERSION));
 
             LOG_INFO("\n"
-                     "\t ____________________________________\n"
-                     "\t|                                    |\n"
-                     "\t|       Home Automation Server       |\n"
-                     "\t|       Version {0}        |\n"
-                     "\t|                                    |\n"
-                     "\t|       Made by :                    |\n"
-                     "\t|       - William KOEHLER            |\n"
-                     "\t|                                    |\n"
-                     "\t|       This server is using :       |\n"
-                     "\t|       - spdlog                     |\n"
-                     "\t|       - Boost                      |\n"
-                     "\t|       - openssl                    |\n"
-                     "\t|       - rapidjson                  |\n"
-                     "\t|       - jwt-cpp                    |\n"
-                     "\t|       - xxHash                     |\n"
-                     "\t|       - cppcodec                   |\n"
-                     "\t|       - duktape                    |\n"
-                     "\t|____________________________________|\n",
+                     "\t __________________________________________\n"
+                     "\t|                                          |\n"
+                     "\t|                                          |\n"
+                     "\t|          Home Automation Server          |\n"
+                     "\t|          Version {0}           |\n"   
+                     "\t|                                          |\n"
+                     "\t|          Made by :                       |\n"
+                     "\t|          - William KOEHLER               |\n"
+                     "\t|                                          |\n"
+                     "\t|          This server is using :          |\n"
+                     "\t|          - spdlog                        |\n"
+                     "\t|          - Boost                         |\n"
+                     "\t|          - openssl                       |\n"
+                     "\t|          - rapidjson                     |\n"
+                     "\t|          - jwt-cpp                       |\n"
+                     "\t|          - xxHash                        |\n"
+                     "\t|          - cppcodec                      |\n"
+                     "\t|          - duktape                       |\n"
+                     "\t|                                          |\n"
+                     "\t|__________________________________________|\n",
                      line);
         }
 

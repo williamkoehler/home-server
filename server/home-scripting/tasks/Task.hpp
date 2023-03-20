@@ -20,7 +20,7 @@ namespace server
             const WeakRef<Script> script;
 
           public:
-            Task(Ref<Script> script);
+            Task(const Ref<Script>& script);
             virtual ~Task();
 
             virtual void Cancel() = 0;

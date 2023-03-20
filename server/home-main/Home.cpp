@@ -108,6 +108,8 @@ namespace server
 
         Ref<Room> Home::AddRoom(const std::string& type, const std::string& name, rapidjson::Value& json)
         {
+            (void)json;
+
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -167,12 +169,14 @@ namespace server
         bool Home::LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                               identifier_t roomID, const std::string_view& data)
         {
+            (void)data;
+
             // Get room
             //! We don't care if no room is found, since it is allowed to be null
             Ref<Room> room = GetRoom(roomID);
 
             // Create device
-            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, room);
 
             // Add device
             if (device != nullptr)
@@ -188,6 +192,8 @@ namespace server
         Ref<Device> Home::AddDevice(const std::string& name, identifier_t scriptSourceID, identifier_t roomID,
                                     rapidjson::Value& json)
         {
+            (void)json;
+
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -205,7 +211,7 @@ namespace server
             Ref<Room> room = GetRoom(roomID);
 
             // Create new device
-            Ref<Device> device = Device::Create(id, name, scriptSourceID, std::move(room));
+            Ref<Device> device = Device::Create(id, name, scriptSourceID, room);
 
             // Add device
             if (device != nullptr)
@@ -230,7 +236,7 @@ namespace server
             return it->second;
         }
 
-        boost::container::vector<Ref<Device>> Home::FilterDevicesByRoom(Ref<Room> room)
+        boost::container::vector<Ref<Device>> Home::FilterDevicesByRoom(const Ref<Room>& room)
         {
             // Reserve device list
             boost::container::vector<Ref<Device>> filteredDeviceList = boost::container::vector<Ref<Device>>();
@@ -251,7 +257,8 @@ namespace server
             return filteredDeviceList;
         }
 
-        boost::container::vector<Ref<Device>> Home::FilterDevicesByScript(Ref<scripting::ScriptSource> scriptSource)
+        boost::container::vector<Ref<Device>> Home::FilterDevicesByScript(
+            const Ref<scripting::ScriptSource>& scriptSource)
         {
             // Reserve device list
             boost::container::vector<Ref<Device>> filteredDeviceList = boost::container::vector<Ref<Device>>();
@@ -291,6 +298,8 @@ namespace server
         bool Home::LoadService(identifier_t id, const std::string& name, identifier_t scriptSourceID,
                                const std::string_view& data)
         {
+            (void)data;
+
             // Create service
             Ref<Service> service = Service::Create(id, name, scriptSourceID);
 
@@ -307,6 +316,8 @@ namespace server
 
         Ref<Service> Home::AddService(const std::string& name, identifier_t scriptSourceID, rapidjson::Value& json)
         {
+            (void)json;
+
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
@@ -421,8 +432,7 @@ namespace server
             output.AddMember("services", serviceListJson, allocator);
         }
 
-
-        HomeView::HomeView(Ref<Home> home) : home(std::move(home))
+        HomeView::HomeView(const Ref<Home>& home) : home(home)
         {
         }
         HomeView::~HomeView()

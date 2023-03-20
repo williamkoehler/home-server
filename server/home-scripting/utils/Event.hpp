@@ -9,7 +9,7 @@ namespace server
         class Value;
 
         class Event;
-        class EventEntry;
+        struct EventEntry;
 
         typedef boost::container::vector<Ref<EventEntry>> EventBase;
 
@@ -27,7 +27,7 @@ namespace server
 
             WeakRef<EventEntry> entry;
 
-            EventConnection(Ref<EventEntry> entry);
+            EventConnection(const Ref<EventEntry>& entry);
 
           public:
             EventConnection();
@@ -54,7 +54,7 @@ namespace server
             /// @param view Invokable view
             /// @param method Method name
             /// @return EventConnection Event connection
-            EventConnection Bind(Ref<View> view, const std::string& method);
+            EventConnection Bind(const Ref<View>& view, const std::string& method);
 
             /// @brief Invoke event
             ///

@@ -108,7 +108,7 @@ namespace server
                 return false;
         }
 
-        Ref<User> UserManager::AddUser(std::string name, std::string passwd, UserAccessLevel accessLevel)
+        Ref<User> UserManager::AddUser(const std::string& name, const std::string& passwd, UserAccessLevel accessLevel)
         {
             // Generate random salt
             uint8_t salt[SALT_SIZE];
@@ -124,7 +124,8 @@ namespace server
 
             return AddUser(name, digest, salt, accessLevel);
         }
-        Ref<User> UserManager::AddUser(std::string name, uint8_t* hash, uint8_t* salt, UserAccessLevel accessLevel)
+        Ref<User> UserManager::AddUser(const std::string& name, uint8_t* hash, uint8_t* salt,
+                                       UserAccessLevel accessLevel)
         {
             // Verify name
             if (!boost::regex_match(name, boost::regex(R"(^[a-zA-Z0-9_-]*$)")))
@@ -134,7 +135,7 @@ namespace server
             }
 
             // Check name
-            if (boost::range::find_if(userList, [&name](robin_hood::pair<const identifier_t, Ref<User>> user)
+            if (boost::range::find_if(userList, [&name](const robin_hood::pair<const identifier_t, Ref<User>>& user)
                                       { return name == user.second->GetName(); }) != userList.end())
             {
                 LOG_ERROR("User name already exists", name);
@@ -178,27 +179,27 @@ namespace server
 
             return (*it).second;
         }
-        Ref<User> UserManager::GetUserByName(std::string_view name)
+        Ref<User> UserManager::GetUserByName(const std::string_view& name)
         {
             // boost::shared_lock_guard lock(mutex);
 
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
                 boost::find_if(userList,
-                               [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool
+                               [&name](const robin_hood::pair<const identifier_t, Ref<User>>& pair) -> bool
                                { return pair.second->GetName() == name; });
             if (it == userList.end())
                 return nullptr;
 
             return it->second;
         }
-        Ref<User> UserManager::Authenticate(std::string_view name, std::string_view password)
+        Ref<User> UserManager::Authenticate(const std::string_view& name, const std::string_view& password)
         {
             // boost::shared_lock_guard lock(mutex);
 
             // Search for user
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
                 boost::find_if(userList,
-                               [&name](robin_hood::pair<const identifier_t, Ref<User>> pair) -> bool
+                               [&name](const robin_hood::pair<const identifier_t, Ref<User>>& pair) -> bool
                                { return pair.second->GetName() == name; });
             if (it == userList.end())
                 return nullptr;
@@ -220,7 +221,8 @@ namespace server
                 return nullptr;
         }
 
-        bool UserManager::SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd)
+        bool UserManager::SetUserPassword(identifier_t userID, const std::string_view& passwd,
+                                          const std::string_view& newPasswd)
         {
             // boost::shared_lock_guard lock(mutex);
 
@@ -230,7 +232,8 @@ namespace server
 
             return SetUserPassword(it->second, passwd, newPasswd);
         }
-        bool UserManager::SetUserPassword(const Ref<User>& user, std::string_view passwd, std::string_view newPasswd)
+        bool UserManager::SetUserPassword(const Ref<User>& user, const std::string_view& passwd,
+                                          const std::string_view& newPasswd)
         {
             // Get salt
             uint8_t salt[SALT_SIZE];
@@ -268,7 +271,7 @@ namespace server
                 return false;
         }
 
-        void UserManager::CalculateHash(std::string_view passwd, uint8_t* salt, uint8_t* digest)
+        void UserManager::CalculateHash(const std::string_view& passwd, uint8_t* salt, uint8_t* digest)
         {
             // Create salted password
             std::string password = std::string(passwd.size() + SALT_SIZE, '\0');
@@ -285,7 +288,7 @@ namespace server
         }
 
         // JWT
-        std::string UserManager::GenerateJWTToken(Ref<User> user)
+        std::string UserManager::GenerateJWTToken(const Ref<User>& user)
         {
             assert(user != nullptr);
 

@@ -190,7 +190,7 @@ namespace server
         }
 
 
-        ServiceView::ServiceView(Ref<Service> service) : service(std::move(service))
+        ServiceView::ServiceView(const Ref<Service>& service) : service(service)
         {
             assert(service != nullptr);
         }

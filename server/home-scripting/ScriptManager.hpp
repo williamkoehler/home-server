@@ -66,7 +66,7 @@ namespace server
             static Ref<ScriptManager> GetInstance();
 
             // Get singleton views
-            static void SetHomeView(Ref<HomeView> homeView);
+            static void SetHomeView(const Ref<HomeView>& homeView);
             static Ref<HomeView> GetHomeView();
 
             //! Script Source
@@ -84,8 +84,8 @@ namespace server
 
             //! Script
 
-            Ref<Script> CreateDeviceScript(identifier_t id, Ref<View> view);
-            Ref<Script> CreateServiceScript(identifier_t id, Ref<View> view);
+            Ref<Script> CreateDeviceScript(identifier_t id, const Ref<View>& view);
+            Ref<Script> CreateServiceScript(identifier_t id, const Ref<View>& view);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
         };

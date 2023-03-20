@@ -23,10 +23,10 @@ namespace server
             Ref<DeviceView> view;
 
           public:
-            Device(identifier_t id, const std::string& name, Ref<Room> room);
+            Device(identifier_t id, const std::string& name, const Ref<Room>& room);
             virtual ~Device();
             static Ref<Device> Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                      Ref<Room> room);
+                                      const Ref<Room>& room);
 
             /// @brief Get device id
             ///
@@ -65,7 +65,7 @@ namespace server
             /// @brief Set room
             /// @param v Room (can be null)
             /// @return Successfulness
-            bool SetRoom(Ref<Room> v);
+            bool SetRoom(const Ref<Room>& v);
 
             /// @brief Get room id
             ///
@@ -95,7 +95,7 @@ namespace server
             WeakRef<Device> device;
 
           public:
-            DeviceView(Ref<Device> device);
+            DeviceView(const Ref<Device>& device);
             virtual ~DeviceView();
 
             virtual identifier_t GetID() const override;

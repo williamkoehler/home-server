@@ -23,8 +23,8 @@ namespace server
 
             Ref<BeaconListener> beaconListener = nullptr;
 
-            void OnAccept(boost::system::error_code err);
-            void OnHandshake(boost::system::error_code err, Ref<ssl_socket_t> socket);
+            void OnAccept(const boost::system::error_code& ec);
+            void OnHandshake(const boost::system::error_code& ec, const Ref<ssl_socket_t>& socket);
 
             boost::container::vector<WeakRef<WSSession>> sessionList;
 

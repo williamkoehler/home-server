@@ -21,7 +21,7 @@ namespace server
             WeakRef<Script> script;
 
           public:
-            Controller(Ref<Script> script);
+            Controller(const Ref<Script>& script);
             virtual ~Controller();
 
             /// @brief Get controller type

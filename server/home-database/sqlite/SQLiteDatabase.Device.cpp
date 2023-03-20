@@ -119,6 +119,8 @@ namespace server
     }
     bool SQLiteDatabase::UpdateDevicePropName(identifier_t id, const std::string& value, const std::string& newValue)
     {
+        (void)value; // Will later be stored to allow history
+
         // Insert into database
         sqlite3_stmt* statement;
 
@@ -183,6 +185,8 @@ namespace server
     }
     bool SQLiteDatabase::UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue)
     {
+        (void)value; // Will later be stored to allow history
+
         // Insert into database
         sqlite3_stmt* statement;
 

@@ -120,14 +120,14 @@ namespace server
             return Ref<NetworkManager>(instanceNetworkManager);
         }
 
-        void NetworkManager::OnAccept(boost::system::error_code err)
+        void NetworkManager::OnAccept(const boost::system::error_code& ec)
         {
-            if (err)
+            if (ec)
                 return;
 
             try
             {
-                if (!err)
+                if (!ec)
                 {
                     Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);
                     if (httpSession != nullptr)
@@ -177,9 +177,11 @@ namespace server
             //                      boost::bind(&NetworkManager::OnAccept, this, boost::placeholders::_1));
         }
 
-        void NetworkManager::OnHandshake(boost::system::error_code error, Ref<ssl_socket_t> socket)
+        void NetworkManager::OnHandshake(const boost::system::error_code& ec, const Ref<ssl_socket_t>& socket)
         {
-            if (error)
+            (void)socket;
+
+            if (ec)
                 return;
 
             // Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);

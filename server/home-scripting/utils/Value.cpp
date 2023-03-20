@@ -146,8 +146,8 @@ namespace server
                 break;
             }
         }
-        Value::Value(Value&& other)
-            : type(std::exchange(other.type, ValueType::kUnknownType)), value(std::move(other.value))
+        Value::Value(Value&& other) noexcept
+            : type(std::exchange(other.type, ValueType::kUnknownType)), value(other.value)
         {
         }
         Value::~Value()
@@ -249,7 +249,7 @@ namespace server
             return Value();
         }
 
-        void Value::operator=(const Value& other)
+        void Value::operator=(const Value& other) noexcept
         {
             // Call deconstructor on old value
             this->~Value();
@@ -281,13 +281,13 @@ namespace server
             }
         }
 
-        void Value::operator=(Value&& other)
+        void Value::operator=(Value&& other) noexcept
         {
             // Call deconstructor on old value
             this->~Value();
 
             type = std::exchange(other.type, ValueType::kUnknownType);
-            value = std::move(other.value);
+            value = other.value;
         }
 
         rapidjson::Value Value::JsonGet(rapidjson::Document::AllocatorType& allocator) const

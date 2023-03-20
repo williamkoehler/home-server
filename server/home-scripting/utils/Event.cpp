@@ -12,17 +12,17 @@ namespace server
         {
         }
 
-        EventConnection Event::Bind(Ref<View> view, const std::string& method)
+        EventConnection Event::Bind(const Ref<View>& view, const std::string& method)
         {
             Ref<EventEntry> entry = boost::make_shared<EventEntry>(EventEntry{
                 .base = base,
-                .view = std::move(view),
+                .view = view,
                 .method = method,
             });
 
             base->push_back(entry);
 
-            return EventConnection(std::move(entry));
+            return EventConnection(entry);
         }
 
         void Event::Invoke(const Value& parameter) const
@@ -35,7 +35,7 @@ namespace server
             }
         }
 
-        EventConnection::EventConnection(Ref<EventEntry> entry) : entry(std::move(entry))
+        EventConnection::EventConnection(const Ref<EventEntry>& entry) : entry(entry)
         {
         }
         EventConnection::EventConnection()

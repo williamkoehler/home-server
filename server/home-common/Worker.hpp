@@ -6,8 +6,6 @@ namespace server
     class Worker : public boost::enable_shared_from_this<Worker>
     {
       private:
-        const size_t threadCount = 1;
-
         /// @brief Running flag
         ///
         boost::atomic_bool running;

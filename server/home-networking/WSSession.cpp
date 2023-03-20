@@ -6,8 +6,8 @@ namespace server
 {
     namespace networking
     {
-        WSSession::WSSession(Ref<tcp_socket_t> socket, Ref<users::User> user)
-            : strand(socket->get_executor()), socket(boost::make_shared<websocket_t>(std::move(*socket))), user(user)
+        WSSession::WSSession(const Ref<tcp_socket_t>& socket, const Ref<users::User>& user)
+            : strand(socket->get_executor()), user(user), socket(boost::make_shared<websocket_t>(std::move(*socket)))
         {
         }
         WSSession::~WSSession()
@@ -18,17 +18,16 @@ namespace server
         {
             socket->next_layer().expires_after(std::chrono::seconds(12));
             socket->set_option(boost::beast::websocket::stream_base::decorator(
-                [](boost::beast::websocket::response_type& response) -> void {
-                    response.set(boost::beast::http::field::server, "HomeAutomation Server WebSocket");
-                }));
+                [](boost::beast::websocket::response_type& response) -> void
+                { response.set(boost::beast::http::field::server, "HomeAutomation Server WebSocket"); }));
             socket->async_accept(
                 request, boost::asio::bind_executor(
                              strand, boost::bind(&WSSession::OnAccept, shared_from_this(), boost::placeholders::_1)));
         }
 
-        void WSSession::OnAccept(boost::system::error_code error)
+        void WSSession::OnAccept(const boost::system::error_code& ec)
         {
-            if (error)
+            if (ec)
                 return;
 
             socket->next_layer().expires_never();
@@ -45,9 +44,9 @@ namespace server
                                                                boost::placeholders::_1, boost::placeholders::_2)));
         }
 
-        void WSSession::OnRead(boost::system::error_code error, size_t receivedBytes)
+        void WSSession::OnRead(const boost::system::error_code& ec, size_t receivedBytes)
         {
-            if (error)
+            if (ec)
                 return;
 
             if (!socket->got_text())
@@ -188,7 +187,7 @@ namespace server
             return true;
         }
 
-        void WSSession::Send(rapidjson::Document& document)
+        void WSSession::Send(const rapidjson::Document& document)
         {
             Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
             rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);
@@ -205,7 +204,7 @@ namespace server
                                                            boost::placeholders::_1, boost::placeholders::_2, message)));
             }
         }
-        void WSSession::Send(rapidjson::StringBuffer& buffer)
+        void WSSession::Send(const rapidjson::StringBuffer& buffer)
         {
             Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
             message->Push(buffer.GetSize());
@@ -222,7 +221,7 @@ namespace server
                                                            boost::placeholders::_1, boost::placeholders::_2, message)));
             }
         }
-        void WSSession::Send(Ref<rapidjson::StringBuffer> buffer)
+        void WSSession::Send(const Ref<rapidjson::StringBuffer>& buffer)
         {
             messageQueue.push_back(buffer);
 
@@ -235,9 +234,12 @@ namespace server
             }
         }
 
-        void WSSession::OnWrite(boost::system::error_code error, size_t sentBytes, Ref<rapidjson::StringBuffer> message)
+        void WSSession::OnWrite(const boost::system::error_code& ec, size_t sentBytes, const Ref<rapidjson::StringBuffer>& message)
         {
-            if (error)
+            (void)sentBytes;
+            (void)message;
+
+            if (ec)
                 return;
 
             messageQueue.erase(messageQueue.begin());
@@ -263,9 +265,9 @@ namespace server
                 boost::asio::bind_executor(
                     strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
         }
-        void WSSession::DoSSLShutdown(boost::system::error_code error)
+        void WSSession::DoSSLShutdown(const boost::system::error_code& ec)
         {
-            if (error)
+            if (ec)
                 return;
 
             // // Shutdown
@@ -273,9 +275,9 @@ namespace server
             // socket->next_layer().async_shutdown(boost::asio::bind_executor(
             //     strand, boost::bind(&WSSession::OnShutdown, shared_from_this(), boost::placeholders::_1)));
         }
-        void WSSession::OnShutdown(boost::system::error_code error)
+        void WSSession::OnShutdown(const boost::system::error_code& ec)
         {
-            if (error)
+            if (ec)
                 return;
 
             socket->next_layer().close();

@@ -5,8 +5,9 @@ namespace server
 {
     namespace scripting
     {
-        Task::Task(Ref<Script> script) : script(script)
+        Task::Task(const Ref<Script>& script) : script(script)
         {
+            assert(script != nullptr);
         }
         Task::~Task()
         {

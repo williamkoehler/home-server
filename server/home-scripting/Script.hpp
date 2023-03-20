@@ -35,7 +35,7 @@ namespace server
             boost::container::vector<WeakRef<Task>> taskMap;
 
           public:
-            Script(Ref<View> view, Ref<ScriptSource> scriptSource);
+            Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource);
             virtual ~Script();
 
             inline Ref<View> GetView() const
@@ -98,7 +98,7 @@ namespace server
             /// @param view Invokable view
             /// @param method Method name
             /// @return EventConnection Event connection
-            EventConnection Bind(const std::string& event, Ref<View> view, const std::string& method);
+            EventConnection Bind(const std::string& event, const Ref<View>& view, const std::string& method);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

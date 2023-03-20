@@ -76,7 +76,7 @@ namespace server
             WeakRef<Service> service;
 
           public:
-            ServiceView(Ref<Service> service);
+            ServiceView(const Ref<Service>& service);
             virtual ~ServiceView();
 
             virtual identifier_t GetID() const override;

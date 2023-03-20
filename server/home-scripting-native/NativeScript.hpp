@@ -24,10 +24,10 @@ namespace server
                 robin_hood::unordered_node_map<std::string, Property> propertyList;
 
               public:
-                NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource,
+                NativeScript(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource,
                              UniqueRef<NativeScriptImpl> scriptImpl);
                 virtual ~NativeScript();
-                static Ref<Script> Create(Ref<View> view, Ref<NativeScriptSource> scriptSource);
+                static Ref<Script> Create(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource);
 
                 bool AddAttribute(const std::string& name, const char* json);
                 bool RemoveAttribute(const std::string& name);

@@ -10,17 +10,17 @@ namespace server
 {
     namespace main
     {
-        Device::Device(identifier_t id, const std::string& name, Ref<Room> room)
-            : id(id), name(name), script(nullptr), room(std::move(room))
+        Device::Device(identifier_t id, const std::string& name, const Ref<Room>& room)
+            : id(id), name(name), script(nullptr), room(room)
         {
         }
         Device::~Device()
         {
         }
         Ref<Device> Device::Create(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                   Ref<Room> room)
+                                   const Ref<Room>& room)
         {
-            Ref<Device> device = boost::make_shared<Device>(id, name, std::move(room));
+            Ref<Device> device = boost::make_shared<Device>(id, name, room);
 
             if (device != nullptr)
             {
@@ -118,7 +118,7 @@ namespace server
         {
             return room.lock();
         }
-        bool Device::SetRoom(Ref<Room> v)
+        bool Device::SetRoom(const Ref<Room>& v)
         {
             Ref<Room> oldRoomRef = room.lock();
             identifier_t oldRoomID = oldRoomRef != nullptr ? oldRoomRef->GetID() : 0;
@@ -235,7 +235,7 @@ namespace server
                 script->JsonSetState(input);
         }
 
-        DeviceView::DeviceView(Ref<Device> device) : device(std::move(device))
+        DeviceView::DeviceView(const Ref<Device>& device) : device(device)
         {
             assert(device != nullptr);
         }

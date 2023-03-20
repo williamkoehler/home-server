@@ -23,7 +23,7 @@ namespace server
             typedef jwt::traits::boost_json JWTTraits;
             jwt::verifier<jwt::default_clock, JWTTraits> verifier;
 
-            void CalculateHash(std::string_view password, uint8_t* salt, uint8_t* digest);
+            void CalculateHash(const std::string_view& password, uint8_t* salt, uint8_t* digest);
 
             // Database
             bool LoadUser(identifier_t userID, const std::string& name, uint8_t hash[SHA256_SIZE],
@@ -50,7 +50,7 @@ namespace server
             /// @param password Password
             /// @param accessLevel Access level
             /// @return User or null in case of an error
-            Ref<User> AddUser(std::string name, std::string password, UserAccessLevel accessLevel);
+            Ref<User> AddUser(const std::string& name, const std::string& password, UserAccessLevel accessLevel);
 
             /// @brief Add user using hash and salt
             ///
@@ -59,7 +59,7 @@ namespace server
             /// @param salt Salt
             /// @param accessLevel Access level
             /// @return User or null in case of an error
-            Ref<User> AddUser(std::string name, uint8_t* hash, uint8_t* salt, UserAccessLevel accessLevel);
+            Ref<User> AddUser(const std::string& name, uint8_t* hash, uint8_t* salt, UserAccessLevel accessLevel);
 
             size_t GetUserCount()
             {
@@ -67,7 +67,7 @@ namespace server
                 return userList.size();
             }
             Ref<User> GetUser(identifier_t userID);
-            Ref<User> GetUserByName(std::string_view name);
+            Ref<User> GetUserByName(const std::string_view& name);
 
             /// @brief Set user password
             ///
@@ -75,7 +75,7 @@ namespace server
             /// @param passwd Old password
             /// @param newPasswd New password
             /// @return Successfulness
-            bool SetUserPassword(identifier_t userID, std::string_view passwd, std::string_view newPasswd);
+            bool SetUserPassword(identifier_t userID, const std::string_view& passwd, const std::string_view& newPasswd);
 
             /// @brief Set user password
             ///
@@ -84,14 +84,14 @@ namespace server
             /// @param newPasswd
             /// @return true
             /// @return false
-            bool SetUserPassword(const Ref<User>& user, std::string_view passwd, std::string_view newPasswd);
+            bool SetUserPassword(const Ref<User>& user, const std::string_view& passwd, const std::string_view& newPasswd);
 
             /// @brief Authenticate user using name and password
             ///
             /// @param name Name
             /// @param password Password
             /// @return User or null if credentials are not valid
-            Ref<User> Authenticate(std::string_view name, std::string_view password);
+            Ref<User> Authenticate(const std::string_view& name, const std::string_view& password);
 
             /// @brief Remove user
             ///
@@ -105,7 +105,7 @@ namespace server
             ///
             /// @param user Authenticated user (not null)
             /// @return JWT Token
-            std::string GenerateJWTToken(Ref<User> user);
+            std::string GenerateJWTToken(const Ref<User>& user);
 
             /// @brief Verify JWT Token
             ///

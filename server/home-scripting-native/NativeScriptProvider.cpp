@@ -46,7 +46,8 @@ namespace server
                                     LOG_INFO("Registering library '{0}'", libraryFileName);
 
                                     //  Get lib informations
-                                    LibraryInformation lib = library->get<GetLibraryInformationsCallback>(libraryFunction)();
+                                    LibraryInformation lib =
+                                        library->get<GetLibraryInformationsCallback>(libraryFunction)();
 
                                     // Log library details
                                     {
@@ -93,7 +94,8 @@ namespace server
 
                                                 ss << "Script name: " << scriptInformation.scriptName << std::endl;
                                                 ss << "Name:        " << scriptInformation.name << std::endl;
-                                                ss << "Usage:       " << StringifyScriptUsage(scriptInformation.usage) << std::endl;
+                                                ss << "Usage:       " << StringifyScriptUsage(scriptInformation.usage)
+                                                   << std::endl;
 
                                                 LOG_INFO("Static Script {0}\n{1}", scriptInformation.scriptName,
                                                          ss.str());
@@ -148,6 +150,9 @@ namespace server
                                                                        ScriptUsage usage,
                                                                        const std::string_view& content)
             {
+                (void)usage;
+                (void)content;
+
                 robin_hood::unordered_node_map<std::string, ScriptInformation>::const_iterator it =
                     scriptList.find(name);
 

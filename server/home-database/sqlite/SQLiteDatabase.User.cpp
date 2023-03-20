@@ -46,6 +46,9 @@ namespace server
             const unsigned char* data = sqlite3_column_text(statement, 5);
             size_t dataSize = sqlite3_column_bytes(statement, 5);
 
+            (void)data; // Will be used for further data
+            (void)dataSize;
+
             // Check values
             if (name == nullptr || data == nullptr)
             {

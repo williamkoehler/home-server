@@ -64,7 +64,7 @@ namespace server
                 static duk_ret_t duk_invoke_event(duk_context* context);
 
               public:
-                JSScript(Ref<View> view, Ref<JSScriptSource> scriptSource);
+                JSScript(const Ref<View>& view, const Ref<JSScriptSource>& scriptSource);
                 virtual ~JSScript();
 
                 /// @brief Get duktape context

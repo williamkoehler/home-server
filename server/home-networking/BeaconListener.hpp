@@ -18,8 +18,8 @@ namespace server
             boost::asio::ip::udp::endpoint remoteEnpoint;
 
             void StartReceiving();
-            void OnReceive(boost::system::error_code ec, size_t size);
-            void OnSend(boost::system::error_code ec, size_t size, Ref<rapidjson::StringBuffer> message);
+            void OnReceive(const boost::system::error_code& ec, size_t size);
+            void OnSend(const boost::system::error_code& ec, size_t size, const Ref<rapidjson::StringBuffer>& message);
 
           public:
             BeaconListener(const std::string& externalURL);

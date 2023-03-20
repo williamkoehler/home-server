@@ -110,7 +110,7 @@ namespace server
             CallbackMethod<> callback;
 
           public:
-            HttpController(Ref<Script> script, CallbackMethod<> callback);
+            HttpController(const Ref<Script>& script, CallbackMethod<> callback);
 
             virtual ControllerType GetType() const override
             {
@@ -158,7 +158,7 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            static bool Send(Ref<Script> script, const std::string& host, uint16_t port,
+            static bool Send(const Ref<Script>& script, const std::string& host, uint16_t port,
                              HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                              const std::string_view& content = std::string_view("", 0),
                              CallbackMethod<> callback = nullptr);
@@ -170,7 +170,7 @@ namespace server
             /// @param callback Callback
             /// @return Successfulness
             template <class T>
-            inline static bool Get(Ref<Script> script, const std::string& host, uint16_t port,
+            inline static bool Get(const Ref<Script>& script, const std::string& host, uint16_t port,
                                    const std::string& target = "/",
                                    const std::string_view& content = std::string_view("", 0),
                                    CallbackMethod<T> callback = nullptr)
@@ -186,7 +186,7 @@ namespace server
             /// @param callback Callback
             /// @return Successfulness
             template <class T>
-            inline static bool Post(Ref<Script> script, const std::string& host, uint16_t port,
+            inline static bool Post(const Ref<Script>& script, const std::string& host, uint16_t port,
                                     const std::string& target = "/",
                                     const std::string_view& content = std::string_view("", 0),
                                     CallbackMethod<T> callback = nullptr)
@@ -206,7 +206,7 @@ namespace server
             /// @param target URL Target
             /// @param content Body Content
             /// @return Successfulness
-            static bool Send(Ref<Script> script, const std::string& host, uint16_t port,
+            static bool Send(const Ref<Script>& script, const std::string& host, uint16_t port,
                              HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                              const std::string_view& content = std::string_view("", 0),
                              CallbackMethod<> callback = nullptr);
@@ -218,7 +218,7 @@ namespace server
             /// @param content Body Content
             /// @return Successfulness
             template <class T>
-            inline static bool Get(Ref<Script> script, const std::string& host, uint16_t port,
+            inline static bool Get(const Ref<Script>& script, const std::string& host, uint16_t port,
                                    const std::string& target = "/",
                                    const std::string_view& content = std::string_view("", 0),
                                    CallbackMethod<T> callback = nullptr)
@@ -234,7 +234,7 @@ namespace server
             /// @param content Body Content
             /// @return Successfulness
             template <class T>
-            inline static bool Post(Ref<Script> script, const std::string& host, uint16_t port,
+            inline static bool Post(const Ref<Script>& script, const std::string& host, uint16_t port,
                                     const std::string& target = "/",
                                     const std::string_view& content = std::string_view("", 0),
                                     CallbackMethod<T> callback = nullptr)

@@ -7,7 +7,7 @@ namespace server
     {
         namespace native
         {
-            NativeScript::NativeScript(Ref<View> view, Ref<NativeScriptSource> scriptSource,
+            NativeScript::NativeScript(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource,
                                        UniqueRef<NativeScriptImpl> scriptImpl)
                 : Script(view, scriptSource), scriptImpl(std::move(scriptImpl))
             {
@@ -15,7 +15,7 @@ namespace server
             NativeScript::~NativeScript()
             {
             }
-            Ref<Script> NativeScript::Create(Ref<View> view, Ref<NativeScriptSource> scriptSource)
+            Ref<Script> NativeScript::Create(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource)
             {
                 UniqueRef<NativeScriptImpl> scriptImpl = scriptSource->GetCreateCallback()();
 
@@ -142,6 +142,10 @@ namespace server
 
             void NativeScript::SetProperty(const std::string& name, const Value& value)
             {
+                (void)name;
+                (void)value;
+
+                // TODO
             }
 
             bool NativeScript::Invoke(const std::string& name, const Value& parameter)
@@ -212,7 +216,7 @@ namespace server
                 assert(output.IsObject());
 
                 output.MemberReserve(propertyList.size(), allocator);
-                for (auto&[name, property] : propertyList)
+                for (auto& [name, property] : propertyList)
                 {
                     // Add property
                     output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),

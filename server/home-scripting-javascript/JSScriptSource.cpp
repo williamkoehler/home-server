@@ -38,7 +38,7 @@ namespace server
                     return false;
             }
 
-            Ref<Script> JSScriptSource::CreateScript(Ref<View> view)
+            Ref<Script> JSScriptSource::CreateScript(const Ref<View>& view)
             {
                 Ref<JSScript> script =
                     boost::make_shared<JSScript>(view, boost::dynamic_pointer_cast<JSScriptSource>(shared_from_this()));
@@ -55,7 +55,7 @@ namespace server
             void JSScriptSource::CleanScripts()
             {
                 scriptList.erase(std::remove_if(scriptList.begin(), scriptList.end(),
-                                                [](const boost::weak_ptr<JSScript>& script) -> bool const
+                                                [](const boost::weak_ptr<JSScript>& script) -> bool
                                                 { return script.expired(); }),
                                  scriptList.end());
             }

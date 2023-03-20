@@ -34,7 +34,7 @@ namespace server
 
         User::User(identifier_t id, const std::string& name, uint8_t h[SHA256_SIZE], uint8_t s[SALT_SIZE],
                    UserAccessLevel accessLevel)
-            : name(name), id(id), accessLevel(accessLevel)
+            : id(id), name(name), accessLevel(accessLevel)
         {
             memcpy(hash, h, SHA256_SIZE);
             memcpy(salt, s, SALT_SIZE);

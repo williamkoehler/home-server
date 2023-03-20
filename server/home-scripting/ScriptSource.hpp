@@ -83,7 +83,7 @@ namespace server
             ///
             /// @param view Sender view
             /// @return Script
-            virtual Ref<Script> CreateScript(Ref<View> view) = 0;
+            virtual Ref<Script> CreateScript(const Ref<View>& view) = 0;
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);

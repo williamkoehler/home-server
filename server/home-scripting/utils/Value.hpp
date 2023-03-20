@@ -88,7 +88,7 @@ namespace server
             explicit Value(const Color& color);
             explicit Value(ValueType type);
             Value(const Value& other);
-            Value(Value&& other);
+            Value(Value&& other) noexcept;
             ~Value();
 
             /// @brief Create value
@@ -105,8 +105,8 @@ namespace server
             /// @return Value
             static Value Create(rapidjson::Value& json);
 
-            void operator=(const Value& other);
-            void operator=(Value&& other);
+            void operator=(const Value& other) noexcept;
+            void operator=(Value&& other) noexcept;
 
             inline ValueType GetType() const
             {
@@ -349,7 +349,7 @@ namespace server
         {
             Value value = Value(ValueType::kRoomIDType);
             value.SetRoomID(roomID);
-            return std::move(value);
+            return value;
         }
 
         template <>
@@ -357,7 +357,7 @@ namespace server
         {
             Value value = Value(ValueType::kDeviceIDType);
             value.SetDeviceID(deviceID);
-            return std::move(value);
+            return value;
         }
 
         template <>
@@ -365,7 +365,7 @@ namespace server
         {
             Value value = Value(ValueType::kServiceIDType);
             value.SetServiceID(serviceID);
-            return std::move(value);
+            return value;
         }
     }
 }

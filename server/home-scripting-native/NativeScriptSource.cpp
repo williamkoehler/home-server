@@ -21,7 +21,7 @@ namespace server
                 return boost::make_shared<NativeScriptSource>(id, name, usage, callback);
             }
 
-            Ref<Script> NativeScriptSource::CreateScript(Ref<View> view)
+            Ref<Script> NativeScriptSource::CreateScript(const Ref<View>& view)
             {
                 assert(view != nullptr);
 

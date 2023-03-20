@@ -96,7 +96,7 @@ namespace server
                 SetType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength()));
         }
 
-        RoomView::RoomView(Ref<Room> room) : room(std::move(room))
+        RoomView::RoomView(const Ref<Room>& room) : room(room)
         {
             assert(room != nullptr);
         }

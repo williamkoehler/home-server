@@ -14,7 +14,7 @@ namespace server
         {
         }
 
-        identifier_t DeviceView::GetID()
+        identifier_t DeviceView::GetID() const
         {
             if (Ref<Device> r = device.lock())
                 return r->GetID();
@@ -22,7 +22,7 @@ namespace server
             return 0;
         }
 
-        std::string DeviceView::GetName()
+        std::string DeviceView::GetName() const
         {
             if (Ref<Device> r = device.lock())
                 return r->GetName();

@@ -24,13 +24,13 @@ namespace server
             ///
             /// @param id Room id
             /// @return Ref<RoomView> Room view
-            virtual Ref<scripting::RoomView> GetRoom(identifier_t id) override;
+            virtual Ref<scripting::RoomView> GetRoom(identifier_t id) const override;
 
             /// @brief Get device view
             ///
             /// @param id Device id
             /// @return Ref<DeviceView> Device view
-            virtual Ref<scripting::DeviceView> GetDevice(identifier_t id) override;
+            virtual Ref<scripting::DeviceView> GetDevice(identifier_t id) const override;
         };
     }
 }

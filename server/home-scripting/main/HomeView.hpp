@@ -33,6 +33,8 @@ namespace server
             /// @param id Device id
             /// @return Ref<DeviceView> Device view
             virtual Ref<DeviceView> GetDevice(identifier_t id) const = 0;
+
+            virtual void Invoke(const std::string& method, const Value& parameter) final override;
         };
     }
 }

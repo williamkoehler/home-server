@@ -28,5 +28,9 @@ namespace server
         void HomeView::SetName(const std::string& v)
         {
         }
+
+        void HomeView::Invoke(const std::string& method, const Value& parameter)
+        {
+        }
     }
 }

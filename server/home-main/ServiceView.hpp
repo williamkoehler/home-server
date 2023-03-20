@@ -17,9 +17,9 @@ namespace server
             ServiceView(Ref<Service> service);
             virtual ~ServiceView();
 
-            virtual identifier_t GetID() override;
+            virtual identifier_t GetID() const override;
 
-            virtual std::string GetName() override;
+            virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
 
             virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;

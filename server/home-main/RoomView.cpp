@@ -14,7 +14,7 @@ namespace server
         {
         }
 
-        identifier_t RoomView::GetID()
+        identifier_t RoomView::GetID() const
         {
             Ref<Room> r = room.lock();
 
@@ -24,7 +24,7 @@ namespace server
             return 0;
         }
 
-        std::string RoomView::GetName()
+        std::string RoomView::GetName() const
         {
             Ref<Room> r = room.lock();
 

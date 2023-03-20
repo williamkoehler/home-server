@@ -14,7 +14,7 @@ namespace server
         {
         }
 
-        identifier_t ServiceView::GetID()
+        identifier_t ServiceView::GetID() const
         {
             if (Ref<Service> r = service.lock())
                 return r->GetID();
@@ -22,7 +22,7 @@ namespace server
             return 0;
         }
 
-        std::string ServiceView::GetName()
+        std::string ServiceView::GetName() const
         {
             if (Ref<Service> r = service.lock())
                 return r->GetName();

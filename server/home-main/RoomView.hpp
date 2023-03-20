@@ -17,14 +17,9 @@ namespace server
             RoomView(Ref<Room> room);
             virtual ~RoomView();
 
-            virtual scripting::ViewType GetType() override
-            {
-                return scripting::ViewType::kRoomViewType;
-            }
+            virtual identifier_t GetID() const override;
 
-            virtual identifier_t GetID() override;
-
-            virtual std::string GetName() override;
+            virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
         };
     }

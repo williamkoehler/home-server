@@ -63,7 +63,7 @@ namespace server
                 }
                 catch (const std::exception& e)
                 {
-                    LOG_ERROR("Ops... Something bad happend!\n{1}", std::string(e.what()));
+                    LOG_ERROR("Ops... Something bad happend!\n{0}", std::string(e.what()));
                 }
             }
 

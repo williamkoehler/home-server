@@ -1,5 +1,4 @@
 #include "Device.hpp"
-#include "DeviceView.hpp"
 #include "Home.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
@@ -234,6 +233,41 @@ namespace server
 
             if (script != nullptr)
                 script->JsonSetState(input);
+        }
+
+        DeviceView::DeviceView(Ref<Device> device) : device(std::move(device))
+        {
+            assert(device != nullptr);
+        }
+        DeviceView::~DeviceView()
+        {
+        }
+
+        identifier_t DeviceView::GetID() const
+        {
+            if (Ref<Device> r = device.lock())
+                return r->GetID();
+
+            return 0;
+        }
+
+        std::string DeviceView::GetName() const
+        {
+            if (Ref<Device> r = device.lock())
+                return r->GetName();
+
+            return "";
+        }
+        void DeviceView::SetName(const std::string& v)
+        {
+            if (Ref<Device> r = device.lock())
+                r->SetName(v);
+        }
+
+        void DeviceView::Invoke(const std::string& method, const scripting::Value& parameter)
+        {
+            if (Ref<Device> r = device.lock())
+                r->Invoke(method, parameter);
         }
     }
 }

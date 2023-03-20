@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include <home-common/Worker.hpp>
 #include <home-scripting/Script.hpp>
+#include <home-scripting/main/HomeView.hpp>
 
 namespace server
 {
@@ -12,6 +13,9 @@ namespace server
         class Service;
 
         class HomeView;
+
+        class RoomView;
+        class DeviceView;
 
         class Home : public boost::enable_shared_from_this<Home>
         {
@@ -146,6 +150,28 @@ namespace server
             bool RemoveService(identifier_t id);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+        };
+
+        class HomeView : public scripting::HomeView
+        {
+          private:
+            WeakRef<Home> home;
+
+          public:
+            HomeView(Ref<Home> home);
+            virtual ~HomeView();
+
+             /// @brief Get room view
+            ///
+            /// @param id Room id
+            /// @return Ref<RoomView> Room view
+            virtual Ref<scripting::RoomView> GetRoom(identifier_t id) const override;
+
+            /// @brief Get device view
+            ///
+            /// @param id Device id
+            /// @return Ref<DeviceView> Device view
+            virtual Ref<scripting::DeviceView> GetDevice(identifier_t id) const override;
         };
     }
 }

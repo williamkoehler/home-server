@@ -1,7 +1,6 @@
 #include "Room.hpp"
 #include "Device.hpp"
 #include "Home.hpp"
-#include "RoomView.hpp"
 #include <home-database/Database.hpp>
 
 namespace server
@@ -95,6 +94,41 @@ namespace server
             rapidjson::Value::MemberIterator typeIt = input.FindMember("type");
             if (typeIt != input.MemberEnd() && typeIt->value.IsUint())
                 SetType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength()));
+        }
+
+        RoomView::RoomView(Ref<Room> room) : room(std::move(room))
+        {
+            assert(room != nullptr);
+        }
+        RoomView::~RoomView()
+        {
+        }
+
+        identifier_t RoomView::GetID() const
+        {
+            Ref<Room> r = room.lock();
+
+            if (r != nullptr)
+                return r->GetID();
+
+            return 0;
+        }
+
+        std::string RoomView::GetName() const
+        {
+            Ref<Room> r = room.lock();
+
+            if (r != nullptr)
+                return r->GetName();
+
+            return "";
+        }
+        void RoomView::SetName(const std::string& v)
+        {
+            Ref<Room> r = room.lock();
+
+            if (r != nullptr)
+                r->SetName(v);
         }
     }
 }

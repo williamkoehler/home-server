@@ -1,5 +1,4 @@
 #include "Service.hpp"
-#include "ServiceView.hpp"
 #include "Home.hpp"
 #include "Room.hpp"
 #include <home-database/Database.hpp>
@@ -188,6 +187,42 @@ namespace server
 
             if (script != nullptr)
                 script->JsonSetState(input);
+        }
+
+
+        ServiceView::ServiceView(Ref<Service> service) : service(std::move(service))
+        {
+            assert(service != nullptr);
+        }
+        ServiceView::~ServiceView()
+        {
+        }
+
+        identifier_t ServiceView::GetID() const
+        {
+            if (Ref<Service> r = service.lock())
+                return r->GetID();
+
+            return 0;
+        }
+
+        std::string ServiceView::GetName() const
+        {
+            if (Ref<Service> r = service.lock())
+                return r->GetName();
+
+            return "";
+        }
+        void ServiceView::SetName(const std::string& v)
+        {
+            if (Ref<Service> r = service.lock())
+                r->SetName(v);
+        }
+
+        void ServiceView::Invoke(const std::string& method, const scripting::Value& parameter)
+        {
+            if (Ref<Service> r = service.lock())
+                r->Invoke(method, parameter);
         }
     }
 }

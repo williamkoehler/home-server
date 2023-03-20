@@ -19,10 +19,10 @@ int main(int argc, char** argv)
 
     try
     {
-
+        // Log hello message
         {
-            char line[14] = "             ";
-
+            char line[14];
+            memset(line, 0, sizeof(line) - 1);
             memcpy(line, SERVER_VERSION, strlen(SERVER_VERSION));
 
             LOG_INFO("\n"

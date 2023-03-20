@@ -13,22 +13,22 @@ namespace server
     {
         std::string name = "error-no-name";
 
-        struct
+        struct DatabaseConfig
         {
             DatabaseType type = DatabaseType::kSQLiteDatabaseType;
             std::string location;
             std::string username;
             std::string password;
         } database;
-        
-        struct
+
+        struct NetworkingConfig
         {
             std::string externalURL;
             std::string address;
             uint16_t port;
         } networking;
 
-        struct
+        struct ScriptingConfig
         {
             struct
             {
@@ -43,11 +43,6 @@ namespace server
     {
       private:
         std::string name = "error-no-name";
-
-        // Networking
-        std::string externalURL;
-        std::string address;
-        uint16_t port;
 
         // Components
         Ref<Worker> worker;
@@ -65,36 +60,40 @@ namespace server
       public:
         Core();
         virtual ~Core();
+
+        /// @brief Create core instance
+        /// 
+        /// @return Core singleton
         static Ref<Core> Create();
+
+        /// @brief Get core instance
+        /// 
+        /// @return Core singleton
         static Ref<Core> GetInstance();
 
+        /// @brief Get server status
+        ///
+        /// @return true Server is running
+        /// @return false Server is not running
         inline bool IsRunning() const
         {
             return worker->IsRunning();
         }
 
+        /// @brief Get server name
+        ///
+        /// @return Server name
         inline const std::string& GetName()
         {
             return name;
         }
 
-        // Networking
-        inline const std::string& GetAddress()
-        {
-            return address;
-        }
-        inline uint16_t GetPort()
-        {
-            return port;
-        }
-        inline const std::string& GetExternalURL()
-        {
-            return externalURL;
-        }
-
+        /// @brief Run server
+        ///
         void Run();
 
-        // Shutdown
+        /// @brief Shutdown server
+        ///
         void Shutdown();
     };
 

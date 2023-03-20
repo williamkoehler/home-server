@@ -34,7 +34,7 @@ namespace server
 
                 template <typename T>
                 inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
-                                               ScriptUsage usage, CreateScriptCallback<T> callback)
+                                                      ScriptUsage usage, CreateScriptCallback<T> callback)
                 {
                     return ScriptInformation{
                         .scriptName = scriptName,
@@ -44,10 +44,9 @@ namespace server
                     };
                 }
 
-
                 template <typename T>
                 inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
-                                               ScriptUsage usage)
+                                                      ScriptUsage usage)
                 {
                     return ScriptInformation{
                         .scriptName = scriptName,
@@ -85,8 +84,11 @@ namespace server
             ///
             struct LibraryInformation
             {
-                std::string libraryName; // Secondary name that links the script with corresponding database entry! THIS
-                                         // SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
+                /// @brief Secondary name that links the script with corresponding database entry! THIS
+                ///        SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
+                ///
+                std::string libraryName;
+
                 std::string name;
                 LibraryVersion version;
                 std::string license;

@@ -18,8 +18,20 @@ namespace server
       public:
         Database();
         virtual ~Database();
+
+        /// @brief Create database instance
+        ///
+        /// @param type Database type
+        /// @param db Database location
+        /// @param username Username (optional)
+        /// @param password Password (optional)
+        /// @return Database singleton
         static Ref<Database> Create(DatabaseType type, const std::string& db = "home.sqlite3",
                                     const std::string& username = "", const std::string& password = "");
+
+        /// @brief Get database instance
+        ///
+        /// @return Database singleton
         static Ref<Database> GetInstance();
 
         //! ScriptSource

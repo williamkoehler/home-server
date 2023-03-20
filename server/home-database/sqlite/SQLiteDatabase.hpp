@@ -13,6 +13,11 @@ namespace server
       public:
         SQLiteDatabase();
         virtual ~SQLiteDatabase();
+
+        /// @brief Create SQLite database instance
+        /// 
+        /// @param db Database location
+        /// @return SQLite database
         static Ref<SQLiteDatabase> Create(std::string db = "");
 
         /// @brief Load script sources from database

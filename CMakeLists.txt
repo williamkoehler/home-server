@@ -10,6 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(CTest)
 
 add_compile_definitions(OS_LINUX)
+add_compile_options(-Wall -Wextra -Wpedantic)
 
 # Conan
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)

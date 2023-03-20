@@ -6,7 +6,7 @@ namespace server
 {
     namespace main
     {
-        RoomView::RoomView(Ref<Room> room) : room(room)
+        RoomView::RoomView(Ref<Room> room) : room(std::move(room))
         {
             assert(room != nullptr);
         }

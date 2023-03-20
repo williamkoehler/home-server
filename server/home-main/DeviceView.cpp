@@ -6,7 +6,7 @@ namespace server
 {
     namespace main
     {
-        DeviceView::DeviceView(Ref<Device> device) : device(device)
+        DeviceView::DeviceView(Ref<Device> device) : device(std::move(device))
         {
             assert(device != nullptr);
         }

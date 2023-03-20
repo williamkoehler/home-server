@@ -9,7 +9,7 @@ namespace server
 {
     namespace main
     {
-        HomeView::HomeView(Ref<Home> home) : home(home)
+        HomeView::HomeView(Ref<Home> home) : home(std::move(home))
         {
         }
         HomeView::~HomeView()

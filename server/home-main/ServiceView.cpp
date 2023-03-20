@@ -6,7 +6,7 @@ namespace server
 {
     namespace main
     {
-        ServiceView::ServiceView(Ref<Service> service) : service(service)
+        ServiceView::ServiceView(Ref<Service> service) : service(std::move(service))
         {
             assert(service != nullptr);
         }

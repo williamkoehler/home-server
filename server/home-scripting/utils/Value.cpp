@@ -68,51 +68,51 @@ namespace server
         }
         Value::Value(bool boolean) : type(ValueType::kBooleanType)
         {
-            new ((void*)value) bool(boolean);
+            new ((void*)value.data()) bool(boolean);
         }
         Value::Value(double_t number) : type(ValueType::kNumberType)
         {
-            new ((void*)value) double_t(number);
+            new ((void*)value.data()) double_t(number);
         }
         Value::Value(const std::string& string) : type(ValueType::kStringType)
         {
-            new ((void*)value) std::string(string);
+            new ((void*)value.data()) std::string(string);
         }
         Value::Value(const std::string_view& string) : type(ValueType::kStringType)
         {
-            new ((void*)value) std::string(string);
+            new ((void*)value.data()) std::string(string);
         }
         Value::Value(const Endpoint& endpoint) : type(ValueType::kEndpointType)
         {
-            new ((void*)value) Endpoint(endpoint);
+            new ((void*)value.data()) Endpoint(endpoint);
         }
         Value::Value(const Color& color) : type(ValueType::kColorType)
         {
-            new ((void*)value) Color(color);
+            new ((void*)value.data()) Color(color);
         }
         Value::Value(ValueType type) : type(type)
         {
             switch (type)
             {
             case ValueType::kBooleanType:
-                new ((void*)value) bool();
+                new ((void*)value.data()) bool();
                 break;
             case ValueType::kNumberType:
-                new ((void*)value) double_t();
+                new ((void*)value.data()) double_t();
                 break;
             case ValueType::kStringType:
-                new ((void*)value) std::string();
+                new ((void*)value.data()) std::string();
                 break;
             case ValueType::kEndpointType:
-                new ((void*)value) Endpoint();
+                new ((void*)value.data()) Endpoint();
                 break;
             case ValueType::kColorType:
-                new ((void*)value) Color();
+                new ((void*)value.data()) Color();
                 break;
             case ValueType::kRoomIDType:
             case ValueType::kDeviceIDType:
             case ValueType::kServiceIDType:
-                new ((void*)value) identifier_t();
+                new ((void*)value.data()) identifier_t();
                 break;
             default:
                 break;
@@ -123,45 +123,45 @@ namespace server
             switch (type)
             {
             case ValueType::kBooleanType:
-                new ((void*)value) bool(*(bool*)other.value);
+                new ((void*)value.data()) bool(*(bool*)other.value.data());
                 break;
             case ValueType::kNumberType:
-                new ((void*)value) double_t(*(double_t*)other.value);
+                new ((void*)value.data()) double_t(*(double_t*)other.value.data());
                 break;
             case ValueType::kStringType:
-                new ((void*)value) std::string(*(std::string*)other.value);
+                new ((void*)value.data()) std::string(*(std::string*)other.value.data());
                 break;
             case ValueType::kEndpointType:
-                new ((void*)value) Endpoint(*(Endpoint*)other.value);
+                new ((void*)value.data()) Endpoint(*(Endpoint*)other.value.data());
                 break;
             case ValueType::kColorType:
-                new ((void*)value) Color(*(Color*)other.value);
+                new ((void*)value.data()) Color(*(Color*)other.value.data());
                 break;
             case ValueType::kRoomIDType:
             case ValueType::kDeviceIDType:
             case ValueType::kServiceIDType:
-                new ((void*)value) identifier_t(*(identifier_t*)other.value);
+                new ((void*)value.data()) identifier_t(*(identifier_t*)other.value.data());
                 break;
             default:
                 break;
             }
         }
-        Value::Value(Value&& other) : type(std::exchange(other.type, ValueType::kUnknownType))
+        Value::Value(Value&& other)
+            : type(std::exchange(other.type, ValueType::kUnknownType)), value(std::move(other.value))
         {
-            memcpy(other.value, value, sizeof(value));
         }
         Value::~Value()
         {
             switch (type)
             {
             case ValueType::kStringType:
-                ((std::string*)value)->~basic_string();
+                ((std::string*)value.data())->~basic_string();
                 break;
             case ValueType::kEndpointType:
-                ((Endpoint*)value)->~Endpoint();
+                ((Endpoint*)value.data())->~Endpoint();
                 break;
             case ValueType::kColorType:
-                ((Color*)value)->~Color();
+                ((Color*)value.data())->~Color();
                 break;
             default: // Do nothing for basic types such as bool, int, etc...
                 break;
@@ -249,22 +249,63 @@ namespace server
             return Value();
         }
 
-        rapidjson::Value Value::JsonGet(rapidjson::Document::AllocatorType& allocator)
+        void Value::operator=(const Value& other)
+        {
+            // Call deconstructor on old value
+            this->~Value();
+
+            switch (type)
+            {
+            case ValueType::kBooleanType:
+                new ((void*)value.data()) bool(*(bool*)other.value.data());
+                break;
+            case ValueType::kNumberType:
+                new ((void*)value.data()) double_t(*(double_t*)other.value.data());
+                break;
+            case ValueType::kStringType:
+                new ((void*)value.data()) std::string(*(std::string*)other.value.data());
+                break;
+            case ValueType::kEndpointType:
+                new ((void*)value.data()) Endpoint(*(Endpoint*)other.value.data());
+                break;
+            case ValueType::kColorType:
+                new ((void*)value.data()) Color(*(Color*)other.value.data());
+                break;
+            case ValueType::kRoomIDType:
+            case ValueType::kDeviceIDType:
+            case ValueType::kServiceIDType:
+                new ((void*)value.data()) identifier_t(*(identifier_t*)other.value.data());
+                break;
+            default:
+                break;
+            }
+        }
+
+        void Value::operator=(Value&& other)
+        {
+            // Call deconstructor on old value
+            this->~Value();
+
+            type = std::exchange(other.type, ValueType::kUnknownType);
+            value = std::move(other.value);
+        }
+
+        rapidjson::Value Value::JsonGet(rapidjson::Document::AllocatorType& allocator) const
         {
             switch (type)
             {
             case ValueType::kBooleanType:
-                return rapidjson::Value(*(bool*)value);
+                return rapidjson::Value(*(bool*)value.data());
             case ValueType::kNumberType:
-                return rapidjson::Value(*(double_t*)value);
+                return rapidjson::Value(*(double_t*)value.data());
             case ValueType::kStringType:
             {
-                const std::string& string = *(std::string*)value;
+                const std::string& string = *(std::string*)value.data();
                 return rapidjson::Value(string.data(), string.size(), allocator);
             }
             case ValueType::kEndpointType:
             {
-                const Endpoint& endpoint = *(Endpoint*)value;
+                const Endpoint& endpoint = *(Endpoint*)value.data();
 
                 rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -277,7 +318,7 @@ namespace server
             }
             case ValueType::kColorType:
             {
-                const Color& color = *(Color*)value;
+                const Color& color = *(Color*)value.data();
 
                 rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -290,7 +331,7 @@ namespace server
             }
             case ValueType::kRoomIDType:
             {
-                const identifier_t& id = *(identifier_t*)value;
+                const identifier_t& id = *(identifier_t*)value.data();
 
                 rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -301,7 +342,7 @@ namespace server
             }
             case ValueType::kDeviceIDType:
             {
-                const identifier_t& id = *(identifier_t*)value;
+                const identifier_t& id = *(identifier_t*)value.data();
 
                 rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -312,7 +353,7 @@ namespace server
             }
             case ValueType::kServiceIDType:
             {
-                const identifier_t& id = *(identifier_t*)value;
+                const identifier_t& id = *(identifier_t*)value.data();
 
                 rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
 
@@ -332,15 +373,15 @@ namespace server
             {
             case ValueType::kBooleanType:
                 if (input.IsBool())
-                    *((bool*)value) = input.GetBool();
+                    *((bool*)value.data()) = input.GetBool();
                 break;
             case ValueType::kNumberType:
                 if (input.IsNumber())
-                    *((bool*)value) = input.GetDouble();
+                    *((bool*)value.data()) = input.GetDouble();
                 break;
             case ValueType::kStringType:
             {
-                std::string& string = *(std::string*)value;
+                std::string& string = *(std::string*)value.data();
 
                 if (input.IsString())
                     string.assign(input.GetString(), input.GetStringLength());
@@ -348,7 +389,7 @@ namespace server
             }
             case ValueType::kEndpointType:
             {
-                Endpoint& endpoint = *(Endpoint*)value;
+                Endpoint& endpoint = *(Endpoint*)value.data();
 
                 if (input.IsObject())
                 {
@@ -375,7 +416,7 @@ namespace server
             }
             case ValueType::kColorType:
             {
-                Color& color = *(Color*)value;
+                Color& color = *(Color*)value.data();
 
                 if (input.IsObject())
                 {
@@ -403,7 +444,7 @@ namespace server
             }
             case ValueType::kRoomIDType:
             {
-                identifier_t& id = *(identifier_t*)value;
+                identifier_t& id = *(identifier_t*)value.data();
 
                 if (input.IsObject())
                 {
@@ -426,7 +467,7 @@ namespace server
             }
             case ValueType::kDeviceIDType:
             {
-                identifier_t& id = *(identifier_t*)value;
+                identifier_t& id = *(identifier_t*)value.data();
 
                 if (input.IsObject())
                 {
@@ -449,7 +490,7 @@ namespace server
             }
             case ValueType::kServiceIDType:
             {
-                identifier_t& id = *(identifier_t*)value;
+                identifier_t& id = *(identifier_t*)value.data();
 
                 if (input.IsObject())
                 {
@@ -475,6 +516,38 @@ namespace server
             }
 
             return true;
+        }
+
+        void Value::Assign(const Value& other)
+        {
+            if (type == other.type)
+            {
+                switch (type)
+                {
+                case ValueType::kBooleanType:
+                    *((bool*)value.data()) = *(bool*)other.value.data();
+                    break;
+                case ValueType::kNumberType:
+                    *((double_t*)value.data()) = *(double_t*)other.value.data();
+                    break;
+                case ValueType::kStringType:
+                    *((std::string*)value.data()) = *(std::string*)other.value.data();
+                    break;
+                case ValueType::kEndpointType:
+                    *((Endpoint*)value.data()) = *(Endpoint*)other.value.data();
+                    break;
+                case ValueType::kColorType:
+                    *((Color*)value.data()) = *(Color*)other.value.data();
+                    break;
+                case ValueType::kRoomIDType:
+                case ValueType::kDeviceIDType:
+                case ValueType::kServiceIDType:
+                    *((identifier_t*)value.data()) = *(identifier_t*)other.value.data();
+                    break;
+                default:
+                    break;
+                }
+            }
         }
 
         std::string Value::ToString()

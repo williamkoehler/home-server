@@ -5,29 +5,77 @@ namespace server
 {
     namespace scripting
     {
-        Event::Event()
+        Event::Event() : base(boost::make_shared<EventBase>())
         {
         }
         Event::~Event()
         {
         }
 
-        Ref<Event> Event::Create()
+        EventConnection Event::Bind(Ref<View> view, const std::string& method)
         {
-            return boost::make_shared<Event>();
+            Ref<EventEntry> entry = boost::make_shared<EventEntry>(EventEntry{
+                .base = base,
+                .view = std::move(view),
+                .method = method,
+            });
+
+            base->push_back(entry);
+
+            return EventConnection(std::move(entry));
         }
 
-        EventConnection Event::Connect(Ref<Script> script, const std::string& method)
+        void Event::Invoke(const Value& parameter) const
         {
-            assert(script != nullptr);
-
-            return EventConnection(signal.connect(
-                Signal::slot_type(&Script::PostInvoke, script.get(), method, boost::placeholders::_1).track(script)));
+            for (const Ref<EventEntry>& entry : *base)
+            {
+                Ref<View> view = entry->view.lock();
+                if (view != nullptr)
+                    view->Invoke(entry->method, parameter);
+            }
         }
 
-        void Event::Invoke(const Value& parameter)
+        EventConnection::EventConnection(Ref<EventEntry> entry) : entry(std::move(entry))
         {
-            signal(parameter);
+        }
+        EventConnection::EventConnection()
+        {
+        }
+        EventConnection::EventConnection(EventConnection&& eventConnection) noexcept
+            : entry(std::exchange(eventConnection.entry, WeakRef<EventEntry>()))
+        {
+        }
+        EventConnection::~EventConnection()
+        {
+            Unbind();
+        }
+
+        void EventConnection::operator=(EventConnection&& other) noexcept
+        {
+            std::swap(entry, other.entry);
+        }
+
+        void EventConnection::Unbind()
+        {
+            Ref<EventEntry> r = entry.lock();
+            if (r != nullptr)
+            {
+                // Find entry
+                EventBase::iterator it = boost::range::find(*r->base, r);
+                if (it != r->base->end())
+                {
+                    // Get last element
+                    EventBase::iterator it2 = r->base->end() - 1;
+
+                    // Swap with last element
+                    std::iter_swap(it, it2);
+
+                    // Pop last element
+                    r->base->pop_back();
+                }
+            }
+
+            entry.reset();
         }
     }
 }

@@ -3,6 +3,7 @@
 #include "View.hpp"
 #include "common.hpp"
 #include "tasks/Task.hpp"
+#include "utils/Event.hpp"
 #include "utils/Value.hpp"
 
 namespace server
@@ -12,7 +13,6 @@ namespace server
         class ScriptSource;
 
         class Value;
-        class Event;
 
         class Task;
 
@@ -24,11 +24,15 @@ namespace server
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
-            robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeList;
-            boost::container::set<std::string> propertySet;
-            robin_hood::unordered_node_map<std::string, Ref<Event>> eventList;
+            /// @brief Script attributes
+            ///
+            robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeMap;
 
-            boost::container::vector<WeakRef<Task>> taskList;
+            /// @brief Script events
+            ///
+            robin_hood::unordered_node_map<std::string, Event> eventMap;
+
+            boost::container::vector<WeakRef<Task>> taskMap;
 
           public:
             Script(Ref<View> view, Ref<ScriptSource> scriptSource);
@@ -46,8 +50,6 @@ namespace server
             {
                 return scriptSource->GetID();
             }
-
-            Ref<Event> GetEvent(const std::string& id);
 
             /// @brief Initialize script (ONLY CALL ONCE AFTER CREATION)
             ///
@@ -90,11 +92,19 @@ namespace server
             /// @param parameter Parameter
             void PostInvoke(const std::string& name, const Value& parameter);
 
+            /// @brief Bind view method to event
+            ///
+            /// @param event Event name
+            /// @param view Invokable view
+            /// @param method Method name
+            /// @return EventConnection Event connection
+            EventConnection Bind(const std::string& event, Ref<View> view, const std::string& method);
+
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);
 
-            void JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSetState(rapidjson::Value& input);
+            virtual void JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) = 0;
+            virtual void JsonSetState(rapidjson::Value& input) = 0;
         };
     }
 }

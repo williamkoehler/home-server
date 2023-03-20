@@ -76,7 +76,7 @@ namespace server
                     sizeof(arg1) >= sizeof(arg2) ? static_max<arg1, args...>::value : static_max<arg2, args...>::value;
             };
 
-            uint8_t value[static_max<bool, double_t, std::string, Endpoint, Color, identifier_t>::value];
+            std::array<uint8_t, static_max<bool, double_t, std::string, Endpoint, Color, identifier_t>::value> value;
 
           public:
             explicit Value();
@@ -104,6 +104,9 @@ namespace server
             /// @param json Json
             /// @return Value
             static Value Create(rapidjson::Value& json);
+
+            void operator=(const Value& other);
+            void operator=(Value&& other);
 
             inline ValueType GetType() const
             {
@@ -154,127 +157,127 @@ namespace server
             inline bool& GetBoolean()
             {
                 assert(type == ValueType::kBooleanType);
-                return *(bool*)value;
+                return *(bool*)value.data();
             }
             inline const bool& GetBoolean() const
             {
                 assert(type == ValueType::kBooleanType);
-                return *(bool*)value;
+                return *(bool*)value.data();
             }
 
             inline int64_t GetInteger() const
             {
                 assert(type == ValueType::kNumberType);
-                return (int64_t) * (double_t*)value;
+                return (int64_t) * (double_t*)value.data();
             }
 
             inline double_t& GetNumber()
             {
                 assert(type == ValueType::kNumberType);
-                return *(double_t*)value;
+                return *(double_t*)value.data();
             }
             inline const double_t& GetNumber() const
             {
                 assert(type == ValueType::kNumberType);
-                return *(double_t*)value;
+                return *(double_t*)value.data();
             }
 
             inline std::string& GetString()
             {
                 assert(type == ValueType::kStringType);
-                return *(std::string*)value;
+                return *(std::string*)value.data();
             }
             inline const std::string& GetString() const
             {
                 assert(type == ValueType::kStringType);
-                return *(std::string*)value;
+                return *(std::string*)value.data();
             }
 
             inline Endpoint& GetEndpoint()
             {
                 assert(type == ValueType::kEndpointType);
-                return *(Endpoint*)value;
+                return *(Endpoint*)value.data();
             }
             inline const Endpoint& GetEndpoint() const
             {
                 assert(type == ValueType::kEndpointType);
-                return *(Endpoint*)value;
+                return *(Endpoint*)value.data();
             }
 
             inline Color& GetColor()
             {
                 assert(type == ValueType::kColorType);
-                return *(Color*)value;
+                return *(Color*)value.data();
             }
             inline const Color& GetColor() const
             {
                 assert(type == ValueType::kColorType);
-                return *(Color*)value;
+                return *(Color*)value.data();
             }
 
             inline identifier_t& GetRoomID()
             {
                 assert(type == ValueType::kRoomIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
             inline const identifier_t& GetRoomID() const
             {
                 assert(type == ValueType::kRoomIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
 
             inline identifier_t& GetDeviceID()
             {
                 assert(type == ValueType::kDeviceIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
             inline const identifier_t& GetDeviceID() const
             {
                 assert(type == ValueType::kDeviceIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
 
             inline identifier_t& GetServiceID()
             {
                 assert(type == ValueType::kServiceIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
             inline const identifier_t& GetServiceID() const
             {
                 assert(type == ValueType::kServiceIDType);
-                return *(identifier_t*)value;
+                return *(identifier_t*)value.data();
             }
 
             inline void SetBoolean(bool v)
             {
                 assert(type == ValueType::kBooleanType);
-                *(bool*)value = v;
+                *(bool*)value.data() = v;
             }
             inline void SetInteger(int64_t v)
             {
                 assert(type == ValueType::kNumberType);
-                *(int64_t*)value = v;
+                *(int64_t*)value.data() = v;
             }
             inline void SetNumber(double_t v)
             {
                 assert(type == ValueType::kNumberType);
-                *(double_t*)value = v;
+                *(double_t*)value.data() = v;
             }
             inline void SetString(const std::string& v)
             {
                 assert(type == ValueType::kStringType);
-                *(std::string*)value = v;
+                *(std::string*)value.data() = v;
             }
             inline void SetStringView(const std::string_view& v)
             {
                 assert(type == ValueType::kStringType);
-                *(std::string*)value = v;
+                *(std::string*)value.data() = v;
             }
             inline void SetEndpoint(const Endpoint& v)
             {
                 assert(type == ValueType::kEndpointType);
 
-                Endpoint& endpoint = *(Endpoint*)value;
+                Endpoint& endpoint = *(Endpoint*)value.data();
                 endpoint.host = v.host;
                 endpoint.port = v.port;
             }
@@ -282,7 +285,7 @@ namespace server
             {
                 assert(type == ValueType::kColorType);
 
-                Color& color = *(Color*)value;
+                Color& color = *(Color*)value.data();
                 color.red = v.red;
                 color.green = v.green;
                 color.blue = v.blue;
@@ -290,22 +293,24 @@ namespace server
             inline void SetRoomID(const identifier_t& v)
             {
                 assert(type == ValueType::kRoomIDType);
-                *(identifier_t*)value = v;
+                *(identifier_t*)value.data() = v;
             }
             inline void SetDeviceID(const identifier_t& v)
             {
                 assert(type == ValueType::kDeviceIDType);
-                *(identifier_t*)value = v;
+                *(identifier_t*)value.data() = v;
             }
             inline void SetServiceID(const identifier_t& v)
             {
                 assert(type == ValueType::kServiceIDType);
-                *(identifier_t*)value = v;
+                *(identifier_t*)value.data() = v;
             }
+
+            void Assign(const Value& other);
 
             std::string ToString();
 
-            rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator);
+            rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSet(rapidjson::Value& input);
         };
 

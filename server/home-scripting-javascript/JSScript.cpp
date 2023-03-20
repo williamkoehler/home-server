@@ -76,7 +76,7 @@ namespace server
                         {
 
                             // Import utils module
-                            JSUtils::duk_import(context);
+                            duk_import_utils(context);
                             duk_import_value(context);
 
                             // Import main module
@@ -183,7 +183,7 @@ namespace server
                             if (!document.HasParseError())
                             {
                                 // Insert attribute
-                                attributeList[name] = std::move(document);
+                                attributeMap[name] = std::move(document);
                             }
                             else
                                 duk_error(context, DUK_ERR_ERROR, "Invalid json.");
@@ -202,14 +202,14 @@ namespace server
 
                 DUK_TEST_LEAVE(context, 0);
 
-                attributeList.compact();
+                attributeMap.compact();
             }
             void JSScript::InitializeProperties()
             {
                 duk_context* context = GetDuktapeContext();
                 assert(context != nullptr);
 
-                propertyList.clear();
+                propertyMap.clear();
 
                 DUK_TEST_ENTER(context);
 
@@ -233,33 +233,15 @@ namespace server
                         const char* typeStr = duk_get_lstring(context, -1, &typeLength);
                         ValueType type = ParseValueType(std::string_view(typeStr, typeLength));
 
-                        uint32_t index = 0;
+                        // Add property
+                        propertyMap.insert_or_assign(name, Value(type));
 
-                        // Insert property
-                        // propertyList[name] = Value(type);
-                        // propertySet.insert(name);
+                        // Check property count
+                        if (propertyMap.size() > 32)
+                            duk_error(context, DUK_ERR_ERROR, "Too many properties.");
 
-                        // // Insert property id reference
-                        // index = (uint32_t)propertyList.size();
-                        // if (index >= 32)
-                        //     duk_error(context, DUK_ERR_ERROR, "Too many properties.");
-
-                        // Pop value
-                        duk_pop(context); // [ object enum key ]
-
-                        // Push getter function
-                        duk_push_c_function(context, JSScript::duk_get_property, 0); // [ object enum key c_func ]
-                        duk_set_magic(context, -1, index);
-
-                        // Push setter function
-                        duk_push_c_function(context, JSScript::duk_set_property,
-                                            1); // [ object enum key c_func c_func ]
-                        duk_set_magic(context, -1, index);
-
-                        // Set properties
-                        duk_def_prop(context, -5,
-                                     DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER | DUK_DEFPROP_CLEAR_C |
-                                         DUK_DEFPROP_SET_E | DUK_DEFPROP_FORCE); // [ object enum ]
+                        // Pop value, and key
+                        duk_pop_2(context); // [ object enum ]
                     }
 
                     // Pop enum
@@ -269,9 +251,23 @@ namespace server
                 // Pop object
                 duk_pop(context); // [ ]
 
-                DUK_TEST_LEAVE(context, 0);
+                // Replace properties object by proxy
+                duk_push_object(context); // [ target ]
+                duk_push_object(context); // [ target handler ]
 
-                // propertyByIDList.shrink_to_fit();
+                static const duk_function_list_entry methods[] = {
+                    {"get", duk_get_property, 2},
+                    {"set", duk_set_property, 3},
+                    {nullptr, nullptr, 0},
+                };
+
+                duk_put_function_list(context, -1, methods); // [ target handler ]
+
+                duk_push_proxy(context, 0); // [ proxy ]
+                duk_def_prop(context, -2,
+                             DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_E | DUK_DEFPROP_CLEAR_WC | DUK_DEFPROP_FORCE);
+
+                DUK_TEST_LEAVE(context, 0);
             }
             void JSScript::InitializeMethods()
             {
@@ -318,8 +314,6 @@ namespace server
                 duk_context* context = GetDuktapeContext();
                 assert(context != nullptr);
 
-                eventByIDList.clear();
-
                 DUK_TEST_ENTER(context);
 
                 // Get events object
@@ -339,23 +333,15 @@ namespace server
                         uint32_t index;
 
                         // Add event
-                        Ref<Event> event = Event::Create();
-                        if (event != nullptr)
-                        {
-                            // Insert event
-                            eventList[name] = event;
+                        Event event = Event();
+                        eventMap.emplace(name, std::move(event));
 
-                            // Insert event id reference
-                            index = (uint32_t)eventByIDList.size();
-                            if (index >= 32)
-                                duk_error(context, DUK_ERR_ERROR, "Too many events.");
-
-                            eventByIDList.push_back(event);
-                        }
+                        // Check event count
+                        if (eventMap.size() > 32)
+                            duk_error(context, DUK_ERR_ERROR, "Too many events.");
 
                         // Push function
                         duk_push_c_function(context, JSScript::duk_invoke_event, 0); // [ object enum key c_func ]
-                        duk_set_magic(context, -1, index);
 
                         // Set event
                         duk_def_prop(context, -4,
@@ -371,8 +357,6 @@ namespace server
                 duk_pop(context); // [ ]
 
                 DUK_TEST_LEAVE(context, 0);
-
-                eventByIDList.shrink_to_fit();
             }
             void JSScript::InitializeControllers()
             {
@@ -437,10 +421,17 @@ namespace server
 
             Value JSScript::GetProperty(const std::string& name)
             {
+                const robin_hood::unordered_node_map<std::string, Value>::const_iterator it = propertyMap.find(name);
+                if (it != propertyMap.end())
+                    return it->second;
+
                 return Value();
             }
             void JSScript::SetProperty(const std::string& name, const Value& value)
             {
+                const robin_hood::unordered_node_map<std::string, Value>::iterator it = propertyMap.find(name);
+                if (it != propertyMap.end())
+                    it->second.Assign(value);
             }
 
             bool JSScript::Invoke(const std::string& name, const Value& parameter)
@@ -493,63 +484,90 @@ namespace server
                     return false;
             }
 
+            void JSScript::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            {
+                assert(output.IsObject());
+
+                output.MemberReserve(propertyMap.size(), allocator);
+                for (const auto& [name, property] : propertyMap)
+                {
+                    output.AddMember(rapidjson::Value(name.data(), name.size(), allocator), property.JsonGet(allocator),
+                                     allocator);
+                }
+            }
+            void JSScript::JsonSetState(rapidjson::Value& input)
+            {
+                assert(input.IsObject());
+
+                for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
+                     propertyIt++)
+                {
+                    std::string name = std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength());
+
+                    const robin_hood::unordered_node_map<std::string, Value>::iterator it = propertyMap.find(name);
+                    if (it != propertyMap.end())
+                        it->second.JsonSet(propertyIt->value);
+                }
+            }
+
             duk_ret_t JSScript::duk_get_property(duk_context* context)
             {
-                // JSScript* script = (JSScript*)duk_get_user_data(context);
+                // Expect [ object prop ]
 
-                // uint32_t index = duk_get_current_magic(context);
-                // if (index < script->propertyList.size())
-                // {
-                //     const Value& property = script->propertyList[index];
+                JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                //     duk_new_value(context, property);
+                size_t nameLength;
+                const char* nameStr = duk_get_lstring(context, 1, &nameLength);
+                std::string name = std::string(nameStr, nameLength);
 
-                //     return 1; // [ value ]
-                // }
-                // else
-                {
-                    // Error
-                    return DUK_RET_ERROR;
-                }
+                // Pop prop, and object
+                duk_pop_2(context);
+
+                // Get property
+                const robin_hood::unordered_node_map<std::string, Value>::const_iterator it =
+                    script->propertyMap.find(name);
+                if (it != script->propertyMap.end())
+                    duk_new_value(context, it->second);
+                else
+                    duk_push_undefined(context);
+
+                return 1;
             }
             duk_ret_t JSScript::duk_set_property(duk_context* context)
             {
-                // JSScript* script = (JSScript*)duk_get_user_data(context);
+                // Expect [ object prop value ]
 
-                // uint32_t index = duk_get_current_magic(context);
-                // if (index < script->propertyList.size() && duk_get_top(context) == 1)
-                // {
-                //     Value& property = script->propertyList[index];
-                //     duk_get_value(context, -1, property);
+                JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                //     return 0;
-                // }
-                // else
-                {
-                    // Error
-                    return DUK_RET_ERROR;
-                }
+                size_t nameLength;
+                const char* nameStr = duk_get_lstring(context, 1, &nameLength);
+                std::string name = std::string(nameStr, nameLength);
+
+                // Set property
+                const robin_hood::unordered_node_map<std::string, Value>::iterator it = script->propertyMap.find(name);
+                if (it != script->propertyMap.end())
+                    duk_get_value(context, 2, it->second);
+
+                return 0;
             }
 
             duk_ret_t JSScript::duk_invoke_event(duk_context* context)
             {
+                // Expect [ string value ]
+
                 JSScript* script = (JSScript*)duk_get_user_data(context);
 
-                uint32_t index = duk_get_current_magic(context);
-                if (index < script->eventByIDList.size() && duk_get_top(context) == 1)
-                {
-                    Ref<Event> event = script->eventByIDList[index];
-                    assert(event != nullptr);
+                size_t nameLength;
+                const char* nameStr = duk_to_lstring(context, 0, &nameLength);
+                std::string name = std::string(nameStr, nameLength);
 
-                    event->Invoke(duk_get_value(context, 0));
+                // Invoke event
+                const robin_hood::unordered_node_map<std::string, Event>::const_iterator it =
+                    script->eventMap.find(name);
+                if (it != script->eventMap.end())
+                    it->second.Invoke(duk_get_value(context, 1));
 
-                    return 0;
-                }
-                else
-                {
-                    // Error
-                    return DUK_RET_ERROR;
-                }
+                return 0;
             }
         }
     }

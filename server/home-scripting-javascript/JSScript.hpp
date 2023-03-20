@@ -23,7 +23,7 @@ namespace server
         {
             class JSScriptSource;
 
-            class JSScript : public Script
+            class JSScript final : public Script
             {
               private:
                 size_t startTime;
@@ -40,13 +40,13 @@ namespace server
 
                 std::unique_ptr<void, ContextDeleter> context;
 
-                /// @brief Script properties ordered by id
+                /// @brief Script properties
                 ///
-                robin_hood::unordered_node_map<std::string, Value> propertyList;
+                robin_hood::unordered_node_map<std::string, Value> propertyMap;
 
-                /// @brief Script events ordered by id
+                /// @brief Script event names
                 ///
-                boost::container::vector<Ref<Event>> eventByIDList;
+                // boost::container::vector<std::string> eventList;
 
                 /// @brief Script controllers
                 ///
@@ -101,6 +101,10 @@ namespace server
                 virtual void SetProperty(const std::string& name, const Value& value) override;
 
                 virtual bool Invoke(const std::string& name, const Value& parameter) override;
+
+                virtual void JsonGetState(rapidjson::Value& output,
+                                          rapidjson::Document::AllocatorType& allocator) override;
+                virtual void JsonSetState(rapidjson::Value& input) override;
             };
         }
     }

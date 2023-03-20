@@ -7,42 +7,7 @@ namespace server
     {
         namespace javascript
         {
-            bool JSUtils::duk_import(duk_context* context)
-            {
-                assert(context != nullptr);
-
-                // Push global object
-                duk_push_global_object(context); // [ object ]                              // [ c_func object ]
-
-                // Register methods
-                static const duk_function_list_entry methods[] = {
-                    duk_function_list_entry{
-                        .key = "print",
-                        .value = JSUtils::duk_print,
-                        .nargs = DUK_VARARGS,
-                    },
-                    duk_function_list_entry{
-                        .key = "createTimer",
-                        .value = JSUtils::duk_create_timer,
-                        .nargs = 2,
-                    },
-                    duk_function_list_entry{
-                        .key = "createDelay",
-                        .value = JSUtils::duk_create_delay,
-                        .nargs = 2,
-                    },
-                    {nullptr, nullptr, 0},
-                };
-
-                duk_put_function_list(context, -1, methods); // [ object ]
-
-                // Pop global object
-                duk_pop(context); // [ ]
-
-                return true;
-            }
-
-            duk_ret_t JSUtils::duk_print(duk_context* context)
+            duk_ret_t duk_print(duk_context* context)
             {
                 std::stringstream ss;
 
@@ -60,7 +25,7 @@ namespace server
                 return 0;
             }
 
-            duk_ret_t JSUtils::duk_create_timer(duk_context* context)
+            duk_ret_t duk_create_timer(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
 
@@ -93,7 +58,7 @@ namespace server
                 }
             }
 
-            duk_ret_t JSUtils::duk_create_delay(duk_context* context)
+            duk_ret_t duk_create_delay(duk_context* context)
             {
                 JSScript* script = (JSScript*)duk_get_user_data(context);
 
@@ -124,6 +89,41 @@ namespace server
                     // Error
                     return DUK_RET_ERROR;
                 }
+            }
+
+            bool duk_import_utils(duk_context* context)
+            {
+                assert(context != nullptr);
+
+                // Push global object
+                duk_push_global_object(context); // [ object ]
+
+                // Register methods
+                static const duk_function_list_entry methods[] = {
+                    duk_function_list_entry{
+                        .key = "print",
+                        .value = duk_print,
+                        .nargs = DUK_VARARGS,
+                    },
+                    duk_function_list_entry{
+                        .key = "createTimer",
+                        .value = duk_create_timer,
+                        .nargs = 2,
+                    },
+                    duk_function_list_entry{
+                        .key = "createDelay",
+                        .value = duk_create_delay,
+                        .nargs = 2,
+                    },
+                    {nullptr, nullptr, 0},
+                };
+
+                duk_put_function_list(context, -1, methods); // [ object ]
+
+                // Pop global object
+                duk_pop(context); // [ ]
+
+                return true;
             }
         }
     }

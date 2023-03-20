@@ -41,7 +41,7 @@ namespace server
                 bool RemoveMethod(const std::string& name);
                 void ClearMethods();
 
-                Ref<Event> AddEvent(const std::string& name);
+                Event AddEvent(const std::string& name);
                 bool RemoveEvent(const std::string& name);
                 void ClearEvents();
 
@@ -51,12 +51,16 @@ namespace server
                 virtual void SetProperty(const std::string& name, const Value& value) override;
 
                 bool Invoke(const std::string& name, const Value& parameter) override;
+
+                virtual void JsonGetState(rapidjson::Value& output,
+                                          rapidjson::Document::AllocatorType& allocator) override;
+                virtual void JsonSetState(rapidjson::Value& input) override;
             };
 
             class NativeScriptImpl
             {
               private:
-                friend class NativeScript;
+                friend class server::scripting::native::NativeScript;
 
                 Ref<NativeScript> script;
 
@@ -67,6 +71,8 @@ namespace server
                 virtual ~NativeScriptImpl()
                 {
                 }
+
+                constexpr virtual ViewType GetViewType() const = 0;
 
                 /// @brief Initialize script
                 ///
@@ -155,7 +161,7 @@ namespace server
                 ///
                 /// @param name Event name
                 /// @return Ref<Event> Event instance
-                inline Ref<Event> AddEvent(const std::string& name)
+                inline Event AddEvent(const std::string& name)
                 {
                     return script->AddEvent(name);
                 }

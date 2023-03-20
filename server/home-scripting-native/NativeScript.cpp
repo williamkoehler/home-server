@@ -41,7 +41,7 @@ namespace server
             bool NativeScript::AddAttribute(const std::string& name, const char* json)
             {
                 // Check existance
-                if (!attributeList.contains(name))
+                if (!attributeMap.contains(name))
                 {
                     // Parse attribute
                     rapidjson::Document document;
@@ -51,7 +51,7 @@ namespace server
                     // Add attribute to list
                     if (!document.HasParseError())
                     {
-                        attributeList[name] = std::move(document);
+                        attributeMap[name] = std::move(document);
                         return true;
                     }
                 }
@@ -60,11 +60,11 @@ namespace server
             }
             bool NativeScript::RemoveAttribute(const std::string& name)
             {
-                return attributeList.erase(name);
+                return attributeMap.erase(name);
             }
             void NativeScript::ClearAttributes()
             {
-                attributeList.clear();
+                attributeMap.clear();
             }
 
             bool NativeScript::AddProperty(const std::string& name, const Property& property)
@@ -194,31 +194,41 @@ namespace server
                 methodList.clear();
             }
 
-            Ref<Event> NativeScript::AddEvent(const std::string& name)
+            Event NativeScript::AddEvent(const std::string& name)
             {
-                // Check existance
-                if (!eventList.contains(name))
-                {
-                    // Create event instance
-                    Ref<Event> r = Event::Create();
-
-                    // Add event to list
-                    if (r != nullptr)
-                    {
-                        eventList[name] = r;
-                        return r;
-                    }
-                }
-
-                return nullptr;
+                return eventMap.emplace(name, Event()).first->second;
             }
             bool NativeScript::RemoveEvent(const std::string& name)
             {
-                return eventList.erase(name);
+                return eventMap.erase(name);
             }
             void NativeScript::ClearEvents()
             {
-                eventList.clear();
+                eventMap.clear();
+            }
+
+            void NativeScript::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            {
+                assert(output.IsObject());
+
+                output.MemberReserve(propertyList.size(), allocator);
+                for (auto&[name, property] : propertyList)
+                {
+                    // Add property
+                    output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),
+                                     GetProperty(name).JsonGet(allocator), allocator);
+                }
+            }
+            void NativeScript::JsonSetState(rapidjson::Value& input)
+            {
+                assert(input.IsObject());
+
+                for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
+                     propertyIt++)
+                {
+                    SetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()),
+                                Value::Create(propertyIt->value));
+                }
             }
         }
     }

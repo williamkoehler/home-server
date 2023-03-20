@@ -9,8 +9,6 @@ namespace server
     {
         namespace native
         {
-            class NativeScriptImpl;
-
             class NativeScriptSource : public ScriptSource
             {
               private:

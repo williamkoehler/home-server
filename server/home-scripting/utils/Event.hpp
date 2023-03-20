@@ -6,59 +6,60 @@ namespace server
 {
     namespace scripting
     {
-        class Script;
         class Value;
-        class Method;
 
         class Event;
+        class EventEntry;
 
-        class EventConnection
+        typedef boost::container::vector<Ref<EventEntry>> EventBase;
+
+        struct EventEntry final
+        {
+            Ref<EventBase> base;
+            WeakRef<View> view;
+            std::string method;
+        };
+
+        class EventConnection final
         {
           private:
             friend class Event;
 
-            boost::signals2::connection connection;
+            WeakRef<EventEntry> entry;
 
-            EventConnection(boost::signals2::connection connection) : connection(connection)
-            {
-            }
+            EventConnection(Ref<EventEntry> entry);
+
           public:
-            EventConnection(EventConnection&& eventConnection)
-            {
-                connection.swap(eventConnection.connection);
-            }
-            ~EventConnection()
-            {
-                connection.disconnect();
-            }
+            EventConnection();
+            EventConnection(const EventConnection& other) = delete;
+            EventConnection(EventConnection&& other) noexcept;
+            ~EventConnection();
 
-            inline void Disconnect()
-            {
-                connection.disconnect();
-            }
+            void operator=(EventConnection&& other) noexcept;
+
+            void Unbind();
         };
 
-        class Event : public boost::enable_shared_from_this<Event>
+        class Event final
         {
           protected:
-            typedef boost::signals2::signal<void(const Value&)> Signal;
-            Signal signal;
+            Ref<EventBase> base;
 
           public:
             Event();
-            virtual ~Event();
+            ~Event();
 
-            static Ref<Event> Create();
-
-            /// @brief Connect to event
+            /// @brief Bind script method to event
             ///
-            /// @param script Script to call
-            /// @param method Method to call
-            EventConnection Connect(Ref<Script> script, const std::string& method);
+            /// @param view Invokable view
+            /// @param method Method name
+            /// @return EventConnection Event connection
+            EventConnection Bind(Ref<View> view, const std::string& method);
 
             /// @brief Invoke event
             ///
-            void Invoke(const Value& parameter);
+            /// @param parameter Parameter
+            void Invoke(const Value& parameter) const;
         };
     }
 }

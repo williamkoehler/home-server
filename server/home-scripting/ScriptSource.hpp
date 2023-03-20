@@ -1,4 +1,5 @@
 #pragma once
+#include "View.hpp"
 #include "common.hpp"
 
 namespace server
@@ -6,8 +7,6 @@ namespace server
     namespace scripting
     {
         class Script;
-
-        class View;
 
         enum class ScriptUsage
         {
@@ -81,7 +80,7 @@ namespace server
             }
 
             /// @brief Create script from script source
-            /// 
+            ///
             /// @param view Sender view
             /// @return Script
             virtual Ref<Script> CreateScript(Ref<View> view) = 0;

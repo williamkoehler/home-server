@@ -1,6 +1,5 @@
 #pragma once
 #include "common.hpp"
-#include <jwt-cpp/traits/boost-json/traits.h>
 
 namespace server
 {
@@ -8,6 +7,8 @@ namespace server
     {
         enum class UserAccessLevel;
         class User;
+
+        class Verifier;
 
         class UserManager : public boost::enable_shared_from_this<UserManager>
         {
@@ -20,8 +21,7 @@ namespace server
             uint8_t* authenticationKey = nullptr;
             std::string issuer;
 
-            typedef jwt::traits::boost_json JWTTraits;
-            jwt::verifier<jwt::default_clock, JWTTraits> verifier;
+            Ref<Verifier> verifier;
 
             void CalculateHash(const std::string_view& password, uint8_t* salt, uint8_t* digest);
 

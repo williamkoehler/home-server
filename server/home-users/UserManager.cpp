@@ -2,6 +2,7 @@
 #include "User.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 #include <home-database/Database.hpp>
+#include <jwt-cpp/traits/boost-json/traits.h>
 #include <openssl/rand.h>
 
 #define AUTHKEY_SIZE 128
@@ -18,7 +19,15 @@ namespace server
     {
         WeakRef<UserManager> instanceUserManager;
 
-        UserManager::UserManager(const std::string& issuer) : issuer(issuer), verifier(jwt::default_clock())
+        class Verifier : public jwt::verifier<jwt::default_clock, jwt::traits::boost_json>
+        {
+          public:
+            Verifier() : jwt::verifier<jwt::default_clock, jwt::traits::boost_json>(jwt::default_clock())
+            {
+            }
+        };
+
+        UserManager::UserManager(const std::string& issuer) : issuer(issuer)
         {
         }
         UserManager::~UserManager()
@@ -52,11 +61,18 @@ namespace server
             try
             {
                 // Create JWT verifier
-                userManager->verifier =
-                    jwt::verify<JWTTraits>()
-                        .allow_algorithm(jwt::algorithm::hs256(
-                            std::string(reinterpret_cast<const char*>(userManager->authenticationKey), AUTHKEY_SIZE)))
-                        .with_issuer(issuer);
+                userManager->verifier = boost::make_shared<Verifier>();
+                if (userManager->verifier == nullptr)
+                {
+                    LOG_ERROR("Create jwt verifier");
+                    return nullptr;
+                }
+
+                jwt::verifier<jwt::default_clock, jwt::traits::boost_json>& verifier = *userManager->verifier;
+
+                verifier.allow_algorithm(jwt::algorithm::hs256(
+                    std::string(reinterpret_cast<const char*>(userManager->authenticationKey), AUTHKEY_SIZE)));
+                verifier.with_issuer(issuer);
 
                 Ref<Database> database = Database::GetInstance();
                 assert(database != nullptr);
@@ -294,7 +310,7 @@ namespace server
 
             // boost::shared_lock_guard lock(mutex);
 
-            return jwt::create<JWTTraits>()
+            return jwt::create<jwt::traits::boost_json>()
                 .set_issuer(issuer)
                 .set_type("JWT")
                 .set_payload_claim("id", user->GetID())
@@ -310,14 +326,14 @@ namespace server
 
             try
             {
-                jwt::decoded_jwt decoded = jwt::decode<JWTTraits>(token);
+                jwt::decoded_jwt decoded = jwt::decode<jwt::traits::boost_json>(token);
 
 #ifndef _DEBUG
                 if (!decoded.has_expires_at())
                     throw std::runtime_error("Invalid JWT");
 #endif
                 // Verify token using verifier
-                verifier.verify(decoded); // Throws exception on fail
+                verifier->verify(decoded); // Throws exception on fail
 
                 return decoded.get_payload_claim("id").as_int();
             }

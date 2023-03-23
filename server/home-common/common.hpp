@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string_view>
 
 #define SERVER_VERSION "1.0.0b"
 

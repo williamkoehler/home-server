@@ -1,0 +1,1 @@
+xmake project -k cmake -m release

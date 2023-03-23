@@ -4,7 +4,7 @@ test/
 .vs/
 .idea/
 .cache/
+.xmake/
 **/lib
 *.json
 *.log
-/dependencies/libgit2

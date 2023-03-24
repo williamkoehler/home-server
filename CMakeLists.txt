@@ -785,3 +785,166 @@ target_sources(server-home-users PRIVATE
     server/home-users/User.cpp
 )
 
+# target
+add_library(server-script-debug SHARED "")
+set_target_properties(server-script-debug PROPERTIES OUTPUT_NAME "server-script-debug")
+set_target_properties(server-script-debug PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/release")
+add_dependencies(server-script-debug server-home-common server-home-scripting-native)
+target_include_directories(server-script-debug PRIVATE
+    server
+)
+target_include_directories(server-script-debug PRIVATE
+    /home/dfusr/.conan/data/spdlog/1.11.0/_/_/package/3d882e92b6c691386ef60054fe2ccb6724fba7ba/include
+    /home/dfusr/.conan/data/fmt/9.1.0/_/_/package/bb317a1f4f7069078e967719a5c585f83cd078c2/include
+    /home/dfusr/.conan/data/openssl/1.1.1m/_/_/package/19729b9559f3ae196cad45cb2b97468ccb75dcd1/include
+    /home/dfusr/.conan/data/boost/1.80.0/_/_/package/91965020539061924989133a5a2adc54917f5e11/include
+    /home/dfusr/.conan/data/rapidjson/cci.20220822/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include
+    /home/dfusr/.conan/data/robin-hood-hashing/3.11.5/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include
+    /home/dfusr/.conan/data/xxhash/0.8.1/_/_/package/d750cfef2639f696140dcb4782e5fd0eb44bb369/include
+)
+target_compile_definitions(server-script-debug PRIVATE
+    SPDLOG_FMT_EXTERNAL
+    SPDLOG_COMPILED_LIB
+    SPDLOG_NO_EXCEPTIONS
+)
+target_compile_options(server-script-debug PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:-m64>
+    $<$<COMPILE_LANGUAGE:CXX>:-m64>
+    $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+)
+set_target_properties(server-script-debug PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(server-script-debug PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(server-script-debug PRIVATE $<$<CONFIG:Release>:-Ox -fp:fast>)
+else()
+    target_compile_options(server-script-debug PRIVATE -O3)
+endif()
+if(MSVC)
+    set_property(TARGET server-script-debug PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+target_link_libraries(server-script-debug PRIVATE
+    spdlog
+    fmt
+    ssl
+    crypto
+    boost_filesystem
+    boost_json
+    boost_thread
+    boost_atomic
+    boost_chrono
+    boost_container
+    boost_date_time
+    boost_exception
+    xxhash
+    server-home-scripting-native
+    server-home-scripting
+    server-home-database
+    server-home-common
+    pthread
+    m
+    dl
+    rt
+)
+target_link_directories(server-script-debug PRIVATE
+    /home/dfusr/.conan/data/spdlog/1.11.0/_/_/package/3d882e92b6c691386ef60054fe2ccb6724fba7ba/lib
+    /home/dfusr/.conan/data/fmt/9.1.0/_/_/package/bb317a1f4f7069078e967719a5c585f83cd078c2/lib
+    /home/dfusr/.conan/data/openssl/1.1.1m/_/_/package/19729b9559f3ae196cad45cb2b97468ccb75dcd1/lib
+    /home/dfusr/.conan/data/boost/1.80.0/_/_/package/91965020539061924989133a5a2adc54917f5e11/lib
+    /home/dfusr/.conan/data/xxhash/0.8.1/_/_/package/d750cfef2639f696140dcb4782e5fd0eb44bb369/lib
+    build/linux/x86_64/release
+)
+target_link_options(server-script-debug PRIVATE
+    -m64
+)
+target_sources(server-script-debug PRIVATE
+    server/scripts/home-script-debug/DebugVisuals.cpp
+    server/scripts/home-script-debug/DebugLight.cpp
+    server/scripts/home-script-debug/DebugScript.cpp
+)
+
+# target
+add_library(server-script-yamaha SHARED "")
+set_target_properties(server-script-yamaha PROPERTIES OUTPUT_NAME "server-script-yamaha")
+set_target_properties(server-script-yamaha PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/release")
+add_dependencies(server-script-yamaha server-home-common server-home-scripting-native)
+target_include_directories(server-script-yamaha PRIVATE
+    server
+)
+target_include_directories(server-script-yamaha PRIVATE
+    /home/dfusr/.conan/data/spdlog/1.11.0/_/_/package/3d882e92b6c691386ef60054fe2ccb6724fba7ba/include
+    /home/dfusr/.conan/data/fmt/9.1.0/_/_/package/bb317a1f4f7069078e967719a5c585f83cd078c2/include
+    /home/dfusr/.conan/data/openssl/1.1.1m/_/_/package/19729b9559f3ae196cad45cb2b97468ccb75dcd1/include
+    /home/dfusr/.conan/data/boost/1.80.0/_/_/package/91965020539061924989133a5a2adc54917f5e11/include
+    /home/dfusr/.conan/data/rapidjson/cci.20220822/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include
+    /home/dfusr/.conan/data/robin-hood-hashing/3.11.5/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include
+    /home/dfusr/.conan/data/xxhash/0.8.1/_/_/package/d750cfef2639f696140dcb4782e5fd0eb44bb369/include
+)
+target_compile_definitions(server-script-yamaha PRIVATE
+    SPDLOG_FMT_EXTERNAL
+    SPDLOG_COMPILED_LIB
+    SPDLOG_NO_EXCEPTIONS
+)
+target_compile_options(server-script-yamaha PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:-m64>
+    $<$<COMPILE_LANGUAGE:CXX>:-m64>
+    $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+)
+set_target_properties(server-script-yamaha PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(server-script-yamaha PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(server-script-yamaha PRIVATE $<$<CONFIG:Release>:-Ox -fp:fast>)
+else()
+    target_compile_options(server-script-yamaha PRIVATE -O3)
+endif()
+if(MSVC)
+    set_property(TARGET server-script-yamaha PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+target_link_libraries(server-script-yamaha PRIVATE
+    spdlog
+    fmt
+    ssl
+    crypto
+    boost_filesystem
+    boost_json
+    boost_thread
+    boost_atomic
+    boost_chrono
+    boost_container
+    boost_date_time
+    boost_exception
+    xxhash
+    server-home-scripting-native
+    server-home-scripting
+    server-home-database
+    server-home-common
+    pthread
+    m
+    dl
+    rt
+)
+target_link_directories(server-script-yamaha PRIVATE
+    /home/dfusr/.conan/data/spdlog/1.11.0/_/_/package/3d882e92b6c691386ef60054fe2ccb6724fba7ba/lib
+    /home/dfusr/.conan/data/fmt/9.1.0/_/_/package/bb317a1f4f7069078e967719a5c585f83cd078c2/lib
+    /home/dfusr/.conan/data/openssl/1.1.1m/_/_/package/19729b9559f3ae196cad45cb2b97468ccb75dcd1/lib
+    /home/dfusr/.conan/data/boost/1.80.0/_/_/package/91965020539061924989133a5a2adc54917f5e11/lib
+    /home/dfusr/.conan/data/xxhash/0.8.1/_/_/package/d750cfef2639f696140dcb4782e5fd0eb44bb369/lib
+    build/linux/x86_64/release
+)
+target_link_options(server-script-yamaha PRIVATE
+    -m64
+)
+target_sources(server-script-yamaha PRIVATE
+    server/scripts/home-script-yamaha/Yamaha.cpp
+    server/scripts/home-script-yamaha/YamahaAVReceiver.cpp
+)
+

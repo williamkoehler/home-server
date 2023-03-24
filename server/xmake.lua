@@ -7,3 +7,5 @@ includes("home-main")
 includes("home-users")
 includes("home-networking")
 includes("home-server")
+
+includes("scripts")

@@ -12,26 +12,28 @@ namespace server
 
             template <typename P = void*, class T = NativeScriptImpl>
             using PropertyGetterCallback = P (T::*)() const;
+            template <typename P = void*, class T = NativeScriptImpl>
+            using PropertyGetterFunctionCallback = P (*)(T*);
 
             template <typename P, class T = NativeScriptImpl>
             union PropertyGetterCallbackConversion
             {
                 PropertyGetterCallback<P, T> f1;
-                PropertyGetterCallback<P> f2;
-                PropertyGetterCallback<> f3;
-                void* f4;
+                PropertyGetterFunctionCallback<P, T> f2;
+                void* f3;
             };
 
             template <typename P = void*, class T = NativeScriptImpl>
             using PropertySetterCallback = void (T::*)(const P&);
+            template <typename P = void*, class T = NativeScriptImpl>
+            using PropertySetterFunctionCallback = void (*)(T*, const P&);
 
             template <typename P, class T = NativeScriptImpl>
             union PropertySetterCallbackConversion
             {
                 PropertySetterCallback<P, T> f1;
-                PropertySetterCallback<P> f2;
-                PropertySetterCallback<> f3;
-                void* f4;
+                PropertySetterFunctionCallback<P, T> f2;
+                void* f3;
             };
 
             class Property
@@ -40,9 +42,12 @@ namespace server
                 ValueType type;
                 void* getter;
                 void* setter;
+                void* update;
+                size_t updateInterval;
+                size_t lastUpdateTime;
 
                 template <typename P>
-                static inline Property CreateImpl(PropertyGetterCallback<P> getter, PropertySetterCallback<P> setter);
+                static inline Property CreateImpl(void* getter, void* setter);
 
               public:
                 Property();
@@ -52,77 +57,88 @@ namespace server
                 static inline Property Create(PropertyGetterCallback<P, T> getter,
                                               PropertySetterCallback<P, T> setter = nullptr);
 
+                /// @brief Get property type
+                ///
+                /// @return ValueType Value type
                 inline ValueType GetType() const
                 {
                     return type;
                 }
 
-                inline void* GetGetter() const
+                /// @brief Get getter function pointer
+                ///
+                /// @return void* Function pointer
+                inline void* GetGetterFunction() const
                 {
                     return getter;
                 }
+
+                /// @brief Get getter function pointer
+                ///
+                /// @tparam P Property Type
+                /// @tparam T Base class
+                /// @return PropertyGetterCallback<P, T> Function pointer
                 template <typename P, class T = NativeScriptImpl>
-                inline PropertyGetterCallback<P, T> GetGetter() const
+                inline PropertyGetterFunctionCallback<P, T> GetGetterFunction() const
                 {
-                    return PropertyGetterCallbackConversion<P, T>{.f4 = getter}.f1;
+                    return PropertyGetterCallbackConversion<P, T>{.f3 = getter}.f2;
                 }
 
-                inline void* GetSetter() const
+                /// @brief Get setter function pointer
+                ///
+                /// @return void* Function pointer
+                inline void* GetSetterFunction() const
                 {
                     return setter;
                 }
+
+                /// @brief Get setter function pointer
+                ///
+                /// @tparam P Property Type
+                /// @tparam T Base class
+                /// @return PropertySetterCallback<P, T> Function pointer
                 template <typename P, class T = NativeScriptImpl>
-                inline PropertySetterCallback<P, T> GetSetter() const
+                inline PropertySetterFunctionCallback<P, T> GetSetterFunction() const
                 {
-                    return PropertySetterCallbackConversion<P, T>{.f4 = setter}.f1;
+                    return PropertySetterCallbackConversion<P, T>{.f3 = setter}.f2;
                 }
             };
 
             template <>
-            inline Property Property::CreateImpl<bool>(PropertyGetterCallback<bool> getter,
-                                                       PropertySetterCallback<bool> setter)
+            inline Property Property::CreateImpl<bool>(void* getter, void* setter)
             {
-                return Property(ValueType::kBooleanType, PropertyGetterCallbackConversion<bool>{.f2 = getter}.f4,
-                                PropertySetterCallbackConversion<bool>{.f2 = setter}.f4);
+                return Property(ValueType::kBooleanType, getter, setter);
             }
 
             template <>
-            inline Property Property::CreateImpl<double>(PropertyGetterCallback<double> getter,
-                                                         PropertySetterCallback<double> setter)
+            inline Property Property::CreateImpl<double>(void* getter, void* setter)
             {
-                return Property(ValueType::kNumberType, PropertyGetterCallbackConversion<double>{.f2 = getter}.f4,
-                                PropertySetterCallbackConversion<double>{.f2 = setter}.f4);
+                return Property(ValueType::kNumberType, getter, setter);
             }
 
             template <>
-            inline Property Property::CreateImpl<std::string>(PropertyGetterCallback<std::string> getter,
-                                                              PropertySetterCallback<std::string> setter)
+            inline Property Property::CreateImpl<std::string>(void* getter, void* setter)
             {
-                return Property(ValueType::kStringType, PropertyGetterCallbackConversion<std::string>{.f2 = getter}.f4,
-                                PropertySetterCallbackConversion<std::string>{.f2 = setter}.f4);
+                return Property(ValueType::kStringType, getter, setter);
             }
 
             template <>
-            inline Property Property::CreateImpl<Endpoint>(PropertyGetterCallback<Endpoint> getter,
-                                                           PropertySetterCallback<Endpoint> setter)
+            inline Property Property::CreateImpl<Endpoint>(void* getter, void* setter)
             {
-                return Property(ValueType::kEndpointType, PropertyGetterCallbackConversion<Endpoint>{.f2 = getter}.f4,
-                                PropertySetterCallbackConversion<Endpoint>{.f2 = setter}.f4);
+                return Property(ValueType::kEndpointType, getter, setter);
             }
 
             template <>
-            inline Property Property::CreateImpl<Color>(PropertyGetterCallback<Color> getter,
-                                                        PropertySetterCallback<Color> setter)
+            inline Property Property::CreateImpl<Color>(void* getter, void* setter)
             {
-                return Property(ValueType::kColorType, PropertyGetterCallbackConversion<Color>{.f2 = getter}.f4,
-                                PropertySetterCallbackConversion<Color>{.f2 = setter}.f4);
+                return Property(ValueType::kColorType, getter, setter);
             }
 
             template <class T, typename P>
             inline Property Property::Create(PropertyGetterCallback<P, T> getter, PropertySetterCallback<P, T> setter)
             {
-                return Property::CreateImpl(PropertyGetterCallbackConversion<P, T>{.f1 = getter}.f2,
-                                            PropertySetterCallbackConversion<P, T>{.f1 = setter}.f2);
+                return Property::CreateImpl<P>(PropertyGetterCallbackConversion<P, T>{.f1 = getter}.f3,
+                                               PropertySetterCallbackConversion<P, T>{.f1 = setter}.f3);
             }
         }
     }

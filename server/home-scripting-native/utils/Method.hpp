@@ -14,12 +14,14 @@ namespace server
             using MethodCallback = bool (T::*)(const std::string&, const P&);
 
             template <typename P = void*, class T = NativeScriptImpl>
+            using MethodFunctionCallback = bool (*)(T*, const std::string&, const P&);
+
+            template <typename P = void*, class T = NativeScriptImpl>
             union MethodCallbackConversion
             {
                 MethodCallback<P, T> f1;
-                MethodCallback<P> f2;
-                MethodCallback<> f3;
-                void* f4;
+                MethodFunctionCallback<P, T> f2;
+                void* f3;
             };
 
             class Method
@@ -29,7 +31,7 @@ namespace server
                 ValueType parameterType;
 
                 template <typename P>
-                static inline Method CreateImpl(MethodCallback<P> methodr);
+                static inline Method CreateImpl(void* method);
 
               public:
                 Method();
@@ -44,9 +46,9 @@ namespace server
                 }
 
                 template <typename P, class T = NativeScriptImpl>
-                inline MethodCallback<P, T> GetMethod() const
+                inline MethodFunctionCallback<P, T> GetFunction() const
                 {
-                    return MethodCallbackConversion<P, T>{.f4 = method}.f1;
+                    return MethodCallbackConversion<P, T>{.f3 = method}.f2;
                 }
 
                 inline ValueType GetParameterType() const
@@ -56,45 +58,45 @@ namespace server
             };
 
             template <>
-            inline Method Method::CreateImpl<Void>(MethodCallback<Void> method)
+            inline Method Method::CreateImpl<Void>(void* method)
             {
-                return Method(MethodCallbackConversion<Void>{.f2 = method}.f4, ValueType::kNullType);
+                return Method(method, ValueType::kNullType);
             }
 
             template <>
-            inline Method Method::CreateImpl<bool>(MethodCallback<bool> method)
+            inline Method Method::CreateImpl<bool>(void* method)
             {
-                return Method(MethodCallbackConversion<bool>{.f2 = method}.f4, ValueType::kBooleanType);
+                return Method(method, ValueType::kBooleanType);
             }
 
             template <>
-            inline Method Method::CreateImpl<double>(MethodCallback<double> method)
+            inline Method Method::CreateImpl<double>(void* method)
             {
-                return Method(MethodCallbackConversion<double>{.f2 = method}.f4, ValueType::kBooleanType);
+                return Method(method, ValueType::kBooleanType);
             }
 
             template <>
-            inline Method Method::CreateImpl<std::string>(MethodCallback<std::string> method)
+            inline Method Method::CreateImpl<std::string>(void* method)
             {
-                return Method(MethodCallbackConversion<std::string>{.f2 = method}.f4, ValueType::kStringType);
+                return Method(method, ValueType::kStringType);
             }
 
             template <>
-            inline Method Method::CreateImpl<Endpoint>(MethodCallback<Endpoint> method)
+            inline Method Method::CreateImpl<Endpoint>(void* method)
             {
-                return Method(MethodCallbackConversion<Endpoint>{.f2 = method}.f4, ValueType::kEndpointType);
+                return Method(method, ValueType::kEndpointType);
             }
 
             template <>
-            inline Method Method::CreateImpl<Color>(MethodCallback<Color> method)
+            inline Method Method::CreateImpl<Color>(void* method)
             {
-                return Method(MethodCallbackConversion<Color>{.f2 = method}.f4, ValueType::kColorType);
+                return Method(method, ValueType::kColorType);
             }
 
             template <class T, typename P>
             inline Method Method::Create(MethodCallback<P, T> method)
             {
-                return Method::CreateImpl(MethodCallbackConversion<P, T>{.f1 = method}.f2);
+                return Method::CreateImpl<P>(MethodCallbackConversion<P, T>{.f1 = method}.f3);
             }
         }
     }

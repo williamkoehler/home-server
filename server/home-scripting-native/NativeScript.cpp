@@ -107,30 +107,30 @@ namespace server
                 if (it != propertyList.end())
                 {
                     const Property& property = it->second;
-                    if (property.GetGetter() != nullptr)
+                    if (property.GetGetterFunction() != nullptr)
                     {
                         // Invoke getter according to property type
                         switch (property.GetType())
                         {
                         case ValueType::kBooleanType:
-                            return Value((scriptImpl.get()->*(property.GetGetter<bool>()))());
+                            return Value((*property.GetGetterFunction<bool>())(scriptImpl.get()));
                         case ValueType::kNumberType:
-                            return Value((scriptImpl.get()->*(property.GetGetter<double>()))());
+                            return Value((*property.GetGetterFunction<double>())(scriptImpl.get()));
                         case ValueType::kStringType:
-                            return Value((scriptImpl.get()->*(property.GetGetter<std::string>()))());
+                            return Value((*property.GetGetterFunction<std::string>())(scriptImpl.get()));
                         case ValueType::kEndpointType:
-                            return Value((scriptImpl.get()->*(property.GetGetter<Endpoint>()))());
+                            return Value((*property.GetGetterFunction<Endpoint>())(scriptImpl.get()));
                         case ValueType::kColorType:
-                            return Value((scriptImpl.get()->*(property.GetGetter<Color>()))());
+                            return Value((*property.GetGetterFunction<Color>())(scriptImpl.get()));
                         case ValueType::kRoomIDType:
                             return Value::Create<ValueType::kRoomIDType>(
-                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                                (*property.GetGetterFunction<identifier_t>())(scriptImpl.get()));
                         case ValueType::kDeviceIDType:
                             return Value::Create<ValueType::kDeviceIDType>(
-                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                                (*property.GetGetterFunction<identifier_t>())(scriptImpl.get()));
                         case ValueType::kServiceIDType:
                             return Value::Create<ValueType::kServiceIDType>(
-                                (scriptImpl.get()->*(property.GetGetter<identifier_t>()))());
+                                (*property.GetGetterFunction<identifier_t>())(scriptImpl.get()));
                         default:
                             break;
                         }
@@ -142,10 +142,45 @@ namespace server
 
             void NativeScript::SetProperty(const std::string& name, const Value& value)
             {
-                (void)name;
-                (void)value;
+                robin_hood::unordered_node_map<std::string, Property>::const_iterator it = propertyList.find(name);
+                if (it != propertyList.end())
+                {
+                    const Property& property = it->second;
 
-                // TODO
+                    if (property.GetGetterFunction() != nullptr && value.GetType() == property.GetType())
+                    {
+                        // Invoke getter according to property type
+                        switch (property.GetType())
+                        {
+                        case ValueType::kBooleanType:
+                            (*property.GetSetterFunction<bool>())(scriptImpl.get(), value.GetBoolean());
+                            break;
+                        case ValueType::kNumberType:
+                            (*property.GetSetterFunction<double>())(scriptImpl.get(), value.GetNumber());
+                            break;
+                        case ValueType::kStringType:
+                            (*property.GetSetterFunction<std::string>())(scriptImpl.get(), value.GetString());
+                            break;
+                        case ValueType::kEndpointType:
+                            (*property.GetSetterFunction<Endpoint>())(scriptImpl.get(), value.GetEndpoint());
+                            break;
+                        case ValueType::kColorType:
+                            (*property.GetSetterFunction<Color>())(scriptImpl.get(), value.GetColor());
+                            break;
+                        case ValueType::kRoomIDType:
+                            (*property.GetSetterFunction<identifier_t>())(scriptImpl.get(), value.GetRoomID());
+                            break;
+                        case ValueType::kDeviceIDType:
+                            (*property.GetSetterFunction<identifier_t>())(scriptImpl.get(), value.GetDeviceID());
+                            break;
+                        case ValueType::kServiceIDType:
+                            (*property.GetSetterFunction<identifier_t>())(scriptImpl.get(), value.GetServiceID());
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
             }
 
             bool NativeScript::Invoke(const std::string& name, const Value& parameter)
@@ -161,25 +196,23 @@ namespace server
                         switch (method.GetParameterType())
                         {
                         case ValueType::kBooleanType:
-                            return (scriptImpl.get()->*(method.GetMethod<bool>()))(name, parameter.GetBoolean());
+                            return (*method.GetFunction<bool>())(scriptImpl.get(), name, parameter.GetBoolean());
                         case ValueType::kNumberType:
-                            return (scriptImpl.get()->*(method.GetMethod<double>()))(name, parameter.GetNumber());
+                            return (*method.GetFunction<double>())(scriptImpl.get(), name, parameter.GetNumber());
                         case ValueType::kStringType:
-                            return (scriptImpl.get()->*(method.GetMethod<std::string>()))(name, parameter.GetString());
+                            return (*method.GetFunction<std::string>())(scriptImpl.get(), name, parameter.GetString());
                         case ValueType::kEndpointType:
-                            return (scriptImpl.get()->*(method.GetMethod<Endpoint>()))(name, parameter.GetEndpoint());
+                            return (*method.GetFunction<Endpoint>())(scriptImpl.get(), name, parameter.GetEndpoint());
                         case ValueType::kColorType:
-                            return (scriptImpl.get()->*(method.GetMethod<Color>()))(name, parameter.GetColor());
+                            return (*method.GetFunction<Color>())(scriptImpl.get(), name, parameter.GetColor());
                         case ValueType::kRoomIDType:
-                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name, parameter.GetRoomID());
+                            return (*method.GetFunction<identifier_t>())(scriptImpl.get(), name, parameter.GetRoomID());
                         case ValueType::kDeviceIDType:
-                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name,
-                                                                                           parameter.GetDeviceID());
+                            return (*method.GetFunction<identifier_t>())(scriptImpl.get(), name, parameter.GetDeviceID());
                         case ValueType::kServiceIDType:
-                            return (scriptImpl.get()->*(method.GetMethod<identifier_t>()))(name,
-                                                                                           parameter.GetServiceID());
+                            return (*method.GetFunction<identifier_t>())(scriptImpl.get(), name, parameter.GetServiceID());
                         case ValueType::kNullType:
-                            return (scriptImpl.get()->*(method.GetMethod<Void>()))(name, Void());
+                            return (*method.GetFunction<Void>())(scriptImpl.get(), name, Void());
                         default:
                             return false;
                         }

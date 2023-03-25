@@ -22,7 +22,7 @@ namespace server
             identifier_t id = sqlite3_column_int64(statement, 0);
 
             // Check values
-            if (sqlite3_column_type(statement, 1) == SQLITE_NULL || sqlite3_column_type(statement, 5) == SQLITE_NULL)
+            if (sqlite3_column_type(statement, 1) == SQLITE_NULL || sqlite3_column_type(statement, 4) == SQLITE_NULL)
             {
                 LOG_ERROR("Failing to load invalid device {0}", id);
                 continue;

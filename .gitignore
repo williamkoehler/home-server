@@ -8,3 +8,5 @@ test/
 **/lib
 *.json
 *.log
+
+CMakeLists.txt

@@ -71,8 +71,14 @@ add_requires("conan::cppcodec/0.2", { alias = "cppcodec" })
 add_requires("conan::jwt-cpp/0.6.0", { alias = "jwt-cpp" })
 add_requires("conan::stb/cci.20210910", { alias = "stb" })
 
--- add_cxxflags("-fsanitize=thread", "-fstandalone-debug", "-fPIC")
+-- "-fsanitize=thread", 
+add_cxxflags("-fPIC")
 add_cxxflags("-Wall", "-Wextra", "-Wpedantic")
+
+-- if is_mode("debug") then
+add_cxxflags("-fstandalone-debug")
+set_optimize("none")
+-- end
 
 set_languages("cxx20")
 

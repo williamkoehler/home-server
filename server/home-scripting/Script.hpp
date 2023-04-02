@@ -32,6 +32,8 @@ namespace server
             ///
             robin_hood::unordered_node_map<std::string, Event> eventMap;
 
+            /// @brief Script tasks
+            /// 
             boost::container::vector<WeakRef<Task>> taskMap;
 
           public:

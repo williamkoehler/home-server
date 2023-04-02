@@ -24,6 +24,8 @@ namespace server
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
+            size_t lastUpdateTime, updateInterval;
+
             /// @brief Script attributes
             ///
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeMap;
@@ -33,7 +35,7 @@ namespace server
             robin_hood::unordered_node_map<std::string, Event> eventMap;
 
             /// @brief Script tasks
-            /// 
+            ///
             boost::container::vector<WeakRef<Task>> taskMap;
 
           public:
@@ -93,6 +95,19 @@ namespace server
             /// @param name Method name
             /// @param parameter Parameter
             void PostInvoke(const std::string& name, const Value& parameter);
+
+            /// @brief Update script (lazy update)
+            /// @note Updates internal script state and properties
+            ///
+            /// @param minUpdateInterval Min update interval (seconds)
+            /// @return Successfulness
+            virtual bool Update(size_t minUpdateInterval);
+
+            /// @brief Post update script (lazy update)
+            /// @note Updates internal script state and properties
+            ///
+            /// @param minUpdateInterval Min update interval (seconds)
+            void PostUpdate(size_t minUpdateInterval);
 
             /// @brief Bind view method to event
             ///

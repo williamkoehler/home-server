@@ -27,6 +27,8 @@ void duk_log_dump(duk_context* context)
     duk_pop(context);
 }
 
+#define MIN_UPDATE_TIME (size_t)(5)
+
 namespace server
 {
     namespace scripting
@@ -417,6 +419,11 @@ namespace server
                 //                 // Check stack before and after
                 //                 assert(top1 == top2);
                 // #endif
+            }
+
+            bool JSScript::Update(size_t minUpdateInterval)
+            {
+                return Script::Update(std::max(minUpdateInterval, MIN_UPDATE_TIME));
             }
 
             Value JSScript::GetProperty(const std::string& name)

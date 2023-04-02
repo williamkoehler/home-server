@@ -72,7 +72,7 @@ namespace server
             template <>
             inline Method Method::CreateImpl<double>(void* method)
             {
-                return Method(method, ValueType::kBooleanType);
+                return Method(method, ValueType::kNumberType);
             }
 
             template <>

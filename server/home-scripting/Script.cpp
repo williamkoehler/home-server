@@ -7,7 +7,7 @@ namespace server
     namespace scripting
     {
         Script::Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource)
-            : view(view), scriptSource(scriptSource)
+            : view(view), scriptSource(scriptSource), lastUpdateTime(0), updateInterval(0)
         {
             assert(view != nullptr);
             assert(scriptSource != nullptr);
@@ -18,6 +18,10 @@ namespace server
 
         bool Script::Initialize()
         {
+            // Reset update timer
+            lastUpdateTime = time(nullptr);
+            updateInterval = 0;
+
             // Reset references
             attributeMap.clear();
             eventMap.clear();
@@ -53,6 +57,30 @@ namespace server
             assert(worker != nullptr);
 
             worker->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), name, parameter));
+        }
+
+        bool Script::Update(size_t minUpdateInterval)
+        {
+            minUpdateInterval = std::max(updateInterval, minUpdateInterval);
+
+            size_t currentUpdateTime = time(nullptr);
+            size_t elapsedTime = currentUpdateTime - lastUpdateTime;
+
+            if (elapsedTime >= minUpdateInterval)
+            {
+                lastUpdateTime = currentUpdateTime;
+                return Invoke("update", Value((double_t)elapsedTime));
+            }
+            else
+                return true;
+        }
+
+        void Script::PostUpdate(size_t minUpdateInterval)
+        {
+            Ref<Worker> worker = Worker::GetInstance();
+            assert(worker != nullptr);
+
+            worker->GetContext().dispatch(boost::bind(&Script::Update, shared_from_this(), minUpdateInterval));
         }
 
         EventConnection Script::Bind(const std::string& event, const Ref<View>& view, const std::string& method)

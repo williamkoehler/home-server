@@ -10,8 +10,7 @@ namespace server
 {
     namespace main
     {
-        Service::Service(identifier_t id, const std::string& name)
-            : id(id), name(name), script(nullptr)
+        Service::Service(identifier_t id, const std::string& name) : id(id), name(name), script(nullptr)
         {
         }
         Service::~Service()
@@ -124,6 +123,12 @@ namespace server
                 script->PostInvoke(id, parameter);
         }
 
+        void Service::Update()
+        {
+            if (script != nullptr)
+                script->PostUpdate(0);
+        }
+
         void Service::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
@@ -188,7 +193,6 @@ namespace server
             if (script != nullptr)
                 script->JsonSetState(input);
         }
-
 
         ServiceView::ServiceView(const Ref<Service>& service) : service(service)
         {

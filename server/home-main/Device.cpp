@@ -154,6 +154,12 @@ namespace server
                 script->PostInvoke(id, parameter);
         }
 
+        void Device::Update()
+        {
+            if (script != nullptr)
+                script->PostUpdate(0);
+        }
+
         void Device::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());

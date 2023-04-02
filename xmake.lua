@@ -1,4 +1,5 @@
 add_rules("mode.debug", "mode.release")
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
 add_requires("conan::spdlog/1.11.0", { 
     alias = "spdlog",
@@ -75,10 +76,13 @@ add_requires("conan::stb/cci.20210910", { alias = "stb" })
 add_cxxflags("-fPIC")
 add_cxxflags("-Wall", "-Wextra", "-Wpedantic")
 
--- if is_mode("debug") then
-add_cxxflags("-fstandalone-debug")
-set_optimize("none")
--- end
+if is_mode("debug") then
+    add_cxxflags("-fstandalone-debug")
+    set_optimize("none")
+    add_defines("DEBUG")
+else
+    add_defines("NDEBUG")
+end
 
 set_languages("cxx20")
 

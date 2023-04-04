@@ -28,17 +28,17 @@ namespace server
 
         enum ValueType : uint8_t
         {
-            kUnknownType,
-            kNullType,
-            kBooleanType,
-            kNumberType,
-            kStringType,
-            kEndpointType,
-            kColorType,
+            kUnknownType = 0,
+            kNullType = 1,
+            kBooleanType = 2,
+            kNumberType = 3,
+            kStringType = 4,
+            kEndpointType = 5,
+            kColorType = 6,
 
-            kRoomIDType,
-            kDeviceIDType,
-            kServiceIDType,
+            kRoomIDType = 7,
+            kDeviceIDType = 8,
+            kServiceIDType = 9,
         };
 
         std::string_view StringifyValueTypeConst(ValueType type);

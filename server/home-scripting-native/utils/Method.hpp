@@ -11,93 +11,66 @@ namespace server
             class NativeScriptImpl;
 
             template <typename P = void*, class T = NativeScriptImpl>
-            using MethodCallback = bool (T::*)(const std::string&, const P&);
+            using MethodDefinition = bool (T::*)(const P&);
 
-            template <typename P = void*, class T = NativeScriptImpl>
-            using MethodFunctionCallback = bool (*)(T*, const std::string&, const P&);
-
-            template <typename P = void*, class T = NativeScriptImpl>
-            union MethodCallbackConversion
-            {
-                MethodCallback<P, T> f1;
-                MethodFunctionCallback<P, T> f2;
-                void* f3;
-            };
+            template <typename P, class T>
+            class MethodImpl;
 
             class Method
             {
-              private:
-                void* method;
-                ValueType parameterType;
-
-                template <typename P>
-                static inline Method CreateImpl(void* method);
-
               public:
-                Method();
-                Method(void* method, ValueType parameterType);
-                ~Method();
-                template <class T, typename P>
-                static inline Method Create(MethodCallback<P, T> method);
-
-                inline void* GetMethod() const
+                Method()
                 {
-                    return method;
+                }
+                virtual ~Method()
+                {
                 }
 
-                template <typename P, class T = NativeScriptImpl>
-                inline MethodFunctionCallback<P, T> GetFunction() const
+                template <typename P, class T>
+                static UniqueRef<Method> Create(MethodDefinition<P, T> method)
                 {
-                    return MethodCallbackConversion<P, T>{.f3 = method}.f2;
+                    return boost::make_unique<MethodImpl<P, T>>(method);
                 }
 
-                inline ValueType GetParameterType() const
-                {
-                    return parameterType;
-                }
+                virtual bool Invoke(void* self, const Value& value) = 0;
             };
 
-            template <>
-            inline Method Method::CreateImpl<Void>(void* method)
-            {
-                return Method(method, ValueType::kNullType);
-            }
+#define METHOD ((static_cast<T*>(self))->*method)
+#define METHOD_IMPLEMENTATION(type, condition, invokeExpr)                                                             \
+    template <class T>                                                                                                 \
+    class MethodImpl<type, T> final : public Method                                                                    \
+    {                                                                                                                  \
+      private:                                                                                                         \
+        MethodDefinition<type, T> method;                                                                                \
+                                                                                                                       \
+      public:                                                                                                          \
+        MethodImpl<type, T>(MethodDefinition<type, T> method) : method(method)                                           \
+        {                                                                                                              \
+        }                                                                                                              \
+        virtual bool Invoke(void* self, const Value& value) override                                                   \
+        {                                                                                                              \
+            if (condition)                                                                                             \
+                return invokeExpr;                                                                                     \
+            else                                                                                                       \
+                return false;                                                                                          \
+        }                                                                                                              \
+    };
 
-            template <>
-            inline Method Method::CreateImpl<bool>(void* method)
-            {
-                return Method(method, ValueType::kBooleanType);
-            }
+            METHOD_IMPLEMENTATION(bool, value.IsBoolean(), METHOD(value.GetBoolean()))
+            METHOD_IMPLEMENTATION(double_t, value.IsNumber(), METHOD(value.GetNumber()))
+            METHOD_IMPLEMENTATION(size_t, value.IsNumber(), METHOD((size_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(int8_t, value.IsNumber(), METHOD((int8_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(uint8_t, value.IsNumber(), METHOD((uint8_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(int16_t, value.IsNumber(), METHOD((int16_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(uint16_t, value.IsNumber(), METHOD((uint16_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(int32_t, value.IsNumber(), METHOD((int32_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(uint32_t, value.IsNumber(), METHOD((uint32_t)value.GetNumber()))
+            METHOD_IMPLEMENTATION(std::string, value.IsString(), METHOD(value.GetString()))
+            METHOD_IMPLEMENTATION(Endpoint, value.IsEndpoint(), METHOD(value.GetEndpoint()))
+            METHOD_IMPLEMENTATION(Color, value.IsColor(), METHOD(value.GetColor()))
 
-            template <>
-            inline Method Method::CreateImpl<double>(void* method)
-            {
-                return Method(method, ValueType::kNumberType);
-            }
-
-            template <>
-            inline Method Method::CreateImpl<std::string>(void* method)
-            {
-                return Method(method, ValueType::kStringType);
-            }
-
-            template <>
-            inline Method Method::CreateImpl<Endpoint>(void* method)
-            {
-                return Method(method, ValueType::kEndpointType);
-            }
-
-            template <>
-            inline Method Method::CreateImpl<Color>(void* method)
-            {
-                return Method(method, ValueType::kColorType);
-            }
-
-            template <class T, typename P>
-            inline Method Method::Create(MethodCallback<P, T> method)
-            {
-                return Method::CreateImpl<P>(MethodCallbackConversion<P, T>{.f1 = method}.f3);
-            }
+#undef METHOD
+#undef METHOD_IMPLEMENTATION
         }
     }
 }

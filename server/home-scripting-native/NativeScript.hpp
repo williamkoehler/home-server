@@ -21,19 +21,19 @@ namespace server
               private:
                 /// @brief Script C++ implementation
                 ///
-                UniqueRef<NativeScriptImpl> scriptImpl;
+                Ref<NativeScriptImpl> scriptImpl;
 
                 /// @brief Script methods
                 ///
-                robin_hood::unordered_node_map<std::string, Method> methodList;
+                robin_hood::unordered_node_map<std::string, UniqueRef<Method>> methodMap;
 
                 /// @brief Script properties
                 ///
-                robin_hood::unordered_node_map<std::string, Property> propertyList;
+                robin_hood::unordered_node_map<std::string, UniqueRef<Property>> propertyMap;
 
               public:
                 NativeScript(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource,
-                             UniqueRef<NativeScriptImpl> scriptImpl);
+                             const Ref<NativeScriptImpl>& scriptImpl);
                 virtual ~NativeScript();
                 static Ref<Script> Create(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource);
 
@@ -60,7 +60,7 @@ namespace server
                 /// @param name Property name
                 /// @param property Property definition
                 /// @return Successfulness
-                bool AddProperty(const std::string& name, const Property& property);
+                bool AddProperty(const std::string& name, UniqueRef<Property> property);
 
                 /// @brief Remove property
                 ///
@@ -76,9 +76,8 @@ namespace server
                 /// @brief Add method
                 ///
                 /// @param name Method name
-                /// @param method Method definition
                 /// @return Successfulness
-                bool AddMethod(const std::string& name, const Method& method);
+                bool AddMethod(const std::string& name, UniqueRef<Method> method);
 
                 /// @brief Remove method
                 ///
@@ -138,7 +137,7 @@ namespace server
                 virtual void JsonSetState(rapidjson::Value& input) override;
             };
 
-            class NativeScriptImpl
+            class NativeScriptImpl : public boost::enable_shared_from_this<NativeScriptImpl>
             {
               private:
                 friend class server::scripting::native::NativeScript;
@@ -190,11 +189,10 @@ namespace server
                 /// @brief Add property
                 ///
                 /// @param name Property name
-                /// @param property Property definition
                 /// @return Successfulness
-                inline bool AddProperty(const std::string& name, const Property& property)
+                inline bool AddProperty(const std::string& name, UniqueRef<Property> property)
                 {
-                    return script->AddProperty(name, property);
+                    return script->AddProperty(name, std::move(property));
                 }
 
                 /// @brief Remove property
@@ -219,9 +217,9 @@ namespace server
                 /// @param name Method name
                 /// @param method Method definition
                 /// @return Successfulness
-                inline bool AddMethod(const std::string& name, const Method& method)
+                inline bool AddMethod(const std::string& name, UniqueRef<Method> method)
                 {
-                    return script->AddMethod(name, method);
+                    return script->AddMethod(name, std::move(method));
                 }
 
                 /// @brief Remove method

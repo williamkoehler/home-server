@@ -1,7 +1,6 @@
 #pragma once
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
-#include <home-scripting/tools/Controller.hpp>
 
 extern "C"
 {
@@ -47,10 +46,6 @@ namespace server
                 /// @brief Script event names
                 ///
                 // boost::container::vector<std::string> eventList;
-
-                /// @brief Script controllers
-                ///
-                robin_hood::unordered_node_map<duk_int_t, Ref<Controller>> controllerList;
 
                 void InitializeAttributes();
                 void InitializeProperties();

@@ -11,135 +11,170 @@ namespace server
             class NativeScriptImpl;
 
             template <typename P = void*, class T = NativeScriptImpl>
-            using PropertyGetterCallback = P (T::*)() const;
-            template <typename P = void*, class T = NativeScriptImpl>
-            using PropertyGetterFunctionCallback = P (*)(T*);
-
-            template <typename P, class T = NativeScriptImpl>
-            union PropertyGetterCallbackConversion
-            {
-                PropertyGetterCallback<P, T> f1;
-                PropertyGetterFunctionCallback<P, T> f2;
-                void* f3;
-            };
+            using PropertyGetterDefinition = P (T::*)() const;
 
             template <typename P = void*, class T = NativeScriptImpl>
-            using PropertySetterCallback = void (T::*)(const P&);
-            template <typename P = void*, class T = NativeScriptImpl>
-            using PropertySetterFunctionCallback = void (*)(T*, const P&);
+            using PropertySetterDefinition = void (T::*)(const P&);
 
-            template <typename P, class T = NativeScriptImpl>
-            union PropertySetterCallbackConversion
-            {
-                PropertySetterCallback<P, T> f1;
-                PropertySetterFunctionCallback<P, T> f2;
-                void* f3;
-            };
+            template <typename P, class T>
+            class PropertyCallbackImpl;
+
+            template <typename P, class T>
+            class PropertyReferenceImpl;
 
             class Property
             {
-              private:
-                ValueType type;
-                void* getter;
-                void* setter;
-                void* update;
-                size_t updateInterval;
-                size_t lastUpdateTime;
-
-                template <typename P>
-                static inline Property CreateImpl(void* getter, void* setter);
-
               public:
-                Property();
-                Property(ValueType type, void* getter, void* setter);
-                ~Property();
-                template <class T, typename P>
-                static inline Property Create(PropertyGetterCallback<P, T> getter,
-                                              PropertySetterCallback<P, T> setter = nullptr);
-
-                /// @brief Get property type
-                ///
-                /// @return ValueType Value type
-                inline ValueType GetType() const
+                Property()
                 {
-                    return type;
+                }
+                virtual ~Property()
+                {
                 }
 
-                /// @brief Get getter function pointer
-                ///
-                /// @return void* Function pointer
-                inline void* GetGetterFunction() const
+                template <typename P, class T>
+                static UniqueRef<Property> Create(PropertyGetterDefinition<P, T> getter,
+                                                  PropertySetterDefinition<P, T> setter = nullptr)
                 {
-                    return getter;
+                    assert(getter != nullptr);
+                    return boost::make_unique<PropertyCallbackImpl<P, T>>(getter, setter);
+                }
+                template <typename P, class T>
+                static UniqueRef<Property> Create(P T::*property)
+                {
+                    assert(property != nullptr);
+                    return boost::make_unique<PropertyReferenceImpl<P, T>>(property);
                 }
 
-                /// @brief Get getter function pointer
-                ///
-                /// @tparam P Property Type
-                /// @tparam T Base class
-                /// @return PropertyGetterCallback<P, T> Function pointer
-                template <typename P, class T = NativeScriptImpl>
-                inline PropertyGetterFunctionCallback<P, T> GetGetterFunction() const
-                {
-                    return PropertyGetterCallbackConversion<P, T>{.f3 = getter}.f2;
-                }
+                virtual ValueType GetType() = 0;
 
-                /// @brief Get setter function pointer
-                ///
-                /// @return void* Function pointer
-                inline void* GetSetterFunction() const
-                {
-                    return setter;
-                }
-
-                /// @brief Get setter function pointer
-                ///
-                /// @tparam P Property Type
-                /// @tparam T Base class
-                /// @return PropertySetterCallback<P, T> Function pointer
-                template <typename P, class T = NativeScriptImpl>
-                inline PropertySetterFunctionCallback<P, T> GetSetterFunction() const
-                {
-                    return PropertySetterCallbackConversion<P, T>{.f3 = setter}.f2;
-                }
+                virtual Value Get(void* self) = 0;
+                virtual void Set(void* self, const Value& value) = 0;
             };
 
-            template <>
-            inline Property Property::CreateImpl<bool>(void* getter, void* setter)
-            {
-                return Property(ValueType::kBooleanType, getter, setter);
-            }
+#define PROPERTY_GETTER (static_cast<T*>(self)->*getter)
+#define PROPERTY_SETTER (static_cast<T*>(self)->*setter)
+#define PROPERTY_CALLBACK_IMPLEMENTATION(type, valueType, getterExpr, setterCondition, setterExpr)                     \
+    template <class T>                                                                                                 \
+    class PropertyCallbackImpl<type, T> final : public Property                                                              \
+    {                                                                                                                  \
+      private:                                                                                                         \
+        PropertyGetterDefinition<type, T> getter;                                                                        \
+        PropertySetterDefinition<type, T> setter;                                                                        \
+                                                                                                                       \
+      public:                                                                                                          \
+        PropertyCallbackImpl<type, T>(PropertyGetterDefinition<type, T> getter, PropertySetterDefinition<type, T> setter)  \
+            : getter(getter), setter(setter)                                                                           \
+        {                                                                                                              \
+            assert(getter != nullptr);                                                                                 \
+        }                                                                                                              \
+        virtual ValueType GetType() override                                                                           \
+        {                                                                                                              \
+            return valueType;                                                                                          \
+        }                                                                                                              \
+        virtual Value Get(void* self) override                                                                         \
+        {                                                                                                              \
+            return getterExpr;                                                                                         \
+        }                                                                                                              \
+        virtual void Set(void* self, const Value& value) override                                                      \
+        {                                                                                                              \
+            if (setterCondition && setter != nullptr)                                                                                       \
+                setterExpr;                                                                                            \
+        }                                                                                                              \
+    };
 
-            template <>
-            inline Property Property::CreateImpl<double>(void* getter, void* setter)
-            {
-                return Property(ValueType::kNumberType, getter, setter);
-            }
+            PROPERTY_CALLBACK_IMPLEMENTATION(bool, ValueType::kBooleanType, Value(PROPERTY_GETTER()), value.IsBoolean(),
+                                             PROPERTY_SETTER(value.GetBoolean()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(double_t, ValueType::kNumberType, Value(PROPERTY_GETTER()),
+                                             value.IsNumber(), PROPERTY_SETTER(value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(size_t, ValueType::kNumberType, Value((const double_t&)PROPERTY_GETTER),
+                                             value.IsNumber(), PROPERTY_SETTER((size_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(int8_t, ValueType::kNumberType, Value((const int8_t&)PROPERTY_GETTER()),
+                                             value.IsNumber(), PROPERTY_SETTER((int8_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(uint8_t, ValueType::kNumberType, Value((const uint8_t&)PROPERTY_GETTER()),
+                                             value.IsNumber(), PROPERTY_SETTER((uint8_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(int16_t, ValueType::kNumberType, Value((const int16_t&)PROPERTY_GETTER()),
+                                             value.IsNumber(), PROPERTY_SETTER((int16_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(uint16_t, ValueType::kNumberType,
+                                             Value((const uint16_t&)PROPERTY_GETTER()), value.IsNumber(),
+                                             PROPERTY_SETTER((uint16_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(int32_t, ValueType::kNumberType, Value((const int32_t&)PROPERTY_GETTER()),
+                                             value.IsNumber(), PROPERTY_SETTER((int32_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(uint32_t, ValueType::kNumberType,
+                                             Value((const uint32_t&)PROPERTY_GETTER()), value.IsNumber(),
+                                             PROPERTY_SETTER((uint32_t)value.GetNumber()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(std::string, ValueType::kStringType, Value(PROPERTY_GETTER()),
+                                             value.IsString(), PROPERTY_SETTER(value.GetString()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(Endpoint, ValueType::kEndpointType, Value(PROPERTY_GETTER()),
+                                             value.IsEndpoint(), PROPERTY_SETTER(value.GetEndpoint()))
+            PROPERTY_CALLBACK_IMPLEMENTATION(Color, ValueType::kColorType, Value(PROPERTY_GETTER()), value.IsColor(),
+                                             PROPERTY_SETTER(value.GetColor()))
 
-            template <>
-            inline Property Property::CreateImpl<std::string>(void* getter, void* setter)
-            {
-                return Property(ValueType::kStringType, getter, setter);
-            }
+#undef PROPERTY_GETTER
+#undef PROPERTY_SETTER
+#undef PROPERTY_CALLBACK_IMPLEMENTATION
 
-            template <>
-            inline Property Property::CreateImpl<Endpoint>(void* getter, void* setter)
-            {
-                return Property(ValueType::kEndpointType, getter, setter);
-            }
+#define PROPERTY_REFERENCE (static_cast<T*>(self)->*reference)
+#define PROPERTY_REFERENCE_IMPLEMENTATION(type, valueType, getterExpr, setterCondition, setterExpr)                    \
+    template <class T>                                                                                                 \
+    class PropertyReferenceImpl<type, T> : public Property                                                             \
+    {                                                                                                                  \
+      private:                                                                                                         \
+        type T::*reference;                                                                                            \
+                                                                                                                       \
+      public:                                                                                                          \
+        PropertyReferenceImpl<type, T>(type T::*reference) : reference(reference)                                      \
+        {                                                                                                              \
+            assert(reference != nullptr);                                                                              \
+        }                                                                                                              \
+        virtual ValueType GetType() override                                                                           \
+        {                                                                                                              \
+            return valueType;                                                                                          \
+        }                                                                                                              \
+        virtual Value Get(void* self) override                                                                         \
+        {                                                                                                              \
+            return getterExpr;                                                                                         \
+        }                                                                                                              \
+        virtual void Set(void* self, const Value& value) override                                                      \
+        {                                                                                                              \
+            if (setterCondition)                                                                                       \
+                setterExpr;                                                                                            \
+        }                                                                                                              \
+    };
 
-            template <>
-            inline Property Property::CreateImpl<Color>(void* getter, void* setter)
-            {
-                return Property(ValueType::kColorType, getter, setter);
-            }
+            PROPERTY_REFERENCE_IMPLEMENTATION(bool, ValueType::kBooleanType, Value(PROPERTY_REFERENCE),
+                                              value.IsBoolean(), PROPERTY_REFERENCE = value.GetBoolean())
+            PROPERTY_REFERENCE_IMPLEMENTATION(double_t, ValueType::kNumberType, Value(PROPERTY_REFERENCE),
+                                              value.IsNumber(), PROPERTY_REFERENCE = value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(size_t, ValueType::kNumberType,
+                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (size_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int8_t, ValueType::kNumberType, Value((const int8_t&)PROPERTY_REFERENCE),
+                                              value.IsNumber(), PROPERTY_REFERENCE = (int8_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint8_t, ValueType::kNumberType,
+                                              Value((const uint8_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (uint8_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int16_t, ValueType::kNumberType,
+                                              Value((const int16_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (int16_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint16_t, ValueType::kNumberType,
+                                              Value((const uint16_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (uint16_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int32_t, ValueType::kNumberType,
+                                              Value((const int32_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (int32_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint32_t, ValueType::kNumberType,
+                                              Value((const uint32_t&)PROPERTY_REFERENCE), value.IsNumber(),
+                                              PROPERTY_REFERENCE = (uint32_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(std::string, ValueType::kStringType, Value(PROPERTY_REFERENCE),
+                                              value.IsString(), PROPERTY_REFERENCE = value.GetString())
+            PROPERTY_REFERENCE_IMPLEMENTATION(Endpoint, ValueType::kEndpointType, Value(PROPERTY_REFERENCE),
+                                              value.IsEndpoint(), PROPERTY_REFERENCE = value.GetEndpoint())
+            PROPERTY_REFERENCE_IMPLEMENTATION(Color, ValueType::kColorType, Value(PROPERTY_REFERENCE), value.IsColor(),
+                                              PROPERTY_REFERENCE = value.GetColor())
 
-            template <class T, typename P>
-            inline Property Property::Create(PropertyGetterCallback<P, T> getter, PropertySetterCallback<P, T> setter)
-            {
-                return Property::CreateImpl<P>(PropertyGetterCallbackConversion<P, T>{.f1 = getter}.f3,
-                                               PropertySetterCallbackConversion<P, T>{.f1 = setter}.f3);
-            }
+#undef PROPERTY_REFERENCE
+#undef PROPERTY_REFERENCE_IMPLEMENTATION
         }
     }
 }

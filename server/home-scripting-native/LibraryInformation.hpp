@@ -12,7 +12,7 @@ namespace server
             class NativeScriptImpl;
 
             template <typename T = NativeScriptImpl>
-            using CreateScriptCallback = UniqueRef<T> (*)();
+            using CreateScriptCallback = Ref<T> (*)();
 
             template <class T>
             union CreateScriptCallbackConversion

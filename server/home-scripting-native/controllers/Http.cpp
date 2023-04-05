@@ -137,6 +137,9 @@ namespace server
 
                     if (!ec)
                     {
+                        // Set event args
+                        statusCode = (HttpStatusCode)response.result_int();
+
                         // Invoke event
                         Ref<NativeScriptImpl> r = script.lock();
 
@@ -192,7 +195,7 @@ namespace server
                 }
 
                 void Send(const std::string& host, uint16_t port, HttpMethod method, const std::string& target,
-                          const std::string_view& content)
+                          const std::string_view& content, const std::string_view& contentType)
                 {
                     // Fill header
                     request.version(11); // HTTP/1.1
@@ -202,6 +205,7 @@ namespace server
                     // Set header arguments
                     request.set(boost::beast::http::field::host, host);
                     request.set(boost::beast::http::field::user_agent, "Home. Http Client");
+                    request.set(boost::beast::http::field::content_type, contentType.data());
 
                     // Fill body
                     request.body() = content;
@@ -222,15 +226,17 @@ namespace server
 
             bool Http::Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                             HttpMethod method, const std::string& target, const std::string_view& content,
+                            const std::string_view& contentType,
                             UniqueRef<HttpController::CallbackMethod> methodCallback)
             {
                 // Create new controller
-                Ref<HttpControllerImpl> controller = boost::make_shared<HttpControllerImpl>(script, std::move(methodCallback));
+                Ref<HttpControllerImpl> controller =
+                    boost::make_shared<HttpControllerImpl>(script, std::move(methodCallback));
 
                 if (controller != nullptr)
                 {
                     // Send http request
-                    controller->Send(host, port, method, target, content);
+                    controller->Send(host, port, method, target, content, contentType);
 
                     return true;
                 }
@@ -414,6 +420,9 @@ namespace server
 
                         if (r != nullptr)
                         {
+                            // Set event args
+                            statusCode = (HttpStatusCode)response.result_int();
+
                             // Invoke callback
                             if (callbackMethod != nullptr)
                             {
@@ -464,7 +473,7 @@ namespace server
                 }
 
                 void Send(const std::string& host, uint16_t port, HttpMethod method, const std::string& target,
-                          const std::string_view& content)
+                          const std::string_view& content, const std::string_view& contentType)
                 {
                     // Fill header
                     request.version(11); // HTTP/1.1
@@ -474,6 +483,7 @@ namespace server
                     // Set header arguments
                     request.set(boost::beast::http::field::host, host);
                     request.set(boost::beast::http::field::user_agent, "Home. Http Client");
+                    request.set(boost::beast::http::field::content_type, contentType.data());
 
                     // Fill body
                     request.body() = content;
@@ -494,15 +504,17 @@ namespace server
 
             bool Https::Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                              HttpMethod method, const std::string& target, const std::string_view& content,
+                             const std::string_view& contentType,
                              UniqueRef<HttpController::CallbackMethod> methodCallback)
             {
                 // Create new controller
-                Ref<HttpsControllerImpl> controller = boost::make_shared<HttpsControllerImpl>(script, std::move(methodCallback));
+                Ref<HttpsControllerImpl> controller =
+                    boost::make_shared<HttpsControllerImpl>(script, std::move(methodCallback));
 
                 if (controller != nullptr)
                 {
                     // Send http request
-                    controller->Send(host, port, method, target, content);
+                    controller->Send(host, port, method, target, content, contentType);
 
                     return true;
                 }

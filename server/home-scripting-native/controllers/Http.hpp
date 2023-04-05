@@ -168,6 +168,7 @@ namespace server
                 static bool Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                  HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                                  const std::string_view& content = std::string_view("", 0),
+                                 const std::string_view& contentType = "text/plain",
                                  UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr);
 
                 /// @brief Send http get request
@@ -179,9 +180,11 @@ namespace server
                 inline static bool Get(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                        const std::string& target = "/",
                                        const std::string_view& content = std::string_view("", 0),
+                                       const std::string_view& contentType = std::string_view("text/plain", 10),
                                        UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
                 {
-                    return Send(script, host, port, HttpMethod::kGet, target, content, std::move(methodCallback));
+                    return Send(script, host, port, HttpMethod::kGet, target, content, contentType,
+                                std::move(methodCallback));
                 }
 
                 /// @brief Send http post request
@@ -193,9 +196,11 @@ namespace server
                 inline static bool Post(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                         const std::string& target = "/",
                                         const std::string_view& content = std::string_view("", 0),
+                                        const std::string_view& contentType = std::string_view("text/plain", 10),
                                         UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
                 {
-                    return Send(script, host, port, HttpMethod::kPost, target, content, std::move(methodCallback));
+                    return Send(script, host, port, HttpMethod::kPost, target, content, contentType,
+                                std::move(methodCallback));
                 }
             };
 
@@ -212,6 +217,7 @@ namespace server
                 static bool Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                  HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                                  const std::string_view& content = std::string_view("", 0),
+                                 const std::string_view& contentType = std::string_view("text/plain", 10),
                                  UniqueRef<HttpController::CallbackMethod> callback = nullptr);
 
                 /// @brief Send https get request
@@ -223,9 +229,11 @@ namespace server
                 inline static bool Get(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                        const std::string& target = "/",
                                        const std::string_view& content = std::string_view("", 0),
+                                       const std::string_view& contentType = std::string_view("text/plain", 10),
                                        UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
                 {
-                    return Send(script, host, port, HttpMethod::kGet, target, content, std::move(methodCallback));
+                    return Send(script, host, port, HttpMethod::kGet, target, content, contentType,
+                                std::move(methodCallback));
                 }
 
                 /// @brief Send https post request
@@ -237,9 +245,11 @@ namespace server
                 inline static bool Post(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                                         const std::string& target = "/",
                                         const std::string_view& content = std::string_view("", 0),
+                                        const std::string_view& contentType = std::string_view("text/plain", 10),
                                         UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
                 {
-                    return Send(script, host, port, HttpMethod::kPost, target, content, std::move(methodCallback));
+                    return Send(script, host, port, HttpMethod::kPost, target, content, contentType,
+                                std::move(methodCallback));
                 }
             };
         }

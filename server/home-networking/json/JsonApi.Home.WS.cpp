@@ -373,8 +373,6 @@ namespace server
                 return;
             }
 
-            // Post update job
-            device->Update();
 
             rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
             device->JsonGetState(state, allocator);
@@ -412,9 +410,6 @@ namespace server
             }
 
             device->JsonSetState(stateIt->value);
-
-            // Post update job
-            device->Update();
 
             rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
             device->JsonGetState(state, allocator);

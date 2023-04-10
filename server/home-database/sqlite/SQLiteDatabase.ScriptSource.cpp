@@ -80,7 +80,7 @@ namespace server
                 connection,
                 R"(insert into scriptsources values)"
                 R"(((select ifnull((select id+1 from scriptsources where (id+1) not in (select id from scriptsources) order by id asc limit 1), 1)),)"
-                R"(?, null, null, null))",
+                R"(?, "no name", null, null))",
                 -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql reserve script source statement.\n{0}", sqlite3_errmsg(connection));

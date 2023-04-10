@@ -9,7 +9,7 @@ namespace server
     {
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, R"(select id, name, hash, salt, accesslevel, config from users)", 57,
+        if (sqlite3_prepare_v2(connection, R"(select id, name, hash, salt, accesslevel, config from users)", -1,
                                &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql load users statement.\n{0}", sqlite3_errmsg(connection));
@@ -142,7 +142,7 @@ namespace server
 
         if (sqlite3_prepare_v2(
                 connection,
-                R"(insert into users values((select ifnull((select id+1 from users where (id+1) not in (select id from users) order by id asc limit 1), 1)), ?, "", "", "", null))",
+                R"(insert into users values((select ifnull((select id+1 from users where (id+1) not in (select id from users) order by id asc limit 1), 1)), ?, "", "", "", "{}"))",
                 -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql reserve user statement.\n{0}", sqlite3_errmsg(connection));

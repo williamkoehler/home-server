@@ -135,7 +135,7 @@ namespace server
                 virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
                                                uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) override;
                 virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
-                                               uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) override;
+                                                  uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) override;
             };
 
             class NativeScriptImpl : public boost::enable_shared_from_this<NativeScriptImpl>
@@ -143,7 +143,7 @@ namespace server
               private:
                 friend class server::scripting::native::NativeScript;
 
-                Ref<NativeScript> script;
+                WeakRef<NativeScript> script;
 
               public:
                 NativeScriptImpl()
@@ -165,115 +165,76 @@ namespace server
                 /// @param name Attribute name
                 /// @param json Attribute value (in json format)
                 /// @return Successfulness
-                inline bool AddAttribute(const std::string& name, const char* json)
-                {
-                    return script->AddAttribute(name, json);
-                }
+                bool AddAttribute(const std::string& name, const char* json);
 
                 /// @brief Remove attribute
                 ///
                 /// @param name Attribute name
                 /// @return true Attribute was successfuly removed
                 /// @return false Attribute does not exist
-                inline bool RemoveAttribute(const std::string& name)
-                {
-                    return script->RemoveAttribute(name);
-                }
+                bool RemoveAttribute(const std::string& name);
 
                 /// @brief Clear attributes
                 ///
-                void ClearAttributes()
-                {
-                    return script->ClearAttributes();
-                }
+                void ClearAttributes();
 
                 /// @brief Add property
                 ///
                 /// @param name Property name
                 /// @return Successfulness
-                inline bool AddProperty(const std::string& name, UniqueRef<Property> property)
-                {
-                    return script->AddProperty(name, std::move(property));
-                }
+                bool AddProperty(const std::string& name, UniqueRef<Property> property);
 
                 /// @brief Remove property
                 ///
                 /// @param name Property name
                 /// @return true Property was successfuly removed
                 /// @return false Attribute does not exist
-                inline bool RemoveProperty(const std::string& name)
-                {
-                    return script->RemoveProperty(name);
-                }
+                bool RemoveProperty(const std::string& name);
 
                 /// @brief Clear properties
                 ///
-                inline void ClearProperties()
-                {
-                    script->ClearProperties();
-                }
+                void ClearProperties();
 
                 /// @brief Add method
                 ///
                 /// @param name Method name
                 /// @param method Method definition
                 /// @return Successfulness
-                inline bool AddMethod(const std::string& name, UniqueRef<Method> method)
-                {
-                    return script->AddMethod(name, std::move(method));
-                }
+                bool AddMethod(const std::string& name, UniqueRef<Method> method);
 
                 /// @brief Remove method
                 ///
                 /// @param name Method name
                 /// @return true Method was sucessfulny removed
                 /// @return false Method does not exist
-                inline bool RemoveMethod(const std::string& name)
-                {
-                    return script->RemoveMethod(name);
-                }
+                bool RemoveMethod(const std::string& name);
 
                 /// @brief Clear methods
                 ///
-                inline void ClearMethods()
-                {
-                    return script->ClearMethods();
-                }
+                void ClearMethods();
 
                 /// @brief Add event
                 ///
                 /// @param name Event name
                 /// @return Event Event reference
-                inline Event AddEvent(const std::string& name)
-                {
-                    return script->AddEvent(name);
-                }
+                Event AddEvent(const std::string& name);
 
                 /// @brief Remove event
                 ///
                 /// @param name Event name
                 /// @return true Event was successfuly removed
                 /// @return false Event does not exist
-                inline bool RemoveEvent(const std::string& name)
-                {
-                    return script->RemoveEvent(name);
-                }
+                bool RemoveEvent(const std::string& name);
 
                 /// @brief Clear events
                 ///
-                inline void ClearEvents()
-                {
-                    script->ClearEvents();
-                }
+                void ClearEvents();
 
                 /// @brief Add timer task
                 ///
                 /// @param method Method to call
                 /// @param interval Interval in seconds
-                inline void AddTimerTask(const std::string& method, size_t interval)
-                {
-                    script->AddTimerTask(method, interval);
-                }
+                void AddTimerTask(const std::string& method, size_t interval);
             };
         }
     }

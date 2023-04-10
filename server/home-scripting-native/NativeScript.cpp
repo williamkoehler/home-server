@@ -170,8 +170,8 @@ namespace server
 
                 uint8_t updateFlags = 0; // We use an uint8_t to allow to check what properties where updated
 
-                for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
-                     propertyIt++)
+                for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin();
+                     propertyIt != input.MemberEnd(); propertyIt++)
                 {
                     robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
                         propertyMap.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
@@ -183,6 +183,94 @@ namespace server
                 }
 
                 return updateFlags;
+            }
+
+            //! NativeScriptImpl
+
+            bool NativeScriptImpl::AddAttribute(const std::string& name, const char* json)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->AddAttribute(name, json);
+                else
+                    return false;
+            }
+            bool NativeScriptImpl::RemoveAttribute(const std::string& name)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->RemoveAttribute(name);
+                else
+                    return false;
+            }
+            void NativeScriptImpl::ClearAttributes()
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    scriptRef->ClearAttributes();
+            }
+
+            bool NativeScriptImpl::AddProperty(const std::string& name, UniqueRef<Property> property)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->AddProperty(name, std::move(property));
+                else
+                    return false;
+            }
+            bool NativeScriptImpl::RemoveProperty(const std::string& name)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->RemoveProperty(name);
+                else
+                    return false;
+            }
+            void NativeScriptImpl::ClearProperties()
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    scriptRef->ClearProperties();
+            }
+
+            bool NativeScriptImpl::AddMethod(const std::string& name, UniqueRef<Method> method)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->AddMethod(name, std::move(method));
+                else
+                    return false;
+            }
+            bool NativeScriptImpl::RemoveMethod(const std::string& name)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->RemoveMethod(name);
+                else
+                    return false;
+            }
+            void NativeScriptImpl::ClearMethods()
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->ClearMethods();
+            }
+
+            Event NativeScriptImpl::AddEvent(const std::string& name)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->AddEvent(name);
+                else
+                    return Event();
+            }
+            bool NativeScriptImpl::RemoveEvent(const std::string& name)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    return scriptRef->RemoveEvent(name);
+                else
+                    return false;
+            }
+            void NativeScriptImpl::ClearEvents()
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    scriptRef->ClearEvents();
+            }
+
+            void NativeScriptImpl::AddTimerTask(const std::string& method, size_t interval)
+            {
+                if (Ref<NativeScript> scriptRef = script.lock())
+                    scriptRef->AddTimerTask(method, interval);
             }
         }
     }

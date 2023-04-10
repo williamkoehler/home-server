@@ -21,13 +21,11 @@ namespace server
         {
           private:
             const identifier_t id;
-            std::string name;
+            const std::string name;
             uint8_t hash[SHA256_SIZE] = "";
             uint8_t salt[SALT_SIZE] = "";
 
             UserAccessLevel accessLevel;
-
-            // Settings
 
           public:
             User(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE],
@@ -36,8 +34,10 @@ namespace server
             static Ref<User> Create(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
                                     uint8_t salt[SALT_SIZE], UserAccessLevel accessLevel);
 
-            std::string GetName();
-            bool SetName(const std::string& v);
+            inline std::string GetName() const
+            {
+                return name;
+            }
 
             inline uint32_t GetID() const
             {

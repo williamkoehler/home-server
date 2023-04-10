@@ -103,42 +103,22 @@ namespace server
         (void)callback;
         return true;
     }
-    identifier_t EmptyDatabase::ReserveUser()
+    identifier_t EmptyDatabase::ReserveUser(const std::string& name)
     {
+        (void)name;
         return ++userIdCounter;
     }
-    bool EmptyDatabase::UpdateUser(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
-                                   uint8_t salt[SALT_SIZE], const std::string& accessLevel)
+    bool EmptyDatabase::UpdateUserAccessLevel(identifier_t id, const std::string& newValue)
     {
         (void)id;
-        (void)name;
+        (void)newValue;
+        return true;
+    }
+    bool EmptyDatabase::UpdateUserHash(identifier_t id, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE])
+    {
+        (void)id;
         (void)hash;
         (void)salt;
-        (void)accessLevel;
-        return true;
-    }
-    bool EmptyDatabase::UpdateUserPropName(identifier_t id, const std::string& newValue)
-    {
-        (void)id;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue)
-    {
-        (void)id;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateUserPropHash(identifier_t id, uint8_t newValue[SHA256_SIZE])
-    {
-        (void)id;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateUserPropSalt(identifier_t id, uint8_t newValue[SALT_SIZE])
-    {
-        (void)id;
-        (void)newValue;
         return true;
     }
     bool EmptyDatabase::RemoveUser(identifier_t id)

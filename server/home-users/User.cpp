@@ -49,41 +49,15 @@ namespace server
             return boost::make_shared<User>(id, name, hash, salt, accessLevel);
         }
 
-        std::string User::GetName()
-        {
-            // boost::shared_lock_guard lock(mutex);
-            return name;
-        }
-        bool User::SetName(const std::string& v)
-        {
-            Ref<Database> database = Database::GetInstance();
-            assert(database != nullptr);
-
-            // Update database
-            if (database->UpdateUserPropName(id, v))
-            {
-                // Assign new value
-                name = v;
-
-                return true;
-            }
-
-            return false;
-        }
-
         void User::GetHash(uint8_t* h)
         {
             assert(h != nullptr);
-
-            // boost::shared_lock_guard lock(mutex);
 
             // Copy to output variable
             memcpy(h, hash, SHA256_SIZE);
         }
         bool User::CompaireHash(uint8_t h[SHA256_SIZE])
         {
-            // boost::shared_lock_guard lock(mutex);
-
             return memcmp(hash, h, SHA256_SIZE) == 0;
         }
         bool User::SetHash(uint8_t h[SHA256_SIZE])
@@ -92,7 +66,7 @@ namespace server
             assert(database != nullptr);
 
             // Update database
-            if (database->UpdateUserPropHash(id, h))
+            if (database->UpdateUserHash(id, h, salt))
             {
                 // Assign new value
                 memcpy(hash, h, SHA256_SIZE);
@@ -107,16 +81,12 @@ namespace server
         {
             assert(s != nullptr);
 
-            // boost::shared_lock_guard lock(mutex);
-
             // Copy to output variable
             memcpy(s, salt, SALT_SIZE);
         }
 
         UserAccessLevel User::GetAccessLevel()
         {
-            // boost::shared_lock_guard lock(mutex);
-
             return accessLevel;
         }
         bool User::SetAccessLevel(UserAccessLevel v)
@@ -125,7 +95,7 @@ namespace server
             assert(database != nullptr);
 
             // Update database
-            if (database->UpdateUserPropAccessLevel(id, StringifyUserAccessLevel(v)))
+            if (database->UpdateUserAccessLevel(id, StringifyUserAccessLevel(v)))
             {
                 // Assign new value
                 accessLevel = v;
@@ -139,9 +109,6 @@ namespace server
         {
             assert(output.IsObject());
 
-            // Lock main mutex
-            // boost::shared_lock_guard lock(mutex);
-
             output.AddMember("id", rapidjson::Value(id), allocator);
 
             output.AddMember("name", rapidjson::Value(name.data(), name.size(), allocator), allocator);
@@ -154,13 +121,6 @@ namespace server
         void User::JsonSet(rapidjson::Value& input)
         {
             assert(input.IsObject());
-
-            // Lock main mutex
-            // boost::shared_lock_guard lock(mutex);
-
-            rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
-            if (nameIt != input.MemberEnd() && nameIt->value.IsString())
-                SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
         }
     }
 }

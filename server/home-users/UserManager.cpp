@@ -143,8 +143,10 @@ namespace server
         Ref<User> UserManager::AddUser(const std::string& name, uint8_t* hash, uint8_t* salt,
                                        UserAccessLevel accessLevel)
         {
+            static const boost::regex nameRegex = boost::regex(R"(^[a-zA-Z0-9_-]*$)");
+
             // Verify name
-            if (!boost::regex_match(name, boost::regex(R"(^[a-zA-Z0-9_-]*$)")))
+            if (!boost::regex_match(name, nameRegex))
             {
                 LOG_ERROR("Invalid user name '{0}' (does not match '[a-zA-Z0-9_-]*')", name);
                 return nullptr;
@@ -162,12 +164,13 @@ namespace server
             assert(database != nullptr);
 
             // Reserve user
-            identifier_t id = database->ReserveUser();
+            identifier_t id = database->ReserveUser(name);
             if (id == 0)
                 return nullptr;
 
             // Update database
-            if (!database->UpdateUser(id, name, hash, salt, StringifyUserAccessLevel(accessLevel)))
+            if (!database->UpdateUserAccessLevel(id, StringifyUserAccessLevel(accessLevel)) ||
+                !database->UpdateUserHash(id, hash, salt))
                 return nullptr;
 
             // Create new user
@@ -197,8 +200,6 @@ namespace server
         }
         Ref<User> UserManager::GetUserByName(const std::string_view& name)
         {
-            // boost::shared_lock_guard lock(mutex);
-
             const robin_hood::unordered_node_map<identifier_t, Ref<User>>::const_iterator it =
                 boost::find_if(userList,
                                [&name](const robin_hood::pair<const identifier_t, Ref<User>>& pair) -> bool

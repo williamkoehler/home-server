@@ -56,7 +56,7 @@ namespace server
                                  R"((id integer not null primary key, type text not null, name text not null, scriptsourceid integer, config text, state text))",
                                  nullptr, nullptr, &err) != SQLITE_OK)
                 {
-                    LOG_ERROR("Failing to create 'rooms' table.\n{0}", err);
+                    LOG_ERROR("Failing to create 'entities' table.\n{0}", err);
                     return nullptr;
                 }
             }
@@ -67,7 +67,7 @@ namespace server
                 if (sqlite3_exec(
                         database->connection,
                         R"(create table if not exists users)"
-                        R"((id integer not null primary key, name text, hash text not null, salt text not null, accesslevel text not null, data text not null))",
+                        R"((id integer not null primary key, name text not null, hash text not null, salt text not null, accesslevel text not null, config text))",
                         nullptr, nullptr, &err) != SQLITE_OK)
                 {
                     LOG_ERROR("Failing to create 'users' table.\n{0}", err);

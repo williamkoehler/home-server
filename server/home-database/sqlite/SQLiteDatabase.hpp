@@ -119,20 +119,10 @@ namespace server
 
         /// @brief Reserves new user entry in database
         /// @return Entry identifier or null in case of an error
-        virtual identifier_t ReserveUser() override;
-
-        virtual bool UpdateUser(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
-                                uint8_t salt[SALT_SIZE], const std::string& accessLevel) override;
-
-        /// @brief Update user name
-        /// @param script User to update
-        /// @param value Old name (for record)
-        /// @param newValue New name
-        /// @return Successfulness
-        virtual bool UpdateUserPropName(identifier_t id, const std::string& newValue) override;
-        virtual bool UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue) override;
-        virtual bool UpdateUserPropHash(identifier_t id, uint8_t newValue[SHA256_SIZE]) override;
-        virtual bool UpdateUserPropSalt(identifier_t id, uint8_t newValue[SALT_SIZE]) override;
+        virtual identifier_t ReserveUser(const std::string& name) override;
+        
+        virtual bool UpdateUserAccessLevel(identifier_t id, const std::string& newValue) override;
+        virtual bool UpdateUserHash(identifier_t id, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE]) override;
         virtual bool RemoveUser(identifier_t id) override;
 
         virtual size_t GetUserCount() override;

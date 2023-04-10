@@ -131,21 +131,13 @@ namespace server
                                        uint8_t salt[SALT_SIZE], const std::string& accessLevel)>& callback) = 0;
 
         /// @brief Reserves new user entry in database
+        ///
+        /// @param name User name
         /// @return Entry identifier or null in case of an error
-        virtual identifier_t ReserveUser() = 0;
+        virtual identifier_t ReserveUser(const std::string& name) = 0;
 
-        virtual bool UpdateUser(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
-                                uint8_t salt[SALT_SIZE], const std::string& accessLevel) = 0;
-
-        /// @brief Update user name
-        /// @param script User to update
-        /// @param value Old name (for record)
-        /// @param newValue New name
-        /// @return Successfulness
-        virtual bool UpdateUserPropName(identifier_t id, const std::string& newValue) = 0;
-        virtual bool UpdateUserPropAccessLevel(identifier_t id, const std::string& newValue) = 0;
-        virtual bool UpdateUserPropHash(identifier_t id, uint8_t newValue[SHA256_SIZE]) = 0;
-        virtual bool UpdateUserPropSalt(identifier_t id, uint8_t newValue[SALT_SIZE]) = 0;
+        virtual bool UpdateUserAccessLevel(identifier_t id, const std::string& newValue) = 0;
+        virtual bool UpdateUserHash(identifier_t id, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE]) = 0;
         virtual bool RemoveUser(identifier_t id) = 0;
 
         virtual size_t GetUserCount() = 0;

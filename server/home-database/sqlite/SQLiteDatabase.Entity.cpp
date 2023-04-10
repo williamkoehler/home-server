@@ -13,7 +13,7 @@ namespace server
         if (sqlite3_prepare_v2(connection, "select id, type, name, scriptsourceid, config, state from entities", -1,
                                &statement, nullptr) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql load entities statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -79,25 +79,24 @@ namespace server
 
         if (sqlite3_prepare_v2(
                 connection,
-                "insert into entities values((select ifnull((select (id+1) from entities where (id+1) not in (select "
-                "id from entities) order by id asc limit 1), 1)), ?, \"no name\", 0, null, null)",
+                R"(insert into entities values((select ifnull((select (id+1) from entities where (id+1) not in (select id from entities) order by id asc limit 1), 1)), ?, "no name", 0, null, null))",
                 -1, &statement, nullptr) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql reserve entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }
 
         if (sqlite3_bind_text(statement, 1, type.data(), type.size(), nullptr) != SQLITE_OK) // type
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to bind sql parameters.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to entity to 'entities' table.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to execute sql reserve entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }
@@ -117,7 +116,7 @@ namespace server
         if (sqlite3_prepare_v2(connection, "update entities set name = ?, scriptsourceid = ?, config = ? where id = ?",
                                -1, &statement, nullptr) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql update entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -127,14 +126,14 @@ namespace server
             sqlite3_bind_text(statement, 3, config.data(), config.size(), nullptr) != SQLITE_OK || // config
             sqlite3_bind_int64(statement, 4, id) != SQLITE_OK)                                     // id
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to bind sql parameters.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update entity from 'entities' table.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to execute sql update entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -147,10 +146,10 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, "update entities set state = ? where id = ?", -1, &statement, nullptr) !=
+        if (sqlite3_prepare_v2(connection, R"(update entities set state = ? where id = ?)", -1, &statement, nullptr) !=
             SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql update entity state statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -158,14 +157,14 @@ namespace server
         if (sqlite3_bind_text(statement, 1, state.data(), state.size(), nullptr) != SQLITE_OK ||
             sqlite3_bind_int64(statement, 2, id) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to bind sql parameters.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to update entity script data.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to execute sql update entity state statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -182,21 +181,21 @@ namespace server
 
         if (sqlite3_prepare_v2(connection, "delete from entities where id = ?", -1, &statement, nullptr) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql remove entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
         if (sqlite3_bind_int64(statement, 1, id) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to bind sql parameters.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
         if (sqlite3_step(statement) != SQLITE_DONE)
         {
-            LOG_ERROR("Failing to remove entity from 'entities' table.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to execute sql remove entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
@@ -212,14 +211,14 @@ namespace server
 
         if (sqlite3_prepare_v2(connection, "select count(*) from entities", -1, &statement, nullptr) != SQLITE_OK)
         {
-            LOG_ERROR("Failing to prepare sql statement.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to prepare sql count entities statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }
 
         if (sqlite3_step(statement) != SQLITE_ROW)
         {
-            LOG_ERROR("Failing to count entities.\n{0}", sqlite3_errmsg(connection));
+            LOG_ERROR("Failed to execute sql count entities statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return 0;
         }

@@ -124,6 +124,7 @@ namespace server
         //! User
 
         /// @brief Load users from database
+        ///
         /// @param callback Callback for each user
         /// @return Successfulness
         virtual bool LoadUsers(
@@ -136,10 +137,30 @@ namespace server
         /// @return Entry identifier or null in case of an error
         virtual identifier_t ReserveUser(const std::string& name) = 0;
 
+        /// @brief Update user access level
+        ///
+        /// @param id User id
+        /// @param newValue New access level
+        /// @return Successfulness
         virtual bool UpdateUserAccessLevel(identifier_t id, const std::string& newValue) = 0;
+
+        /// @brief Update user hash and salt
+        ///
+        /// @param id User id
+        /// @param hash New hash
+        /// @param salt New salt
+        /// @return Successfulness
         virtual bool UpdateUserHash(identifier_t id, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE]) = 0;
+
+        /// @brief Remove user
+        ///
+        /// @param id User id
+        /// @return Successfulness
         virtual bool RemoveUser(identifier_t id) = 0;
 
+        /// @brief Get user count
+        ///
+        /// @return size_t User count
         virtual size_t GetUserCount() = 0;
     };
 }

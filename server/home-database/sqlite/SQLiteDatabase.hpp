@@ -111,6 +111,7 @@ namespace server
         //! User
 
         /// @brief Load users from database
+        ///
         /// @param callback Callback for each user
         /// @return Successfulness
         virtual bool LoadUsers(
@@ -118,13 +119,35 @@ namespace server
                                        uint8_t salt[SALT_SIZE], const std::string& accessLevel)>& callback) override;
 
         /// @brief Reserves new user entry in database
+        ///
+        /// @param name User name
         /// @return Entry identifier or null in case of an error
         virtual identifier_t ReserveUser(const std::string& name) override;
-        
+
+        /// @brief Update user access level
+        ///
+        /// @param id User id
+        /// @param newValue New access level
+        /// @return Successfulness
         virtual bool UpdateUserAccessLevel(identifier_t id, const std::string& newValue) override;
+
+        /// @brief Update user hash and salt
+        ///
+        /// @param id User id
+        /// @param hash New hash
+        /// @param salt New salt
+        /// @return Successfulness
         virtual bool UpdateUserHash(identifier_t id, uint8_t hash[SHA256_SIZE], uint8_t salt[SALT_SIZE]) override;
+
+        /// @brief Remove user
+        ///
+        /// @param id User id
+        /// @return Successfulness
         virtual bool RemoveUser(identifier_t id) override;
 
+        /// @brief Get user count
+        ///
+        /// @return size_t User count
         virtual size_t GetUserCount() override;
 
         //! Testing

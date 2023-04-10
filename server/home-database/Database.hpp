@@ -41,40 +41,29 @@ namespace server
         /// @param callback Entry callback called once for every entry
         /// @return Successfulness
         virtual bool LoadScriptSources(
-            const boost::function<void(identifier_t id, const std::string& type, const std::string& name,
-                                       const std::string& usage, const std::string_view& content)>& callback) = 0;
+            const boost::function<void(identifier_t id, const std::string& language, const std::string& name,
+                                       const std::string_view& config, const std::string_view& content)>& callback) = 0;
 
-        /// @brief Reserve script source id
+        /// @brief Reserve script source entry in database
         ///
-        /// @return identifier_t Script source id or 0 in case of an error
-        virtual identifier_t ReserveScriptSource() = 0;
+        /// @param language Script source language
+        /// @return identifier_t Script source id or zero if reservation failed
+        virtual identifier_t ReserveScriptSource(const std::string& language) = 0;
 
         /// @brief Update script source
         ///
         /// @param id Script source id
-        /// @param type Type
-        /// @param name Name
-        /// @param usage Usage
-        /// @param content Content
+        /// @param name Script source name
+        /// @param content Additional config
         /// @return Successfulness
-        virtual bool UpdateScriptSource(identifier_t id, const std::string& type, const std::string& name,
-                                        const std::string& usage, const std::string_view& content) = 0;
-
-        /// @brief Update script source name
-        ///
-        /// @param id Script source id
-        /// @param value Old name
-        /// @param newValue New name
-        /// @return Successfulness
-        virtual bool UpdateScriptSourcePropName(identifier_t id, const std::string& value,
-                                                const std::string& newValue) = 0;
+        virtual bool UpdateScriptSource(identifier_t id, const std::string& name, const std::string_view& config) = 0;
 
         /// @brief Update script source content
         ///
         /// @param id Script source id
         /// @param newValue New content
         /// @return Successfulness
-        virtual bool UpdateScriptSourcePropContent(identifier_t id, const std::string_view& newValue) = 0;
+        virtual bool UpdateScriptSourceContent(identifier_t id, const std::string_view& newValue) = 0;
 
         /// @brief Remove script source
         ///
@@ -82,81 +71,55 @@ namespace server
         /// @return Successfulness
         virtual bool RemoveScriptSource(identifier_t id) = 0;
 
+        /// @brief Get script source count
+        ///
+        /// @return size_t Script source count
         virtual size_t GetScriptSourceCount() = 0;
 
-        //! Room
+        //! Entity
 
-        /// @brief Load rooms from database
-        /// @param callback Callback for each room
+        /// @brief Load entities from database
+        ///
+        /// @param callback Entry callback
         /// @return Successfulness
-        virtual bool LoadRooms(const boost::function<bool(identifier_t id, const std::string& type,
-                                                          const std::string& name)>& callback) = 0;
+        virtual bool LoadEntities(
+            const boost::function<bool(identifier_t id, const std::string& entityType, const std::string& name,
+                                       identifier_t scriptSourceID, const std::string_view& data,
+                                       const std::string_view& scriptData)>& callback) = 0;
 
-        /// @brief Reserves new room entry in database
-        /// @return Entry identifier or 0 in case of an error
-        virtual identifier_t ReserveRoom() = 0;
+        /// @brief Reserve entity entry in database
+        ///
+        /// @param type Entity type
+        /// @return identifier_t Entity id or zero if reservation failed
+        virtual identifier_t ReserveEntity(const std::string& type) = 0;
 
-        /// @brief Update room without pushing record
-        /// @param room Room to update
+        /// @brief Update entity without pushing to history
+        ///
+        /// @param id Entity id
+        /// @param name Entity name
+        /// @param scriptSourceId Entity script source id
+        /// @param config Additional configuration
         /// @return Successfulness
-        virtual bool UpdateRoom(identifier_t id, const std::string& type, const std::string& name) = 0;
+        virtual bool UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceId,
+                                  const std::string_view& config) = 0;
 
-        /// @brief Update room name
-        /// @param room Room to update
-        /// @param value Old name (for record)
-        /// @param newValue New name
+        /// @brief Update entity state
+        ///
+        /// @param id Entity data
+        /// @param stat State
         /// @return Successfulness
-        virtual bool UpdateRoomPropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
-        virtual bool UpdateRoomPropType(identifier_t id, const std::string& value, const std::string& newValue) = 0;
-        virtual bool RemoveRoom(identifier_t id) = 0;
+        virtual bool UpdateEntityState(identifier_t id, const std::string_view& state) = 0;
 
-        virtual size_t GetRoomCount() = 0;
-
-        //! Device
-
-        /// @brief Load device from database
-        /// @param callback Callback for each device
+        /// @brief Remove entity
+        ///
+        /// @param id Entity id
         /// @return Successfulness
-        virtual bool LoadDevices(
-            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       identifier_t roomID, const std::string_view& data)>& callback) = 0;
+        virtual bool RemoveEntity(identifier_t id) = 0;
 
-        /// @brief Reserves new device entry in database
-        /// @return Entry identifier or 0 in case of an error
-        virtual identifier_t ReserveDevice() = 0;
-
-        virtual bool UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                  identifier_t roomID) = 0;
-
-        virtual bool UpdateDevicePropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
-        virtual bool UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue) = 0;
-        virtual bool UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue) = 0;
-
-        virtual bool RemoveDevice(identifier_t id) = 0;
-
-        virtual size_t GetDeviceCount() = 0;
-
-        //! Service
-
-        /// @brief Load service from database
-        /// @param callback Callback for each service
-        /// @return Successfulness
-        virtual bool LoadServices(
-            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       const std::string_view& data)>& callback) = 0;
-
-        /// @brief Reserves new service entry in database
-        /// @return Entry identifier or 0 in case of an error
-        virtual identifier_t ReserveService() = 0;
-
-        virtual bool UpdateService(identifier_t id, const std::string& name, identifier_t scriptSourceID) = 0;
-
-        virtual bool UpdateServicePropName(identifier_t id, const std::string& value, const std::string& newValue) = 0;
-        virtual bool UpdateServicePropScriptSource(identifier_t id, identifier_t newValue) = 0;
-
-        virtual bool RemoveService(identifier_t id) = 0;
-
-        virtual size_t GetServiceCount() = 0;
+        /// @brief Get entity count
+        ///
+        /// @return size_t Entity count
+        virtual size_t GetEntityCount() = 0;
 
         //! User
 

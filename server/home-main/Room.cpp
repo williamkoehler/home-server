@@ -7,15 +7,15 @@ namespace server
 {
     namespace main
     {
-        Room::Room(identifier_t id, const std::string& type, const std::string& name) : id(id), type(type), name(name)
+        Room::Room(identifier_t id, const std::string& name) : Entity(id, name)
         {
         }
         Room::~Room()
         {
         }
-        Ref<Room> Room::Create(identifier_t id, const std::string& type, const std::string& name)
+        Ref<Room> Room::Create(identifier_t id, const std::string& name)
         {
-            Ref<Room> room = boost::make_shared<Room>(id, type, name);
+            Ref<Room> room = boost::make_shared<Room>(id, name);
 
             if (room != nullptr)
             {
@@ -31,71 +31,29 @@ namespace server
             return room;
         }
 
-        std::string Room::GetType()
-        {
-            return type;
-        }
-        bool Room::SetType(const std::string& v)
-        {
-            Ref<Database> database = Database::GetInstance();
-            assert(database != nullptr);
-
-            if (database->UpdateRoomPropType(id, type, v))
-            {
-                type = v;
-
-                return true;
-            }
-
-            return false;
-        }
-
-        std::string Room::GetName()
-        {
-            return name;
-        }
-        bool Room::SetName(const std::string& v)
-        {
-            Ref<Database> database = Database::GetInstance();
-            assert(database != nullptr);
-
-            if (database->UpdateRoomPropName(id, name, v))
-            {
-                name = v;
-
-                return true;
-            }
-
-            return false;
-        }
-
-        Ref<RoomView> Room::GetView()
-        {
-            return view;
-        }
-
-        void Room::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void Room::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
         {
             assert(output.IsObject());
 
-            output.AddMember("id", rapidjson::Value(id), allocator);
-            output.AddMember("name", rapidjson::Value(name.c_str(), name.size()), allocator);
-            output.AddMember("type", rapidjson::Value(type.data(), type.size()), allocator);
+            output.AddMember("roomtype", rapidjson::Value(roomType.data(), roomType.size()), allocator);
         }
-        void Room::JsonSet(rapidjson::Value& input)
+        bool Room::JsonSetConfig(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
-            // Decode properties
-            rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
-            if (nameIt != input.MemberEnd() && nameIt->value.IsString())
-                SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
+            bool update = false;
 
-            rapidjson::Value::MemberIterator typeIt = input.FindMember("type");
-            if (typeIt != input.MemberEnd() && typeIt->value.IsUint())
-                SetType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength()));
+            rapidjson::Value::ConstMemberIterator roomTypeIt = input.FindMember("roomtype");
+            if (roomTypeIt != input.MemberEnd() && roomTypeIt->value.IsString())
+            {
+                roomType.assign(roomTypeIt->value.GetString(), roomTypeIt->value.GetStringLength());
+                update = true;
+            }
+
+            return update;
         }
 
+        //! RoomView
         RoomView::RoomView(const Ref<Room>& room) : room(room)
         {
             assert(room != nullptr);

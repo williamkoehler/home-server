@@ -148,7 +148,8 @@ namespace server
                 eventMap.clear();
             }
 
-            void NativeScript::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            void NativeScript::JsonGetProperties(rapidjson::Value& output,
+                                                 rapidjson::Document::AllocatorType& allocator, uint8_t propertyFlags)
             {
                 assert(output.IsObject());
 
@@ -156,20 +157,32 @@ namespace server
                 for (auto& [name, property] : propertyMap)
                 {
                     // Add property
-                    output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),
-                                     property->Get(scriptImpl.get()).JsonGet(allocator), allocator);
+                    if (property->GetFlags() & propertyFlags)
+                    {
+                        output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),
+                                         property->Get(scriptImpl.get()).JsonGet(allocator), allocator);
+                    }
                 }
             }
-            void NativeScript::JsonSetState(rapidjson::Value& input)
+            uint8_t NativeScript::JsonSetProperties(const rapidjson::Value& input, uint8_t propertyFlags)
             {
                 assert(input.IsObject());
 
-                for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
+                uint8_t updateFlags = 0; // We use an uint8_t to allow to check what properties where updated
+
+                for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
                      propertyIt++)
                 {
-                    SetProperty(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()),
-                                Value::Create(propertyIt->value));
+                    robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
+                        propertyMap.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
+                    if (it != propertyMap.end() && it->second->GetFlags() & propertyFlags)
+                    {
+                        it->second->Set(scriptImpl.get(), Value::Create(propertyIt->value));
+                        updateFlags |= it->second->GetFlags() & PropertyFlags::kPropertyFlag_InitiateUpdate;
+                    }
                 }
+
+                return updateFlags;
             }
         }
     }

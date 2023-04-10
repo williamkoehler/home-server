@@ -7,18 +7,18 @@ namespace server
     {
         namespace native
         {
-            NativeScriptSource::NativeScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
+            NativeScriptSource::NativeScriptSource(identifier_t id, const std::string& name, uint8_t flags,
                                                    CreateScriptCallback<> callback)
-                : ScriptSource(id, name, usage, std::string_view("", 0)), callback(callback)
+                : ScriptSource(id, name, std::string_view("", 0)), flags(flags), callback(callback)
             {
             }
             NativeScriptSource::~NativeScriptSource()
             {
             }
-            Ref<NativeScriptSource> NativeScriptSource::Create(identifier_t id, const std::string& name,
-                                                               ScriptUsage usage, CreateScriptCallback<> callback)
+            Ref<NativeScriptSource> NativeScriptSource::Create(identifier_t id, const std::string& name, uint8_t flags,
+                                                               CreateScriptCallback<> callback)
             {
-                return boost::make_shared<NativeScriptSource>(id, name, usage, callback);
+                return boost::make_shared<NativeScriptSource>(id, name, flags, callback);
             }
 
             Ref<Script> NativeScriptSource::CreateScript(const Ref<View>& view)
@@ -41,6 +41,20 @@ namespace server
                     LOG_ERROR("Exception was thrown while creating new native script '{0}'.", name);
                     return nullptr;
                 }
+            }
+
+            void NativeScriptSource::JsonGetConfig(rapidjson::Value& output,
+                                                   rapidjson::Document::AllocatorType& allocator)
+            {
+                (void)allocator;
+
+                assert(output.IsObject());
+            }
+            bool NativeScriptSource::JsonSetConfig(const rapidjson::Value& input)
+            {
+                assert(input.IsObject());
+
+                return false;
             }
         }
     }

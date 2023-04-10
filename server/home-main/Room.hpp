@@ -1,4 +1,5 @@
 #pragma once
+#include "Entity.hpp"
 #include "common.hpp"
 #include <home-scripting/main/RoomView.hpp>
 
@@ -10,57 +11,60 @@ namespace server
 
         class RoomView;
 
-        class Room : public boost::enable_shared_from_this<Room>
+        class Room : public Entity
         {
           private:
-            const identifier_t id;
-            std::string type;
-            std::string name;
+            std::string roomType;
 
             Ref<RoomView> view;
 
           public:
-            Room(identifier_t id, const std::string& type, const std::string& name);
+            Room(identifier_t id, const std::string& name);
             virtual ~Room();
-            static Ref<Room> Create(identifier_t id, const std::string& type, const std::string& name);
+            static Ref<Room> Create(identifier_t id, const std::string& name);
 
-            /// @brief Get room id
-            ///
-            /// @return Room id
-            inline identifier_t GetID()
+            virtual EntityType GetType() override
             {
-                return id;
+                return EntityType::kRoomEntityType;
             }
-
-            /// @brief Get room name
-            ///
-            /// @return Room name
-            std::string GetName();
-
-            /// @brief Set room name
-            ///
-            /// @param v New room name
-            /// @return Successfulness
-            bool SetName(const std::string& v);
 
             /// @brief Get room type
             ///
             /// @return Room type
-            std::string GetType();
+            inline std::string GetRoomType() const
+            {
+                return roomType;
+            }
 
             /// @brief Set room type
             ///
             /// @param v Room type
+            /// @param update Update database flag
             /// @return Successfulness
-            bool SetType(const std::string& v);
+            void SetRoomType(const std::string& v)
+            {
+                roomType = v;
+            }
+
+            /// @brief Get view
+            ///
+            /// @return Ref<scripting::View> Room view
+            virtual Ref<scripting::View> GetView() override
+            {
+                return boost::static_pointer_cast<scripting::View>(view);
+            }
 
             /// @brief Get room view
             ///
-            /// @return Get room view of this object
-            Ref<RoomView> GetView();
+            /// @return Ref<RoomView> Room view
+            inline Ref<RoomView> GetRoomView()
+            {
+                return view;
+            }
 
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSet(rapidjson::Value& input);
+            virtual void JsonGetConfig(rapidjson::Value& output,
+                                       rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSetConfig(const rapidjson::Value& input) override;
         };
 
         class RoomView : public scripting::RoomView

@@ -1,4 +1,5 @@
 #pragma once
+#include "Entity.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
 #include <home-scripting/main/ServiceView.hpp>
@@ -9,69 +10,40 @@ namespace server
     {
         class ServiceView;
 
-        class Service : public boost::enable_shared_from_this<Service>
+        class Service final : public Entity
         {
           protected:
-            const identifier_t id;
-            std::string name;
-            Ref<scripting::Script> script;
-
             Ref<ServiceView> view;
 
           public:
             Service(identifier_t id, const std::string& name);
             virtual ~Service();
-            static Ref<Service> Create(identifier_t id, const std::string& name, identifier_t scriptSourceID);
+            static Ref<Service> Create(identifier_t id, const std::string& name);
 
-            /// @brief Get service id
-            ///
-            /// @return Service id
-            inline identifier_t GetID()
+            virtual EntityType GetType() override
             {
-                return id;
+                return EntityType::kServiceEntityType;
             }
 
-            /// @brief Get service name
+            /// @brief Get view
             ///
-            /// @return Service name
-            std::string GetName();
-
-            /// @brief Set service name
-            ///
-            /// @param v New service name
-            /// @return Successfulness
-            bool SetName(const std::string& v);
-
-            /// @brief Set script source id
-            ///
-            /// @param scriptSource Script source id
-            /// @return Successfulness
-            bool SetScriptSourceID(identifier_t scriptSourceID);
-
-            /// @brief Get script source id
-            ///
-            /// @return Script source id
-            identifier_t GetScriptSourceID();
+            /// @return Ref<scripting::View> Service view
+            virtual Ref<scripting::View> GetView() override
+            {
+                return boost::static_pointer_cast<scripting::View>(view);
+            }
 
             /// @brief Get service view
             ///
-            /// @return Get service view of this object
-            Ref<ServiceView> GetView();
+            /// @return Ref<ServiceView> Service view
+            inline Ref<ServiceView> GetServiceView()
+            {
+                return view;
+            }
 
-            /// @brief Invoke script method
-            ///
-            /// @param event Method name
-            void Invoke(const std::string& method, const scripting::Value& parameter);
-
-            /// @brief Invoke script update method
-            ///
-            void Update();
-
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSet(rapidjson::Value& input);
-
-            void JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSetState(rapidjson::Value& input);
+            virtual void JsonGetConfig(rapidjson::Value& output,
+                                       rapidjson::Document::AllocatorType& allocator) override;
+            virtual bool JsonSetConfig(const rapidjson::Value& input) override;
         };
 
         class ServiceView : public scripting::ServiceView

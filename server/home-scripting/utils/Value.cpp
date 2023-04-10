@@ -168,7 +168,7 @@ namespace server
             }
         }
 
-        Value Value::Create(rapidjson::Value& input)
+        Value Value::Create(const rapidjson::Value& input)
         {
             switch (input.GetType())
             {
@@ -182,15 +182,15 @@ namespace server
                 return Value(std::string_view(input.GetString(), input.GetStringLength()));
             case rapidjson::kObjectType:
             {
-                rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
+                rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
                 if (classIt != input.MemberEnd() && classIt->value.IsString())
                 {
                     switch (crc32(classIt->value.GetString(), classIt->value.GetStringLength()))
                     {
                     case CRC32(ENDPOINT_TYPE_NAME):
                     {
-                        rapidjson::Value::MemberIterator hostIt = input.FindMember("host");
-                        rapidjson::Value::MemberIterator portIt = input.FindMember("port");
+                        rapidjson::Value::ConstMemberIterator hostIt = input.FindMember("host");
+                        rapidjson::Value::ConstMemberIterator portIt = input.FindMember("port");
                         if (hostIt != input.MemberEnd() && hostIt->value.IsString() && portIt != input.MemberEnd() &&
                             portIt->value.IsUint())
                         {
@@ -204,9 +204,9 @@ namespace server
                     }
                     case CRC32(COLOR_TYPE_NAME):
                     {
-                        rapidjson::Value::MemberIterator rIt = input.FindMember("r");
-                        rapidjson::Value::MemberIterator gIt = input.FindMember("g");
-                        rapidjson::Value::MemberIterator bIt = input.FindMember("b");
+                        rapidjson::Value::ConstMemberIterator rIt = input.FindMember("r");
+                        rapidjson::Value::ConstMemberIterator gIt = input.FindMember("g");
+                        rapidjson::Value::ConstMemberIterator bIt = input.FindMember("b");
                         if (rIt->value.IsUint() && gIt != input.MemberEnd() && gIt->value.IsUint() &&
                             bIt != input.MemberEnd() && bIt->value.IsUint())
                         {
@@ -221,19 +221,19 @@ namespace server
                     }
                     case CRC32(ROOM_ID_TYPE_NAME):
                     {
-                        rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                        rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
                             return Value::Create<ValueType::kRoomIDType>(idIt->value.GetUint());
                     }
                     case CRC32(DEVICE_ID_TYPE_NAME):
                     {
-                        rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                        rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
                             return Value::Create<ValueType::kDeviceIDType>(idIt->value.GetUint());
                     }
                     case CRC32(SERVICE_ID_TYPE_NAME):
                     {
-                        rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                        rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                         if (idIt != input.MemberEnd() && idIt->value.IsUint())
                             return Value::Create<ValueType::kServiceIDType>(idIt->value.GetUint());
                     }
@@ -367,7 +367,7 @@ namespace server
             }
         }
 
-        bool Value::JsonSet(rapidjson::Value& input)
+        bool Value::JsonSet(const rapidjson::Value& input)
         {
             switch (type)
             {
@@ -393,9 +393,9 @@ namespace server
 
                 if (input.IsObject())
                 {
-                    rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
-                    rapidjson::Value::MemberIterator hostIt = input.FindMember("host");
-                    rapidjson::Value::MemberIterator portIt = input.FindMember("port");
+                    rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
+                    rapidjson::Value::ConstMemberIterator hostIt = input.FindMember("host");
+                    rapidjson::Value::ConstMemberIterator portIt = input.FindMember("port");
                     if (classIt != input.MemberEnd() && classIt->value.IsString() && hostIt != input.MemberEnd() &&
                         hostIt->value.IsString() && portIt != input.MemberEnd() && portIt->value.IsUint())
                     {
@@ -420,10 +420,10 @@ namespace server
 
                 if (input.IsObject())
                 {
-                    rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
-                    rapidjson::Value::MemberIterator rIt = input.FindMember("r");
-                    rapidjson::Value::MemberIterator gIt = input.FindMember("g");
-                    rapidjson::Value::MemberIterator bIt = input.FindMember("b");
+                    rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
+                    rapidjson::Value::ConstMemberIterator rIt = input.FindMember("r");
+                    rapidjson::Value::ConstMemberIterator gIt = input.FindMember("g");
+                    rapidjson::Value::ConstMemberIterator bIt = input.FindMember("b");
                     if (classIt != input.MemberEnd() && classIt->value.IsString() && rIt != input.MemberEnd() &&
                         rIt->value.IsUint() && gIt != input.MemberEnd() && gIt->value.IsUint() &&
                         bIt != input.MemberEnd() && bIt->value.IsUint())
@@ -448,8 +448,8 @@ namespace server
 
                 if (input.IsObject())
                 {
-                    rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
-                    rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                    rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
+                    rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                     if (classIt != input.MemberEnd() && classIt->value.IsString() && idIt != input.MemberEnd() &&
                         idIt->value.IsUint())
                     {
@@ -471,8 +471,8 @@ namespace server
 
                 if (input.IsObject())
                 {
-                    rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
-                    rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                    rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
+                    rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                     if (classIt != input.MemberEnd() && classIt->value.IsString() && idIt != input.MemberEnd() &&
                         idIt->value.IsUint())
                     {
@@ -494,8 +494,8 @@ namespace server
 
                 if (input.IsObject())
                 {
-                    rapidjson::Value::MemberIterator classIt = input.FindMember("_class");
-                    rapidjson::Value::MemberIterator idIt = input.FindMember("id");
+                    rapidjson::Value::ConstMemberIterator classIt = input.FindMember("_class");
+                    rapidjson::Value::ConstMemberIterator idIt = input.FindMember("id");
                     if (classIt != input.MemberEnd() && classIt->value.IsString() && idIt != input.MemberEnd() &&
                         idIt->value.IsUint())
                     {

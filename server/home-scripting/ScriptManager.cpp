@@ -55,8 +55,7 @@ namespace server
                     // Create static script sources
                     for (StaticScriptSource& staticScriptSource : staticScriptSources)
                     {
-                        scriptManager->AddScriptSource(provider->GetLanguage(), staticScriptSource.name,
-                                                       staticScriptSource.usage);
+                        scriptManager->AddScriptSource(provider->GetLanguage(), staticScriptSource.name);
                     }
                 }
             }
@@ -83,13 +82,16 @@ namespace server
         }
 
         bool ScriptManager::LoadScriptSource(identifier_t id, const std::string& language, const std::string& name,
-                                             const std::string& usage, const std::string_view& content)
+                                             const std::string_view& config, const std::string_view& content)
         {
-            ScriptLanguage lang = ParseScriptLanguage(language);
+            (void)config;
+
+            const ScriptLanguage lang = ParseScriptLanguage(language);
 
             // Find provider
             const boost::container::vector<Ref<ScriptProvider>>::const_iterator it = boost::find_if(
-                providerList, [&](const Ref<ScriptProvider>& provider) -> bool { return provider->GetLanguage() == lang; });
+                providerList,
+                [&](const Ref<ScriptProvider>& provider) -> bool { return provider->GetLanguage() == lang; });
 
             if (it == providerList.end())
                 return false;
@@ -98,7 +100,7 @@ namespace server
             assert(provider != nullptr);
 
             // Create script source
-            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(id, name, ParseScriptUsage(usage), content);
+            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(id, name, content);
 
             // Add script source
             if (scriptSource != nullptr)
@@ -107,8 +109,7 @@ namespace server
             return true;
         }
 
-        Ref<ScriptSource> ScriptManager::AddScriptSource(ScriptLanguage language, const std::string& name,
-                                                         ScriptUsage usage)
+        Ref<ScriptSource> ScriptManager::AddScriptSource(ScriptLanguage language, const std::string& name)
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -125,19 +126,16 @@ namespace server
             assert(provider != nullptr);
 
             // Reserve script source
-            identifier_t id = database->ReserveScriptSource();
+            identifier_t id = database->ReserveScriptSource(StringifyScriptLanguage(language));
             if (id == 0)
                 return nullptr;
 
-            const std::string_view empty = std::string_view("", 0);
-
             // Update database
-            if (!database->UpdateScriptSource(id, StringifyScriptLanguage(language), name, StringifyScriptUsage(usage),
-                                              empty))
+            if (!database->UpdateScriptSource(id, name, std::string_view("", 0)))
                 return nullptr;
 
             // Create new script source
-            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(id, name, usage, empty);
+            Ref<ScriptSource> scriptSource = provider->CreateScriptSource(id, name, std::string_view("", 0));
 
             // Add script source
             if (scriptSource != nullptr)
@@ -176,7 +174,7 @@ namespace server
                 return false;
         }
 
-        Ref<Script> ScriptManager::CreateDeviceScript(identifier_t id, const Ref<View>& view)
+        Ref<Script> ScriptManager::CreateScript(identifier_t id, uint8_t flags, const Ref<View>& view)
         {
             const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
                 scriptSourceList.find(id);
@@ -185,31 +183,19 @@ namespace server
 
             const Ref<ScriptSource>& scriptSource = it->second;
 
-            // Verify type
-            if (scriptSource->GetUsage() != ScriptUsage::kDeviceScriptUsage)
+            // Verify flags
+            // A bit is only set to 1 if a filter flag is not set in the script source flags
+            if (~scriptSource->GetFlags() & flags)
                 return nullptr;
 
             return scriptSource->CreateScript(view);
         }
 
-        Ref<Script> ScriptManager::CreateServiceScript(identifier_t id, const Ref<View>& view)
+        void ScriptManager::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                   ApiContext& context)
         {
-            const robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>>::const_iterator it =
-                scriptSourceList.find(id);
-            if (it == scriptSourceList.end())
-                return nullptr;
+            (void)context;
 
-            const Ref<ScriptSource>& scriptSource = it->second;
-
-            // Verify type
-            if (scriptSource->GetUsage() != ScriptUsage::kServiceScriptUsage)
-                return nullptr;
-
-            return scriptSource->CreateScript(view);
-        }
-
-        void ScriptManager::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
-        {
             assert(output.IsObject());
 
             // ScriptSources

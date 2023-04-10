@@ -6,31 +6,6 @@ namespace server
 {
     namespace scripting
     {
-        std::string StringifyScriptUsage(ScriptUsage usage)
-        {
-            switch (usage)
-            {
-            case ScriptUsage::kDeviceScriptUsage:
-                return "device";
-            case ScriptUsage::kServiceScriptUsage:
-                return "service";
-            default:
-                return "unknown";
-            }
-        }
-        ScriptUsage ParseScriptUsage(const std::string& usage)
-        {
-            switch (crc32(usage.data(), usage.size()))
-            {
-            case CRC32("device"):
-                return ScriptUsage::kDeviceScriptUsage;
-            case CRC32("service"):
-                return ScriptUsage::kServiceScriptUsage;
-            default:
-                return ScriptUsage::kUnknownUsage;
-            }
-        }
-
         std::string StringifyScriptLanguage(ScriptLanguage language)
         {
             switch (language)
@@ -56,9 +31,8 @@ namespace server
             }
         }
 
-        ScriptSource::ScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
-                                   const std::string_view& content)
-            : id(id), name(name), usage(usage), content(content)
+        ScriptSource::ScriptSource(identifier_t id, const std::string& name, const std::string_view& content)
+            : id(id), name(name), content(content), updateNeeded(false)
         {
             UpdateChecksum();
         }
@@ -66,43 +40,34 @@ namespace server
         {
         }
 
-        std::string ScriptSource::GetName()
-        {
-            return name;
-        }
-        bool ScriptSource::SetName(const std::string& v)
+        bool ScriptSource::SaveConfig()
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
-            if (database->UpdateScriptSourcePropName(id, name, v))
+            // Generate json additional config
+            rapidjson::StringBuffer config = rapidjson::StringBuffer();
             {
-                name = v;
+                // Generate json
+                rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
+                JsonGetConfig(document, document.GetAllocator());
 
-                return true;
+                // Stringify json
+                rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(config);
+                document.Accept(writer);
             }
-            else
-                return false;
+
+            // Update database
+            return database->UpdateScriptSource(id, name, std::string_view(config.GetString(), config.GetSize()));
         }
 
-        std::string ScriptSource::GetContent()
-        {
-            return content;
-        }
-        bool ScriptSource::SetContent(const std::string_view& v)
+        bool ScriptSource::SaveContent()
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
 
             // Update database
-            if (database->UpdateScriptSourcePropContent(id, v))
-            {
-                content = v;
-
-                return true;
-            }
-
-            return false;
+            return database->UpdateScriptSourceContent(id, std::string_view(content.data(), content.size()));
         }
 
         void ScriptSource::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -117,17 +82,22 @@ namespace server
 
             output.AddMember("name", rapidjson::Value(name.c_str(), name.size(), allocator), allocator);
 
-            std::string usageStr = StringifyScriptUsage(usage);
-            output.AddMember("usage", rapidjson::Value(usageStr.data(), usageStr.size(), allocator), allocator);
+            JsonGetConfig(output, allocator);
         }
-        void ScriptSource::JsonSet(rapidjson::Value& input)
+        bool ScriptSource::JsonSet(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
-            // Decode properties
-            rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
+            bool update = JsonSetConfig(input);
+
+            rapidjson::Value::ConstMemberIterator nameIt = input.FindMember("name");
             if (nameIt != input.MemberEnd() && nameIt->value.IsString())
-                SetName(std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
+            {
+                name.assign(nameIt->value.GetString(), nameIt->value.GetStringLength());
+                update = true;
+            }
+
+            return update;
         }
 
         void ScriptSource::JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
@@ -137,15 +107,67 @@ namespace server
             output.AddMember("content", rapidjson::Value((const char*)content.data(), content.size(), allocator),
                              allocator);
         }
-        void ScriptSource::JsonSetContent(rapidjson::Value& input)
+        bool ScriptSource::JsonSetContent(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
-            // Decode properties
-            rapidjson::Value::MemberIterator contentIt = input.FindMember("content");
+            bool update = false;
+
+            rapidjson::Value::ConstMemberIterator contentIt = input.FindMember("content");
             if (contentIt != input.MemberEnd() && contentIt->value.IsString())
+            {
                 SetContent(
                     std::string_view((const char*)contentIt->value.GetString(), contentIt->value.GetStringLength()));
+                update = true;
+            }
+
+            return update;
+        }
+
+        void ScriptSource::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                  ApiContext& context)
+        {
+            (void)context;
+
+            assert(output.IsObject());
+
+            JsonGet(output, allocator);
+        }
+        bool ScriptSource::ApiSet(const rapidjson::Value& input, ApiContext& context)
+        {
+            (void)context;
+
+            assert(input.IsObject());
+
+            bool update = JsonSet(input);
+
+            if (update)
+                SaveConfig();
+
+            return update;
+        }
+
+        void ScriptSource::ApiGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                         ApiContext& context)
+        {
+            (void)context;
+
+            assert(output.IsObject());
+
+            JsonGetContent(output, allocator);
+        }
+        bool ScriptSource::ApiSetContent(const rapidjson::Value& input, ApiContext& context)
+        {
+            (void)context;
+
+            assert(input.IsObject());
+
+            bool update = JsonSetContent(input);
+
+            if (update)
+                SaveContent();
+
+            return update;
         }
     }
 }

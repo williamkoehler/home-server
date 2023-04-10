@@ -14,179 +14,84 @@ namespace server
     }
 
     bool EmptyDatabase::LoadScriptSources(
-        const boost::function<void(identifier_t id, const std::string& type, const std::string& name,
-                                   const std::string& usage, const std::string_view& data)>& callback)
+        const boost::function<void(identifier_t id, const std::string& language, const std::string& name,
+                                   const std::string_view& config, const std::string_view& content)>& callback)
     {
         (void)callback;
         return true;
     }
-    identifier_t EmptyDatabase::ReserveScriptSource()
+
+    identifier_t EmptyDatabase::ReserveScriptSource(const std::string& language)
     {
-        return ++scriptSourceIDCounter;
+        (void)language;
+        return ++scriptSourceIdCounter;
     }
-    bool EmptyDatabase::UpdateScriptSource(identifier_t id, const std::string& type, const std::string& name,
-                                           const std::string& usage, const std::string_view& data)
+
+    bool EmptyDatabase::UpdateScriptSource(identifier_t id, const std::string& name, const std::string_view& config)
     {
         (void)id;
-        (void)type;
         (void)name;
-        (void)usage;
-        (void)data;
+        (void)config;
         return true;
     }
-    bool EmptyDatabase::UpdateScriptSourcePropName(identifier_t id, const std::string& value,
-                                                   const std::string& newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateScriptSourcePropContent(identifier_t id, const std::string_view& newValue)
+
+    bool EmptyDatabase::UpdateScriptSourceContent(identifier_t id, const std::string_view& newValue)
     {
         (void)id;
         (void)newValue;
         return true;
     }
+
     bool EmptyDatabase::RemoveScriptSource(identifier_t id)
     {
         (void)id;
         return true;
     }
+
     size_t EmptyDatabase::GetScriptSourceCount()
     {
         return 0;
     }
 
-    bool EmptyDatabase::LoadRooms(
-        const boost::function<bool(identifier_t id, const std::string& type, const std::string& name)>& callback)
+    bool EmptyDatabase::LoadEntities(
+        const boost::function<bool(identifier_t id, const std::string& entityType, const std::string& name,
+                                   identifier_t scriptSourceID, const std::string_view& data,
+                                   const std::string_view& scriptData)>& callback)
     {
         (void)callback;
-        return 0;
+        return true;
     }
-    identifier_t EmptyDatabase::ReserveRoom()
+
+    identifier_t EmptyDatabase::ReserveEntity(const std::string& type)
     {
-        return ++roomIDCounter;
-    }
-    bool EmptyDatabase::UpdateRoom(identifier_t id, const std::string& type, const std::string& name)
-    {
-        (void)id;
         (void)type;
-        (void)name;
-
-        return true;
-    }
-    bool EmptyDatabase::UpdateRoomPropName(identifier_t id, const std::string& value, const std::string& newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateRoomPropType(identifier_t id, const std::string& value, const std::string& newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::RemoveRoom(identifier_t id)
-    {
-        (void)id;
-        return true;
-    }
-    size_t EmptyDatabase::GetRoomCount()
-    {
-        return 0;
+        return ++entityIdCounter;
     }
 
-    bool EmptyDatabase::LoadDevices(
-        const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                   identifier_t roomID, const std::string_view& data)>& callback)
-    {
-        (void)callback;
-        return true;
-    }
-    identifier_t EmptyDatabase::ReserveDevice()
-    {
-        return ++deviceIDCounter;
-    }
-    bool EmptyDatabase::UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                     identifier_t roomID)
+    bool EmptyDatabase::UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceId,
+                                     const std::string_view& config)
     {
         (void)id;
         (void)name;
-        (void)scriptSourceID;
-        (void)roomID;
+        (void)scriptSourceId;
+        (void)config;
         return true;
-    }
-    bool EmptyDatabase::UpdateDevicePropName(identifier_t id, const std::string& value, const std::string& newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue)
-    {
-        (void)id;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::RemoveDevice(identifier_t id)
-    {
-        (void)id;
-        return true;
-    }
-    size_t EmptyDatabase::GetDeviceCount()
-    {
-        return 0;
     }
 
-    bool EmptyDatabase::LoadServices(
-        const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                   const std::string_view& data)>& callback)
-    {
-        (void)callback;
-        return true;
-    }
-    identifier_t EmptyDatabase::ReserveService()
-    {
-        return ++serviceIDCounter;
-    }
-    bool EmptyDatabase::UpdateService(identifier_t id, const std::string& name, identifier_t scriptSourceID)
+    bool EmptyDatabase::UpdateEntityState(identifier_t id, const std::string_view& state)
     {
         (void)id;
-        (void)name;
-        (void)scriptSourceID;
+        (void)state;
         return true;
     }
-    bool EmptyDatabase::UpdateServicePropName(identifier_t id, const std::string& value, const std::string& newValue)
-    {
-        (void)id;
-        (void)value;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::UpdateServicePropScriptSource(identifier_t id, identifier_t newValue)
-    {
-        (void)id;
-        (void)newValue;
-        return true;
-    }
-    bool EmptyDatabase::RemoveService(identifier_t id)
+
+    bool EmptyDatabase::RemoveEntity(identifier_t id)
     {
         (void)id;
         return true;
     }
-    size_t EmptyDatabase::GetServiceCount()
+
+    size_t EmptyDatabase::GetEntityCount()
     {
         return 0;
     }
@@ -200,7 +105,7 @@ namespace server
     }
     identifier_t EmptyDatabase::ReserveUser()
     {
-        return ++userIDCounter;
+        return ++userIdCounter;
     }
     bool EmptyDatabase::UpdateUser(identifier_t id, const std::string& name, uint8_t hash[SHA256_SIZE],
                                    uint8_t salt[SALT_SIZE], const std::string& accessLevel)

@@ -40,26 +40,52 @@ namespace server
 
     class ApiContext
     {
-      private:
-        // Error list containing error or warnings that happened during execution
-        rapidjson::Value& log;
-        rapidjson::Document::AllocatorType& allocator;
-
-        ApiError error;
-
       public:
-        ApiContext(rapidjson::Value& json, rapidjson::Document::AllocatorType& allocator);
-        virtual ~ApiContext();
-
-        inline ApiError GetError()
+        ApiContext()
         {
-            return error;
+        }
+        virtual ~ApiContext()
+        {
         }
 
-        void Info(const char* format, ...);
-        void Warning(const char* format, ...);
-        void Error(const char* format, ...);
+        virtual void Info(const char* format, ...) = 0;
+        virtual void Warning(const char* format, ...) = 0;
+        virtual void Error(const char* format, ...) = 0;
 
-        void Error(ApiError message);
+        virtual ApiError GetError() = 0;
+        virtual void Error(ApiError message) = 0;
+    };
+
+    class EmptyApiContext : public ApiContext
+    {
+      public:
+        EmptyApiContext()
+        {
+        }
+        virtual ~EmptyApiContext()
+        {
+        }
+
+        virtual void Info(const char* format, ...) override
+        {
+            (void)format;
+        }
+        virtual void Warning(const char* format, ...) override
+        {
+            (void)format;
+        }
+        virtual void Error(const char* format, ...) override
+        {
+            (void)format;
+        }
+
+        virtual ApiError GetError() override
+        {
+            return ApiError::kError_NoError;
+        }
+        virtual void Error(ApiError message) override
+        {
+            (void)message;
+        }
     };
 }

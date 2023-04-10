@@ -1,4 +1,5 @@
 #pragma once
+#include "Entity.hpp"
 #include "common.hpp"
 #include <home-common/Worker.hpp>
 #include <home-scripting/Script.hpp>
@@ -8,6 +9,7 @@ namespace server
 {
     namespace main
     {
+        class Entity;
         class Room;
         class Device;
         class Service;
@@ -16,24 +18,20 @@ namespace server
 
         class RoomView;
         class DeviceView;
+        class ServiceView;
 
         class Home : public boost::enable_shared_from_this<Home>
         {
           private:
             boost::atomic<time_t> timestamp = 0;
 
-            robin_hood::unordered_node_map<identifier_t, Ref<Room>> roomList;
-            robin_hood::unordered_node_map<identifier_t, Ref<Device>> deviceList;
-            robin_hood::unordered_node_map<identifier_t, Ref<Service>> serviceList;
+            robin_hood::unordered_node_map<identifier_t, Ref<Entity>> entityMap;
 
             Ref<HomeView> view;
 
             // Database
-            bool LoadRoom(identifier_t id, const std::string& type, const std::string& name);
-            bool LoadDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID, identifier_t roomID,
-                            const std::string_view& data);
-            bool LoadService(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                             const std::string_view& data);
+            bool LoadEntity(identifier_t id, const std::string& type, const std::string& name,
+                            identifier_t scriptSourceId, const std::string_view& config, const std::string_view& state);
 
           public:
             Home();
@@ -53,103 +51,53 @@ namespace server
                 return timestamp;
             }
 
-            //! Room
+            /// @brief Add entity
+            ///
+            /// @param type Entity type
+            /// @param name Entity name
+            /// @param scriptSourceId Script source id
+            /// @param config Additional entity config
+            /// @return Ref<Entity> Entity
+            Ref<Entity> AddEntity(EntityType type, const std::string& name, identifier_t scriptSourceId, const rapidjson::Value& config);
 
-            /// @brief Add room
-            /// @param name Room name
-            /// @param type Room type
-            /// @param json JSON
-            /// @return Room
-            Ref<Room> AddRoom(const std::string& type, const std::string& name, rapidjson::Value& json);
-
-            /// @brief Get room count
-            /// @return Room count
-            inline size_t GetRoomCount()
+            /// @brief Get entity count
+            /// @return size_t Entity count
+            inline size_t GetEntityCount()
             {
                 // boost::shared_lock_guard lock(mutex);
-                return roomList.size();
+                return entityMap.size();
             }
 
-            /// @brief Get room using room id
-            /// @param roomID Room id
-            /// @return Room or nullptr
-            Ref<Room> GetRoom(identifier_t roomID);
+            /// @brief Get entity
+            ///
+            /// @param entityId Entity id
+            /// @return Ref<Entity> Entity or null
+            Ref<Entity> GetEntity(identifier_t entityId);
+
+            /// @brief Get room entity
+            ///
+            /// @param entityId Entity id
+            /// @return Ref<Room> Room or null
+            Ref<Room> GetRoom(identifier_t entityId);
+
+            /// @brief Get device entity
+            ///
+            /// @param entityId Entity id
+            /// @return Ref<Device> Device or null
+            Ref<Device> GetDevice(identifier_t entityId);
+
+            /// @brief Get service entity
+            ///
+            /// @param entityId Entity id
+            /// @return Ref<Service> Service or null
+            Ref<Service> GetService(identifier_t entityId);
 
             /// @brief Remove room using room id
+            ///
             /// @param roomID Room id
-            bool RemoveRoom(identifier_t roomID);
+            bool RemoveEntity(identifier_t entityId);
 
-            //! Device
-
-            /// @brief Add new device
-            ///
-            /// @param type Device type
-            /// @param name Name
-            /// @param backendID Backend id
-            /// @param roomID Room id
-            /// @param json JSON Data
-            /// @return New device
-            Ref<Device> AddDevice(const std::string& name, identifier_t backendID, identifier_t roomID,
-                                  rapidjson::Value& json);
-
-            /// @brief Get device count
-            /// @return Device count
-            inline size_t GetDeviceCount()
-            {
-                // boost::shared_lock_guard lock(mutex);
-                return deviceList.size();
-            }
-
-            /// @brief Get device using its id
-            /// @param id Device id
-            /// @return Device or nullptr
-            Ref<Device> GetDevice(identifier_t id);
-
-            /// @brief Get devices from a room
-            ///
-            /// @param room Room (or null to get devices that are not in a room)
-            /// @return Filtered devices
-            boost::container::vector<Ref<Device>> FilterDevicesByRoom(const Ref<Room>& room);
-
-            /// @brief Get devices that use a specific script
-            ///
-            /// @param room Room (or null to get devices that are not configured)
-            /// @return Filtered devices
-            boost::container::vector<Ref<Device>> FilterDevicesByScript(const Ref<scripting::ScriptSource>& scriptSource);
-
-            /// @brief Remove device using its id
-            /// @param id Device id
-            bool RemoveDevice(identifier_t id);
-
-            //! Service
-
-            /// @brief Add new service
-            ///
-            /// @param type Service type
-            /// @param name Name
-            /// @param backendID Backend id
-            /// @param json JSON Data
-            /// @return New service
-            Ref<Service> AddService(const std::string& name, identifier_t backendID, rapidjson::Value& json);
-
-            /// @brief Get service count
-            /// @return Service count
-            inline size_t GetServiceCount()
-            {
-                // boost::shared_lock_guard lock(mutex);
-                return serviceList.size();
-            }
-
-            /// @brief Get service using its id
-            /// @param id Service id
-            /// @return Service or nullptr
-            Ref<Service> GetService(identifier_t id);
-
-            /// @brief Remove service using its id
-            /// @param id Service id
-            bool RemoveService(identifier_t id);
-
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
         };
 
         class HomeView : public scripting::HomeView
@@ -161,7 +109,7 @@ namespace server
             HomeView(const Ref<Home>& home);
             virtual ~HomeView();
 
-             /// @brief Get room view
+            /// @brief Get room view
             ///
             /// @param id Room id
             /// @return Ref<RoomView> Room view

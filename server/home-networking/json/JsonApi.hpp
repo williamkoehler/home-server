@@ -38,55 +38,24 @@ namespace server
             static void ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                     rapidjson::Document& output, ApiContext& context);
 
-            // Room
-            static void ProcessJsonAddRoomMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveRoomMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context);
-
-            static void ProcessJsonGetRoomMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetRoomMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
-
-            // Device
-            static void ProcessJsonAddDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            // Entity
+            static void ProcessJsonAddEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                       rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonRemoveEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                          rapidjson::Document& output, ApiContext& context);
 
-            static void ProcessJsonGetDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonGetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                       rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetDeviceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonSetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                       rapidjson::Document& output, ApiContext& context);
 
             static void ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                                rapidjson::Document& output, ApiContext& context);
 
-            static void ProcessJsonGetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonGetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                            rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetDeviceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
+            static void ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                            rapidjson::Document& output, ApiContext& context);
-
-            // Service
-            static void ProcessJsonAddServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                          rapidjson::Document& output, ApiContext& context);
-
-            static void ProcessJsonGetServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetServiceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context);
-
-            static void ProcessJsonInvokeServiceMethodMessageWS(const Ref<users::User>& user,
-                                                                rapidjson::Document& input, rapidjson::Document& output,
-                                                                ApiContext& context);
-
-            static void ProcessJsonGetServiceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetServiceStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context);
 
             // Scripting
             static void ProcessJsonGetScriptSourcesMessageWS(const Ref<users::User>& user, rapidjson::Document& input,

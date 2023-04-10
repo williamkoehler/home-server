@@ -21,7 +21,7 @@ namespace server
             Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
             assert(scriptManager != nullptr);
 
-            scriptManager->JsonGet(output, allocator);
+            scriptManager->ApiGet(output, allocator, context);
         }
 
         void JsonApi::ProcessJsonAddScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
@@ -38,21 +38,11 @@ namespace server
 
             // Process request
             rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
-            rapidjson::Value::MemberIterator usageIt = input.FindMember("usage");
             rapidjson::Value::MemberIterator langIt = input.FindMember("language");
-            if (nameIt == input.MemberEnd() || !nameIt->value.IsString() || usageIt == input.MemberEnd() ||
-                !usageIt->value.IsString() || langIt == input.MemberEnd() || !langIt->value.IsString())
+            if (nameIt == input.MemberEnd() || !nameIt->value.IsString() || langIt == input.MemberEnd() ||
+                !langIt->value.IsString())
             {
                 context.Error("Missing name, usage and/or language");
-                context.Error(ApiError::kError_InvalidArguments);
-                return;
-            }
-
-            scripting::ScriptUsage usage =
-                scripting::ParseScriptUsage(std::string(usageIt->value.GetString(), usageIt->value.GetStringLength()));
-            if (usage == scripting::ScriptUsage::kUnknownUsage)
-            {
-                context.Error("Invalid script usage");
                 context.Error(ApiError::kError_InvalidArguments);
                 return;
             }
@@ -74,7 +64,7 @@ namespace server
 
             rapidjson::Value json = rapidjson::Value(rapidjson::kObjectType);
             Ref<scripting::ScriptSource> scriptSource = scriptManager->AddScriptSource(
-                language, std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()), usage);
+                language, std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()));
             if (scriptSource == nullptr)
             {
                 //! Error failed to add script source
@@ -82,7 +72,7 @@ namespace server
                 return;
             }
 
-            scriptSource->JsonGet(output, allocator);
+            scriptSource->ApiGet(output, allocator, context);
         }
         void JsonApi::ProcessJsonRemoveScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                              rapidjson::Document& output, ApiContext& context)
@@ -151,8 +141,7 @@ namespace server
                 return;
             }
 
-            // Build script source
-            scriptSource->JsonGet(output, allocator);
+            scriptSource->ApiGet(output, allocator, context);
         }
         void JsonApi::ProcessJsonSetScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
                                                           rapidjson::Document& output, ApiContext& context)
@@ -176,6 +165,8 @@ namespace server
             }
 
             // Build response
+            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+
             Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
             assert(scriptManager != nullptr);
 
@@ -186,8 +177,8 @@ namespace server
                 return;
             }
 
-            // Decode script source
-            scriptSource->JsonSet(input);
+            scriptSource->ApiSet(input, context);
+            scriptSource->ApiGet(output, allocator, context);
         }
 
         void JsonApi::ProcessJsonGetScriptSourceContentMessageWS(const Ref<users::User>& user,
@@ -225,8 +216,7 @@ namespace server
                 return;
             }
 
-            // Build script source
-            scriptSource->JsonGetContent(output, allocator);
+            scriptSource->ApiGetContent(output, allocator, context);
         }
         void JsonApi::ProcessJsonSetScriptSourceContentMessageWS(const Ref<users::User>& user,
                                                                  rapidjson::Document& input,
@@ -261,8 +251,7 @@ namespace server
                 return;
             }
 
-            // Decode script source content
-            scriptSource->JsonSetContent(input);
+            scriptSource->ApiSetContent(input, context);
         }
     }
 }

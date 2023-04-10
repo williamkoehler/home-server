@@ -8,15 +8,13 @@ namespace server
     {
         class Script;
 
-        enum class ScriptUsage
+        enum ScriptFlags
         {
-            kUnknownUsage,
-            kDeviceScriptUsage,
-            kServiceScriptUsage,
+            kScriptFlag_None = 0x00,
+            kScriptFlag_RoomSupport = 0x01,
+            kScriptFlag_DeviceSupport = 0x02,
+            kScriptFlag_ServiceSupport = 0x04,
         };
-
-        std::string StringifyScriptUsage(ScriptUsage usage);
-        ScriptUsage ParseScriptUsage(const std::string& usage);
 
         enum class ScriptLanguage
         {
@@ -35,8 +33,6 @@ namespace server
 
             std::string name;
 
-            const ScriptUsage usage;
-
             std::string content;
 
             /// @brief Checksum (changes when the data changes)
@@ -47,33 +43,64 @@ namespace server
                 checksum = XXH64(content.data(), content.size(), 0x323435367A683567);
             }
 
+            bool updateNeeded;
+
           public:
-            ScriptSource(identifier_t id, const std::string& name, ScriptUsage usage, const std::string_view& content);
+            ScriptSource(identifier_t id, const std::string& name, const std::string_view& content);
             virtual ~ScriptSource();
 
+            /// @brief Get script source id
+            ///
+            /// @return identifier_t Script source id
             inline identifier_t GetID() const
             {
                 return id;
             }
 
-            std::string GetName();
-            bool SetName(const std::string& v);
-
-            inline ScriptUsage GetUsage() const
+            /// @brief Get script source name
+            ///
+            /// @return std::string Script source name
+            inline std::string GetName() const
             {
-                return usage;
+                return name;
             }
 
+            /// @brief Set script source name
+            ///
+            /// @param v New script source name
+            inline void SetName(const std::string& v)
+            {
+                name = v;
+                updateNeeded = true;
+            }
+
+            /// @brief Get script flags
+            ///
+            /// @return uint8_t Script flags
+            virtual uint8_t GetFlags() const = 0;
+
+            /// @brief Get script language
+            ///
+            /// @return ScriptLanguage Script language
             virtual ScriptLanguage GetLanguage() = 0;
 
-            std::string GetContent();
+            virtual std::string GetContent() const
+            {
+                return content;
+            }
 
             /// @brief Set content / source code
             ///
             /// @param v Source code
-            /// @return Successfulness
-            virtual bool SetContent(const std::string_view& v);
+            virtual void SetContent(const std::string_view& v)
+            {
+                content = v;
+                updateNeeded = true;
+            }
 
+            /// @brief Get content checksum
+            ///
+            /// @return uint64_t Content checksum
             inline uint64_t GetChecksum()
             {
                 return checksum;
@@ -85,11 +112,31 @@ namespace server
             /// @return Script
             virtual Ref<Script> CreateScript(const Ref<View>& view) = 0;
 
+            /// @brief Save/update entity data in database
+            ///
+            /// @return Successfulness
+            bool SaveConfig();
+
+            /// @brief Save/update entity content in database
+            ///
+            /// @return Successfulness
+            bool SaveContent();
+
+            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) = 0;
+            virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
+
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSet(rapidjson::Value& input);
+            bool JsonSet(const rapidjson::Value& input);
 
             void JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSetContent(rapidjson::Value& input);
+            bool JsonSetContent(const rapidjson::Value& input);
+
+            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
+            bool ApiSet(const rapidjson::Value& input, ApiContext& context);
+
+            void ApiGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                               ApiContext& context);
+            bool ApiSetContent(const rapidjson::Value& input, ApiContext& context);
         };
     }
 }

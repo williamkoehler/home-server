@@ -12,7 +12,7 @@ namespace server
         struct StaticScriptSource
         {
             const std::string name;
-            const ScriptUsage usage;
+            const uint8_t flags;
         };
 
         class ScriptProvider
@@ -43,7 +43,7 @@ namespace server
             /// @param usage Script usage
             /// @param content Source code
             /// @return Script Source
-            virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
+            virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name,
                                                          const std::string_view& content) = 0;
         };
 
@@ -57,7 +57,7 @@ namespace server
 
             // Database
             bool LoadScriptSource(identifier_t id, const std::string& language, const std::string& name,
-                                  const std::string& usage, const std::string_view& content);
+                                  const std::string_view& config, const std::string_view& content);
 
           public:
             ScriptManager(const boost::container::vector<Ref<ScriptProvider>>& providerList);
@@ -71,7 +71,7 @@ namespace server
 
             //! Script Source
 
-            Ref<ScriptSource> AddScriptSource(ScriptLanguage language, const std::string& name, ScriptUsage usage);
+            Ref<ScriptSource> AddScriptSource(ScriptLanguage language, const std::string& name);
 
             inline size_t GetScriptSourceCount()
             {
@@ -82,12 +82,9 @@ namespace server
 
             bool RemoveScriptSource(identifier_t id);
 
-            //! Script
+            Ref<Script> CreateScript(identifier_t id, uint8_t flags, const Ref<View>& view);
 
-            Ref<Script> CreateDeviceScript(identifier_t id, const Ref<View>& view);
-            Ref<Script> CreateServiceScript(identifier_t id, const Ref<View>& view);
-
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
         };
     }
 }

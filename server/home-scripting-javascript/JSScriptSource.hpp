@@ -16,11 +16,18 @@ namespace server
                 boost::container::vector<WeakRef<JSScript>> scriptList;
 
               public:
-                JSScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
-                               const std::string_view& data);
+                JSScriptSource(identifier_t id, const std::string& name, const std::string_view& content);
                 virtual ~JSScriptSource();
-                static Ref<JSScriptSource> Create(identifier_t id, const std::string& name, ScriptUsage usage,
-                                                  const std::string_view& data);
+                static Ref<JSScriptSource> Create(identifier_t id, const std::string& name,
+                                                  const std::string_view& content);
+
+                /// @brief Get default script flags
+                ///
+                /// @return uint8_t Script flags
+                virtual uint8_t GetFlags() const override
+                {
+                    return ScriptFlags::kScriptFlag_DeviceSupport | ScriptFlags::kScriptFlag_RoomSupport;
+                }
 
                 /// @brief Get script language
                 ///
@@ -30,7 +37,7 @@ namespace server
                     return ScriptLanguage::kJSScriptLanguage;
                 }
 
-                virtual bool SetContent(const std::string_view& v) override;
+                virtual void SetContent(const std::string_view& v) override;
 
                 /// @brief Create javascript script
                 ///
@@ -42,6 +49,9 @@ namespace server
                 /// @note This method is automatically called when a script is deleted
                 ///
                 void CleanScripts();
+
+                virtual void JsonGetConfig(rapidjson::Value &output, rapidjson::Document::AllocatorType &allocator) override;
+                virtual bool JsonSetConfig(const rapidjson::Value &input) override;
             };
         }
     }

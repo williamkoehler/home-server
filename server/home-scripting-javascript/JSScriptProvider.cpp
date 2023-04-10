@@ -31,9 +31,9 @@ namespace server
             }
 
             Ref<ScriptSource> JSScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,
-                                                                   ScriptUsage usage, const std::string_view& data)
+                                                                   const std::string_view& data)
             {
-                return JSScriptSource::Create(id, name, usage, data);
+                return JSScriptSource::Create(id, name, data);
             }
         }
     }

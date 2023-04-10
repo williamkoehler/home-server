@@ -7,11 +7,9 @@ namespace server
     class EmptyDatabase : public Database
     {
       private:
-        identifier_t scriptSourceIDCounter;
-        identifier_t roomIDCounter;
-        identifier_t deviceIDCounter;
-        identifier_t serviceIDCounter;
-        identifier_t userIDCounter;
+        identifier_t scriptSourceIdCounter;
+        identifier_t entityIdCounter;
+        identifier_t userIdCounter;
 
       public:
         EmptyDatabase();
@@ -23,40 +21,31 @@ namespace server
         /// @param callback Entry callback called once for every entry
         /// @return Successfulness
         virtual bool LoadScriptSources(
-            const boost::function<void(identifier_t id, const std::string& type, const std::string& name,
-                                       const std::string& usage, const std::string_view& data)>& callback) override;
+            const boost::function<void(identifier_t id, const std::string& language, const std::string& name,
+                                       const std::string_view& config, const std::string_view& content)>& callback)
+            override;
 
-        /// @brief Reserve script source id
+        /// @brief Reserve script source entry in database
         ///
-        /// @return identifier_t Script source id
-        virtual identifier_t ReserveScriptSource() override;
+        /// @param language Script source language
+        /// @return identifier_t Script source id or zero if reservation failed
+        virtual identifier_t ReserveScriptSource(const std::string& language) override;
 
         /// @brief Update script source
         ///
         /// @param id Script source id
-        /// @param type Type
-        /// @param name Name
-        /// @param usage Usage
-        /// @param data Data
+        /// @param name Script source name
+        /// @param content Additional config
         /// @return Successfulness
-        virtual bool UpdateScriptSource(identifier_t id, const std::string& type, const std::string& name,
-                                        const std::string& usage, const std::string_view& data) override;
-
-        /// @brief Update script source name
-        ///
-        /// @param id Script source id
-        /// @param value Old name
-        /// @param newValue New name
-        /// @return Successfulness
-        virtual bool UpdateScriptSourcePropName(identifier_t id, const std::string& value,
-                                                const std::string& newValue) override;
+        virtual bool UpdateScriptSource(identifier_t id, const std::string& name,
+                                        const std::string_view& config) override;
 
         /// @brief Update script source content
         ///
         /// @param id Script source id
         /// @param newValue New content
         /// @return Successfulness
-        virtual bool UpdateScriptSourcePropContent(identifier_t id, const std::string_view& newValue) override;
+        virtual bool UpdateScriptSourceContent(identifier_t id, const std::string_view& newValue) override;
 
         /// @brief Remove script source
         ///
@@ -64,85 +53,55 @@ namespace server
         /// @return Successfulness
         virtual bool RemoveScriptSource(identifier_t id) override;
 
+        /// @brief Get script source count
+        ///
+        /// @return size_t Script source count
         virtual size_t GetScriptSourceCount() override;
 
-        //! Room
+        //! Entity
 
-        /// @brief Load rooms from database
-        /// @param callback Callback for each room
+        /// @brief Load entities from database
+        ///
+        /// @param callback Entry callback
         /// @return Successfulness
-        virtual bool LoadRooms(const boost::function<bool(identifier_t id, const std::string& type,
-                                                          const std::string& name)>& callback) override;
+        virtual bool LoadEntities(
+            const boost::function<bool(identifier_t id, const std::string& entityType, const std::string& name,
+                                       identifier_t scriptSourceID, const std::string_view& data,
+                                       const std::string_view& scriptData)>& callback) override;
 
-        /// @brief Reserves new room entry in database
-        /// @return Entry identifier or null in case of an error
-        virtual identifier_t ReserveRoom() override;
+        /// @brief Reserve entity entry in database
+        ///
+        /// @param type Entity type
+        /// @return identifier_t Entity id or zero if reservation failed
+        virtual identifier_t ReserveEntity(const std::string& type) override;
 
-        /// @brief Update room without pushing record
-        /// @param room Room to update
+        /// @brief Update entity without pushing to history
+        ///
+        /// @param id Entity id
+        /// @param name Entity name
+        /// @param data Data
+        /// @param scriptData Script data
         /// @return Successfulness
-        virtual bool UpdateRoom(identifier_t id, const std::string& type, const std::string& name) override;
+        virtual bool UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceId,
+                                  const std::string_view& config) override;
 
-        /// @brief Update room name
-        /// @param room Room to update
-        /// @param value Old name (for record)
-        /// @param newValue New name
+        /// @brief Update entity state
+        ///
+        /// @param id Entity data
+        /// @param stat State
         /// @return Successfulness
-        virtual bool UpdateRoomPropName(identifier_t id, const std::string& value,
-                                        const std::string& newValue) override;
-        virtual bool UpdateRoomPropType(identifier_t id, const std::string& value,
-                                        const std::string& newValue) override;
-        virtual bool RemoveRoom(identifier_t id) override;
+        virtual bool UpdateEntityState(identifier_t id, const std::string_view& state) override;
 
-        virtual size_t GetRoomCount() override;
-
-        //! Device
-
-        /// @brief Load device from database
-        /// @param callback Callback for each device
+        /// @brief Remove entity
+        ///
+        /// @param id Entity id
         /// @return Successfulness
-        virtual bool LoadDevices(
-            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       identifier_t roomID, const std::string_view& data)>& callback) override;
+        virtual bool RemoveEntity(identifier_t id) override;
 
-        /// @brief Reserves new device entry in database
-        /// @return Entry identifier or null in case of an error
-        virtual identifier_t ReserveDevice() override;
-
-        virtual bool UpdateDevice(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                  identifier_t roomID) override;
-
-        virtual bool UpdateDevicePropName(identifier_t id, const std::string& value,
-                                          const std::string& newValue) override;
-        virtual bool UpdateDevicePropScriptSource(identifier_t id, identifier_t newValue) override;
-        virtual bool UpdateDevicePropRoom(identifier_t id, identifier_t value, identifier_t newValue) override;
-
-        virtual bool RemoveDevice(identifier_t id) override;
-
-        virtual size_t GetDeviceCount() override;
-
-        //! Service
-
-        /// @brief Load service from database
-        /// @param callback Callback for each service
-        /// @return Successfulness
-        virtual bool LoadServices(
-            const boost::function<bool(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                       const std::string_view& data)>& callback) override;
-
-        /// @brief Reserves new service entry in database
-        /// @return Entry identifier or null in case of an error
-        virtual identifier_t ReserveService() override;
-
-        virtual bool UpdateService(identifier_t id, const std::string& name, identifier_t scriptSourceID) override;
-
-        virtual bool UpdateServicePropName(identifier_t id, const std::string& value,
-                                           const std::string& newValue) override;
-        virtual bool UpdateServicePropScriptSource(identifier_t id, identifier_t newValue) override;
-
-        virtual bool RemoveService(identifier_t id) override;
-
-        virtual size_t GetServiceCount() override;
+        /// @brief Get entity count
+        ///
+        /// @return size_t Entity count
+        virtual size_t GetEntityCount() override;
 
         //! User
 

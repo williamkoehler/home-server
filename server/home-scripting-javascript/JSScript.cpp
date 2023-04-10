@@ -491,8 +491,11 @@ namespace server
                     return false;
             }
 
-            void JSScript::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            void JSScript::JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                             uint8_t propertyFlags)
             {
+                (void)propertyFlags;
+
                 assert(output.IsObject());
 
                 output.MemberReserve(propertyMap.size(), allocator);
@@ -502,12 +505,14 @@ namespace server
                                      allocator);
                 }
             }
-            void JSScript::JsonSetState(rapidjson::Value& input)
+            uint8_t JSScript::JsonSetProperties(const rapidjson::Value& input, uint8_t propertyFlags)
             {
+                (void)propertyFlags;
+
                 assert(input.IsObject());
 
-                for (rapidjson::Value::MemberIterator propertyIt = input.MemberBegin(); propertyIt != input.MemberEnd();
-                     propertyIt++)
+                for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin();
+                     propertyIt != input.MemberEnd(); propertyIt++)
                 {
                     std::string name = std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength());
 
@@ -515,6 +520,8 @@ namespace server
                     if (it != propertyMap.end())
                         it->second.JsonSet(propertyIt->value);
                 }
+
+                return true;
             }
 
             duk_ret_t JSScript::duk_get_property(duk_context* context)

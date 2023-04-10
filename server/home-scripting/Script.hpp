@@ -1,4 +1,5 @@
 #pragma once
+#include "PropertyFlags.hpp"
 #include "ScriptSource.hpp"
 #include "View.hpp"
 #include "common.hpp"
@@ -118,10 +119,11 @@ namespace server
             EventConnection Bind(const std::string& event, const Ref<View>& view, const std::string& method);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSet(rapidjson::Value& input);
 
-            virtual void JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) = 0;
-            virtual void JsonSetState(rapidjson::Value& input) = 0;
+            virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) = 0;
+            virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
+                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) = 0;
         };
     }
 }

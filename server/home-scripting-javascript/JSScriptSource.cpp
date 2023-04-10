@@ -7,35 +7,29 @@ namespace server
     {
         namespace javascript
         {
-            JSScriptSource::JSScriptSource(identifier_t id, const std::string& name, ScriptUsage usage,
-                                           const std::string_view& data)
-                : ScriptSource(id, name, usage, data)
+            JSScriptSource::JSScriptSource(identifier_t id, const std::string& name, const std::string_view& content)
+                : ScriptSource(id, name, content)
             {
             }
             JSScriptSource::~JSScriptSource()
             {
             }
-            Ref<JSScriptSource> JSScriptSource::Create(identifier_t id, const std::string& name, ScriptUsage usage,
-                                                       const std::string_view& data)
+            Ref<JSScriptSource> JSScriptSource::Create(identifier_t id, const std::string& name,
+                                                       const std::string_view& content)
             {
-                return boost::make_shared<JSScriptSource>(id, name, usage, data);
+                return boost::make_shared<JSScriptSource>(id, name, content);
             }
 
-            bool JSScriptSource::SetContent(const std::string_view& v)
+            void JSScriptSource::SetContent(const std::string_view& v)
             {
-                if (ScriptSource::SetContent(v))
-                {
-                    // Re-Initialze scripts
-                    for (const WeakRef<JSScript>& script : scriptList)
-                    {
-                        if (Ref<JSScript> r = script.lock())
-                            r->Initialize(); // Re-Initialize
-                    }
+                ScriptSource::SetContent(v);
 
-                    return true;
+                // Re-Initialze scripts
+                for (const WeakRef<JSScript>& script : scriptList)
+                {
+                    if (Ref<JSScript> r = script.lock())
+                        r->Initialize(); // Re-Initialize
                 }
-                else
-                    return false;
             }
 
             Ref<Script> JSScriptSource::CreateScript(const Ref<View>& view)
@@ -58,6 +52,19 @@ namespace server
                                                 [](const boost::weak_ptr<JSScript>& script) -> bool
                                                 { return script.expired(); }),
                                  scriptList.end());
+            }
+
+            void JSScriptSource::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            {
+                (void)allocator;
+                
+                assert(output.IsObject());
+            }
+            bool JSScriptSource::JsonSetConfig(const rapidjson::Value& input)
+            {
+                assert(input.IsObject());
+
+                return true;
             }
         }
     }

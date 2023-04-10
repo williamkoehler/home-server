@@ -1,4 +1,5 @@
 #include "WSSession.hpp"
+#include "ApiContext.hpp"
 #include "NetworkManager.hpp"
 #include "json/JsonApi.hpp"
 
@@ -123,39 +124,18 @@ namespace server
             // Home
             {"get-home", JsonApi::ProcessJsonGetHomeMessageWS},
 
-            // Room
-            {"add-room", JsonApi::ProcessJsonAddRoomMessageWS},
+            // Entity
+            {"add-entity", JsonApi::ProcessJsonAddEntityMessageWS},
 
-            {"get-room", JsonApi::ProcessJsonGetRoomMessageWS},
-            {"set-room", JsonApi::ProcessJsonSetRoomMessageWS},
+            {"inv-entiy", JsonApi::ProcessJsonInvokeDeviceMethodMessageWS},
 
-            {"rem-room", JsonApi::ProcessJsonRemoveRoomMessageWS},
+            {"get-entity", JsonApi::ProcessJsonGetEntityMessageWS},
+            {"get-entity?state", JsonApi::ProcessJsonGetEntityStateMessageWS},
 
-            // Device
-            {"add-device", JsonApi::ProcessJsonAddDeviceMessageWS},
+            {"set-entity", JsonApi::ProcessJsonSetEntityMessageWS},
+            {"set-entity?state", JsonApi::ProcessJsonSetEntityStateMessageWS},
 
-            {"inv-device", JsonApi::ProcessJsonInvokeDeviceMethodMessageWS},
-
-            {"get-device", JsonApi::ProcessJsonGetDeviceMessageWS},
-            {"get-device?state", JsonApi::ProcessJsonGetDeviceStateMessageWS},
-
-            {"set-device", JsonApi::ProcessJsonSetDeviceMessageWS},
-            {"set-device?state", JsonApi::ProcessJsonSetDeviceStateMessageWS},
-
-            {"rem-device", JsonApi::ProcessJsonRemoveDeviceMessageWS},
-
-            // Service
-            {"add-service", JsonApi::ProcessJsonAddServiceMessageWS},
-
-            {"inv-service", JsonApi::ProcessJsonInvokeServiceMethodMessageWS},
-
-            {"get-service", JsonApi::ProcessJsonGetServiceMessageWS},
-            {"get-service?state", JsonApi::ProcessJsonGetServiceStateMessageWS},
-
-            {"set-service", JsonApi::ProcessJsonSetServiceMessageWS},
-            {"set-service?state", JsonApi::ProcessJsonSetServiceStateMessageWS},
-
-            {"rem-service", JsonApi::ProcessJsonRemoveServiceMessageWS},
+            {"rem-entity", JsonApi::ProcessJsonRemoveEntityMessageWS},
         };
 
         bool WSSession::ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input,
@@ -165,7 +145,7 @@ namespace server
 
             rapidjson::Value logsJson = rapidjson::Value(rapidjson::kArrayType);
 
-            ApiContext context = ApiContext(logsJson, allocator);
+            NetworkApiContext context = NetworkApiContext(logsJson, allocator);
 
             // Call websocket message
             boost::unordered::unordered_map<std::string, WSMethod*>::const_iterator it = methodList.find(msg);
@@ -234,7 +214,8 @@ namespace server
             }
         }
 
-        void WSSession::OnWrite(const boost::system::error_code& ec, size_t sentBytes, const Ref<rapidjson::StringBuffer>& message)
+        void WSSession::OnWrite(const boost::system::error_code& ec, size_t sentBytes,
+                                const Ref<rapidjson::StringBuffer>& message)
         {
             (void)sentBytes;
             (void)message;

@@ -28,30 +28,36 @@ namespace server
                 std::string scriptName; // Secondary name that links the script with corresponding database entry!
                                         // THIS SHOULD NOT BE CHANGED AFTER LIBRARY RELEASE!
                 std::string name;
-                ScriptUsage usage;
 
+                /// @brief Script flags
+                /// @see server::scripting::ScriptFlags
+                ///
+                uint8_t flags;
+
+                /// @brief Script implementation create callback
+                ///
                 CreateScriptCallback<> callback;
 
                 template <typename T>
                 inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
-                                                      ScriptUsage usage, CreateScriptCallback<T> callback)
+                                                      uint8_t flags, CreateScriptCallback<T> callback)
                 {
                     return ScriptInformation{
                         .scriptName = scriptName,
                         .name = name,
-                        .usage = usage,
+                        .flags = flags,
                         .callback = (CreateScriptCallbackConversion<T>{callback}).f2,
                     };
                 }
 
                 template <typename T>
                 inline static ScriptInformation Build(const std::string& scriptName, const std::string& name,
-                                                      ScriptUsage usage)
+                                                      uint8_t flags)
                 {
                     return ScriptInformation{
                         .scriptName = scriptName,
                         .name = name,
-                        .usage = usage,
+                        .flags = flags,
                         .callback = (CreateScriptCallbackConversion<T>{&T::Create}).f2,
                     };
                 }

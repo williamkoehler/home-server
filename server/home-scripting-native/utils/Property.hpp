@@ -1,5 +1,6 @@
 #pragma once
 #include "../common.hpp"
+#include <home-scripting/PropertyFlags.hpp>
 #include <home-scripting/utils/Value.hpp>
 
 namespace server
@@ -26,17 +27,6 @@ namespace server
             template <typename P, class T>
             class PropertyReadonlyReferenceImpl;
 
-            enum PropertyFlags : uint8_t
-            {
-                /// @brief Should property be stored
-                ///
-                kPropertyFlagStore = 0x01,
-
-                /// @brief Should property initiate update when it is changed
-                ///
-                kPropertyFlagInitiateUpdate = 0x02,
-            };
-
             class Property
             {
               private:
@@ -60,7 +50,8 @@ namespace server
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
                 static UniqueRef<Property> Create(PropertyGetterDefinition<P, T> getter,
-                                                  PropertySetterDefinition<P, T> setter, uint8_t propertyFlags)
+                                                  PropertySetterDefinition<P, T> setter,
+                                                  uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
                 {
                     assert(getter != nullptr);
                     return boost::make_unique<PropertyCallbackImpl<P, T>>(getter, setter, propertyFlags);
@@ -74,7 +65,8 @@ namespace server
                 /// @param propertyFlags Property flags
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
-                static UniqueRef<Property> CreateReadonly(PropertyGetterDefinition<P, T> getter, uint8_t propertyFlags)
+                static UniqueRef<Property> CreateReadonly(PropertyGetterDefinition<P, T> getter,
+                                                          uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
                 {
                     assert(getter != nullptr);
                     return boost::make_unique<PropertyReadonlyCallbackImpl<P, T>>(getter, propertyFlags);
@@ -88,7 +80,8 @@ namespace server
                 /// @param propertyFlags Property flags
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
-                static UniqueRef<Property> Create(P T::*property, uint8_t propertyFlags)
+                static UniqueRef<Property> Create(P T::*property,
+                                                  uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
                 {
                     assert(property != nullptr);
                     return boost::make_unique<PropertyReferenceImpl<P, T>>(property, propertyFlags);
@@ -102,7 +95,8 @@ namespace server
                 /// @param propertyFlags Property flags
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
-                static UniqueRef<Property> CreateReadonly(P T::*property, uint8_t propertyFlags)
+                static UniqueRef<Property> CreateReadonly(P T::*property,
+                                                          uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
                 {
                     assert(property != nullptr);
                     return boost::make_unique<PropertyReadonlyReferenceImpl<P, T>>(property, propertyFlags);
@@ -113,18 +107,12 @@ namespace server
                 /// @return ValueType Property value type
                 virtual ValueType GetType() const = 0;
 
-                /// @brief Is store flag set
+                /// @brief Get property flags
                 ///
-                inline bool IsStoreFlagSet() const
+                /// @return uint8_t
+                inline uint8_t GetFlags() const
                 {
-                    return flags & kPropertyFlagStore;
-                }
-
-                /// @brief Is initiate update flag set
-                ///
-                inline bool IsInitiateUpdateFlagSet() const
-                {
-                    return flags & kPropertyFlagInitiateUpdate;
+                    return flags;
                 }
 
                 virtual Value Get(void* self) const = 0;

@@ -94,8 +94,6 @@ namespace server
 
                                                 ss << "Script name: " << scriptInformation.scriptName << std::endl;
                                                 ss << "Name:        " << scriptInformation.name << std::endl;
-                                                ss << "Usage:       " << StringifyScriptUsage(scriptInformation.usage)
-                                                   << std::endl;
 
                                                 LOG_INFO("Static Script {0}\n{1}", scriptInformation.scriptName,
                                                          ss.str());
@@ -140,17 +138,15 @@ namespace server
                 // Generate static script sources
                 for (auto& [name, scriptInformation] : scriptList)
                 {
-                    scriptSourceList.push_back(StaticScriptSource{name, scriptInformation.usage});
+                    scriptSourceList.push_back(StaticScriptSource{name, scriptInformation.flags});
                 }
 
                 return scriptSourceList;
             }
 
             Ref<ScriptSource> NativeScriptProvider::CreateScriptSource(identifier_t id, const std::string& name,
-                                                                       ScriptUsage usage,
                                                                        const std::string_view& content)
             {
-                (void)usage;
                 (void)content;
 
                 robin_hood::unordered_node_map<std::string, ScriptInformation>::const_iterator it =
@@ -163,7 +159,7 @@ namespace server
                     // Remove created scripts
                     scriptList.erase(it);
 
-                    return NativeScriptSource::Create(id, scriptInformation.name, scriptInformation.usage,
+                    return NativeScriptSource::Create(id, scriptInformation.name, scriptInformation.flags,
                                                       scriptInformation.callback);
                 }
                 else

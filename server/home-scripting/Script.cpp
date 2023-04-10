@@ -106,11 +106,5 @@ namespace server
 
             output.AddMember("attributes", attributesJson, allocator);
         }
-        void Script::JsonSet(rapidjson::Value& input)
-        {
-            (void)input;
-
-            assert(false);
-        }
     }
 }

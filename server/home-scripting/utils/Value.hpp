@@ -103,7 +103,7 @@ namespace server
             ///
             /// @param json Json
             /// @return Value
-            static Value Create(rapidjson::Value& json);
+            static Value Create(const rapidjson::Value& json);
 
             void operator=(const Value& other) noexcept;
             void operator=(Value&& other) noexcept;
@@ -311,7 +311,7 @@ namespace server
             std::string ToString();
 
             rapidjson::Value JsonGet(rapidjson::Document::AllocatorType& allocator) const;
-            bool JsonSet(rapidjson::Value& input);
+            bool JsonSet(const rapidjson::Value& input);
         };
 
         template <>

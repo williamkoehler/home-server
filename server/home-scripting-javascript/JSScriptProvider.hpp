@@ -42,7 +42,7 @@ namespace server
                 /// @param data Source code
                 /// @return Javascript script source
                 virtual Ref<ScriptSource> CreateScriptSource(identifier_t id, const std::string& name,
-                                                             ScriptUsage usage, const std::string_view& data) override;
+                                                             const std::string_view& data) override;
             };
         }
     }

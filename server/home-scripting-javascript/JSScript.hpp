@@ -102,9 +102,10 @@ namespace server
 
                 virtual bool Invoke(const std::string& name, const Value& parameter) override;
 
-                virtual void JsonGetState(rapidjson::Value& output,
-                                          rapidjson::Document::AllocatorType& allocator) override;
-                virtual void JsonSetState(rapidjson::Value& input) override;
+                virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
+                                          uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) override;
+                virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
+                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) override;
             };
         }
     }

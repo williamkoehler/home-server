@@ -40,7 +40,7 @@ namespace server
                 if (sqlite3_exec(
                         database->connection,
                         R"(create table if not exists scriptsources)"
-                        R"((id integer not null primary key, type text not null, name text, language text not null, content blob not null))",
+                        R"((id integer not null primary key, language text not null, name text not null, config text, content blob))",
                         nullptr, nullptr, &err) != SQLITE_OK)
                 {
                     LOG_ERROR("Failing to create 'scriptsources' table.\n{0}", err);
@@ -50,35 +50,13 @@ namespace server
 
             // Home
             {
-                // Room table
+                // Entity table
                 if (sqlite3_exec(database->connection,
-                                 R"(create table if not exists rooms)"
-                                 R"((id integer not null primary key, type text not null, name text))",
+                                 R"(create table if not exists entities)"
+                                 R"((id integer not null primary key, type text not null, name text not null, scriptsourceid integer, config text, state text))",
                                  nullptr, nullptr, &err) != SQLITE_OK)
                 {
                     LOG_ERROR("Failing to create 'rooms' table.\n{0}", err);
-                    return nullptr;
-                }
-
-                // Device Table
-                if (sqlite3_exec(
-                        database->connection,
-                        R"(create table if not exists devices)"
-                        R"((id integer not null primary key, name text, scriptsourceid integer not null, roomid integer, data text not null, foreign key (roomid) references rooms (id)))",
-                        nullptr, nullptr, &err) != SQLITE_OK)
-                {
-                    LOG_ERROR("Failing to create 'devices' table.\n{0}", err);
-                    return nullptr;
-                }
-
-                // Service Table
-                if (sqlite3_exec(
-                        database->connection,
-                        R"(create table if not exists services)"
-                        R"((id integer not null primary key, name text, scriptsourceid integer not null, data text not null))",
-                        nullptr, nullptr, &err) != SQLITE_OK)
-                {
-                    LOG_ERROR("Failing to create 'services' table.\n{0}", err);
                     return nullptr;
                 }
             }

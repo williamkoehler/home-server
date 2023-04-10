@@ -10,7 +10,7 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, "select id, type, name, scriptsourceid, config, state from entities", -1,
+        if (sqlite3_prepare_v2(connection, R"(select id, type, name, scriptsourceid, config, state from entities)", -1,
                                &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql load entities statement.\n{0}", sqlite3_errmsg(connection));
@@ -113,7 +113,7 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, "update entities set name = ?, scriptsourceid = ?, config = ? where id = ?",
+        if (sqlite3_prepare_v2(connection, R"(update entities set name = ?, scriptsourceid = ?, config = ? where id = ?)",
                                -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql update entity statement.\n{0}", sqlite3_errmsg(connection));
@@ -179,7 +179,7 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, "delete from entities where id = ?", -1, &statement, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(connection, R"(delete from entities where id = ?)", -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql remove entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
@@ -209,7 +209,7 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, "select count(*) from entities", -1, &statement, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(connection, R"(select count(*) from entities)", -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql count entities statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);

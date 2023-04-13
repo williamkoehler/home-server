@@ -1,6 +1,11 @@
 #include "Http.hpp"
 #include <home-scripting/Script.hpp>
 
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/beast.hpp>
+#include <boost/beast/ssl.hpp>
+
 namespace server
 {
     namespace scripting

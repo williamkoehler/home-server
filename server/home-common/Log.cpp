@@ -1,5 +1,5 @@
 #include "Log.hpp"
-#include "Configurations.hpp"
+#include "config.hpp"
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>

@@ -13,12 +13,29 @@ int main(int argc, char** argv)
     (void)argv;
 
     // Creating necessary folders
-    boost::filesystem::create_directories(config::GetStateDirectory());
-    boost::filesystem::create_directories(config::GetScriptDirectory());
-    boost::filesystem::create_directories(config::GetLogDirectory());
+    try
+    {
+        boost::filesystem::create_directories(config::GetRootDirectory());
+        boost::filesystem::create_directories(config::GetDataDirectory());
+        boost::filesystem::create_directories(config::GetScriptDirectory());
+        boost::filesystem::create_directories(config::GetLogDirectory());
+    }
+    catch (std::exception e)
+    {
+        printf("Failed to create directories. Please check file permissions.\n");
+        return -1;
+    }
 
-    // Create logger
-    Log::Create();
+    try
+    {
+        // Create logger
+        Log::Create();
+    }
+    catch (std::exception e)
+    {
+        printf("Failed to initialize logger. Please check file permissions.\n");
+        return -1;
+    }
 
     try
     {
@@ -33,7 +50,7 @@ int main(int argc, char** argv)
                      "\t|                                          |\n"
                      "\t|                                          |\n"
                      "\t|          Home Automation Server          |\n"
-                     "\t|          Version {0}           |\n"   
+                     "\t|          Version {0}           |\n"
                      "\t|                                          |\n"
                      "\t|          Made by :                       |\n"
                      "\t|          - William KOEHLER               |\n"

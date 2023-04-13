@@ -6,12 +6,6 @@
 #include <boost/regex.hpp>
 #include <boost/variant.hpp>
 
-// Network
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/beast.hpp>
-#include <boost/beast/ssl.hpp>
-
 // IO
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>

@@ -1,7 +1,7 @@
 #pragma once
 #include "ApiMessage.hpp"
-#include "boost.hpp"
-#include "memory.hpp"
+#include "libraries/boost.hpp"
+#include "libraries/memory.hpp"
 
 namespace server
 {

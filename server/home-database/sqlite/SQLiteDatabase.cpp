@@ -21,7 +21,7 @@ namespace server
             // Find path
             if (db.empty())
                 db = "home.sqlite3";
-            db = boost::filesystem::absolute(db, config::GetStateDirectory()).string();
+            db = boost::filesystem::absolute(db, config::GetDataDirectory()).string();
 
             // Open / Create database
             if (sqlite3_open_v2(db.c_str(), &database->connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,

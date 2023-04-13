@@ -3,7 +3,6 @@ target("server-home-scripting")
     add_files("./**.cpp")
     add_packages(
         "spdlog", 
-        "openssl", 
         "boost", 
         "rapidjson", 
         "robin-hood-hashing", 

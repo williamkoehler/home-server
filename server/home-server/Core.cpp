@@ -112,7 +112,8 @@ namespace server
             }
 
             // Initialize networking
-            core->networkManager = networking::NetworkManager::Create(config.networking.address, config.networking.port, config.networking.externalURL);
+            core->networkManager = networking::NetworkManager::Create(config.networking.address, config.networking.port,
+                                                                      config.networking.externalURL);
             if (core->networkManager == nullptr)
             {
                 LOG_ERROR("Intialize network manager.");

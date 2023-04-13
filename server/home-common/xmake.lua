@@ -1,9 +1,9 @@
 target("server-home-common")
     set_kind("shared")
     add_files("./**.cpp")
+    set_pcxxheader("common.hpp")
     add_packages(
         "spdlog", 
-        "openssl", 
         "boost", 
         "rapidjson", 
         "robin-hood-hashing", 

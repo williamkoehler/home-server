@@ -1,6 +1,6 @@
 #pragma once
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <string_view>
 
@@ -8,33 +8,23 @@
 
 typedef uint32_t identifier_t;
 
-#include "macros.hpp"
+#define SHA256_SIZE 32
+#define SALT_SIZE 16
 
-#include "tools.hpp"
+#include "Helper.hpp"
 
-// Config
-#include "Configurations.hpp"
+#include "config.hpp"
 
 // Logging
 #include "Log.hpp"
 
-// Boost
-#include "boost.hpp"
-
-// Robin Hood (Hash Table, etc...)
+// Libraries
+#include "libraries/boost.hpp"
+#include "libraries/memory.hpp"
+#include "libraries/rapidjson.hpp"
 #include <robin_hood.h>
-
-// RapidJSON (Json)
-#include "rapidjson.hpp"
-
-// XXHash (Fast hashing)
 #include <xxhash.h>
 
-// Memory Management
-#include "memory.hpp"
-
-// Signals2
-#include <boost/signals2.hpp>
-
+// Api
 #include "ApiMessage.hpp"
 #include "ApiSession.hpp"

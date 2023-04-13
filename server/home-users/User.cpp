@@ -1,5 +1,4 @@
 #include "User.hpp"
-#include "home-common/macros.hpp"
 #include <home-database/Database.hpp>
 
 namespace server

@@ -82,7 +82,7 @@ namespace server
             /// @brief Get script language
             ///
             /// @return ScriptLanguage Script language
-            virtual ScriptLanguage GetLanguage() = 0;
+            virtual ScriptLanguage GetLanguage() const = 0;
 
             virtual std::string GetContent() const
             {
@@ -101,7 +101,7 @@ namespace server
             /// @brief Get content checksum
             ///
             /// @return uint64_t Content checksum
-            inline uint64_t GetChecksum()
+            inline uint64_t GetChecksum() const
             {
                 return checksum;
             }
@@ -115,28 +115,27 @@ namespace server
             /// @brief Save/update entity data in database
             ///
             /// @return Successfulness
-            bool SaveConfig();
+            bool Save() const;
 
             /// @brief Save/update entity content in database
             ///
             /// @return Successfulness
-            bool SaveContent();
+            bool SaveContent() const;
 
-            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) = 0;
+            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const = 0;
             virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
 
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSet(const rapidjson::Value& input);
 
-            void JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSetContent(const rapidjson::Value& input);
 
-            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
-            bool ApiSet(const rapidjson::Value& input, ApiContext& context);
+            void ApiGet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const;
+            bool ApiSet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session);
 
-            void ApiGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                               ApiContext& context);
-            bool ApiSetContent(const rapidjson::Value& input, ApiContext& context);
+            void ApiGetContent(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const;
+            bool ApiSetContent(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session);
         };
     }
 }

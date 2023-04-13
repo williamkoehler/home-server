@@ -25,8 +25,6 @@ namespace server
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
-            size_t lastUpdateTime, updateInterval;
-
             /// @brief Script attributes
             ///
             robin_hood::unordered_node_map<std::string, rapidjson::Document> attributeMap;
@@ -43,6 +41,9 @@ namespace server
             Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource);
             virtual ~Script();
 
+            /// @brief Get view to parent object
+            ///
+            /// @return Ref<View> View
             inline Ref<View> GetView() const
             {
                 return view;
@@ -55,6 +56,16 @@ namespace server
             {
                 return scriptSource->GetID();
             }
+
+            /// @brief Get prefered lazy update interval
+            ///
+            /// @return size_t Lazy update interval (in seconds)
+            size_t GetLazyUpdateInterval() const;
+
+            /// @brief Get prefered update interval
+            ///
+            /// @return size_t Update interval (in seconds)
+            size_t GetUpdateInterval() const;
 
             /// @brief Initialize script (ONLY CALL ONCE AFTER CREATION)
             ///
@@ -100,15 +111,24 @@ namespace server
             /// @brief Update script (lazy update)
             /// @note Updates internal script state and properties
             ///
-            /// @param minUpdateInterval Min update interval (seconds)
             /// @return Successfulness
-            virtual bool Update(size_t minUpdateInterval);
+            bool LazyUpdate();
 
-            /// @brief Post update script (lazy update)
+            /// @brief Post update script
             /// @note Updates internal script state and properties
             ///
-            /// @param minUpdateInterval Min update interval (seconds)
-            void PostUpdate(size_t minUpdateInterval);
+            void PostLazyUpdate();
+
+            /// @brief Update script
+            /// @note Updates internal script state and properties
+            ///
+            /// @return Successfulness
+            bool Update();
+
+            /// @brief Post update script
+            /// @note Updates internal script state and properties
+            ///
+            void PostUpdate();
 
             /// @brief Bind view method to event
             ///
@@ -121,9 +141,9 @@ namespace server
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
             virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) = 0;
-            virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
-                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) = 0;
+                                           PropertyFlags flags = kPropertyFlag_Visible) = 0;
+            virtual PropertyFlags JsonSetProperties(const rapidjson::Value& input,
+                                                    PropertyFlags flags = kPropertyFlag_All) = 0;
         };
     }
 }

@@ -1,7 +1,7 @@
 #include "NetworkManager.hpp"
 #include "BeaconListener.hpp"
 #include "HTTPSession.hpp"
-#include "WSSession.hpp"
+#include "ApiSession.hpp"
 #include "io/DynamicResources.hpp"
 
 namespace server
@@ -194,24 +194,6 @@ namespace server
             // {
             //     LOG_ERROR("Create http session.");
             // }
-        }
-
-        void NetworkManager::Broadcast(rapidjson::Document& document)
-        {
-            Ref<rapidjson::StringBuffer> message = boost::make_shared<rapidjson::StringBuffer>();
-            rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(*message);
-            document.Accept(writer);
-
-            for (size_t i = 0; i < sessionList.size(); i++)
-            {
-                if (Ref<WSSession> session = sessionList[i].lock())
-                    session->Send(message);
-                else
-                {
-                    sessionList.erase(sessionList.begin() + i);
-                    i--; // Beacuse a session has been removed the iterator needs to decrease
-                }
-            }
         }
     }
 }

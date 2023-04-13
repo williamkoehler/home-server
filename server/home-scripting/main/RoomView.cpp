@@ -8,13 +8,5 @@ namespace server
         {
             return ViewType::kRoomViewType;
         }
-
-        void RoomView::Invoke(const std::string& method, const Value& parameter)
-        {
-            (void)method;
-            (void)parameter;
-
-            // Do nothing
-        }
     }
 }

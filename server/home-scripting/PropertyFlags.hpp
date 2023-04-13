@@ -5,8 +5,12 @@ namespace server
 {
     namespace scripting
     {
-        enum PropertyFlags : uint8_t
+        enum PropertyFlag : uint8_t
         {
+            /// @brief No property flag set
+            ///
+            kPropertyFlag_None = 0x00,
+
             /// @brief Is property visible when reading properties
             ///
             kPropertyFlag_Visible = 0x01,
@@ -21,7 +25,9 @@ namespace server
 
             /// @brief Enable all property flags
             ///
-            kPropertyFlags_All = 0xFF,
+            kPropertyFlag_All = 0xFF,
         };
+
+        using PropertyFlags = uint8_t;
     }
 }

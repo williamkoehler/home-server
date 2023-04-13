@@ -8,12 +8,12 @@ namespace server
     {
         class BeaconListener;
         class DynamicResources;
-        class WSSession;
+        class ApiSessionImpl;
 
         class NetworkManager : public std::enable_shared_from_this<NetworkManager>
         {
           private:
-            friend class WSSession;
+            friend class ApiSessionImpl;
 
             Ref<DynamicResources> dynamicResources = nullptr;
 
@@ -26,7 +26,7 @@ namespace server
             void OnAccept(const boost::system::error_code& ec);
             void OnHandshake(const boost::system::error_code& ec, const Ref<ssl_socket_t>& socket);
 
-            boost::container::vector<WeakRef<WSSession>> sessionList;
+            boost::container::vector<WeakRef<ApiSession>> sessionList;
 
           public:
             NetworkManager();
@@ -34,13 +34,6 @@ namespace server
             static Ref<NetworkManager> Create(const std::string& address, uint16_t port,
                                               const std::string& externalURL);
             static Ref<NetworkManager> GetInstance();
-
-            // inline boost::asio::ssl::context& GetSSLContext() const
-            // {
-            //     return *context;
-            // }
-
-            void Broadcast(rapidjson::Document& document);
         };
     }
 }

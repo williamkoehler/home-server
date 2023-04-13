@@ -53,8 +53,8 @@ namespace server
             UserAccessLevel GetAccessLevel();
             bool SetAccessLevel(UserAccessLevel v);
 
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
-            void JsonSet(rapidjson::Value& input);
+            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
+            void JsonSet(const rapidjson::Value& input);
         };
     }
 }

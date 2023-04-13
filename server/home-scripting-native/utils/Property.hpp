@@ -41,7 +41,7 @@ namespace server
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
                 static inline UniqueRef<Property> Create(P T::*property, PropertyUpdateDefinition<T> updateCallback,
-                                                         uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
+                                                         PropertyFlags propertyFlags = kPropertyFlag_Visible)
                 {
                     assert(property != nullptr);
                     return boost::make_unique<PropertyReferenceImpl<P, T>>(property, updateCallback, propertyFlags);
@@ -56,7 +56,7 @@ namespace server
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
                 static inline UniqueRef<Property> Create(P T::*property,
-                                                         uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
+                                                         PropertyFlags propertyFlags = kPropertyFlag_Visible)
                 {
                     return Create<P, T>(property, nullptr, propertyFlags);
                 }
@@ -70,7 +70,7 @@ namespace server
                 /// @return UniqueRef<Property> Property
                 template <typename P, class T>
                 static UniqueRef<Property> CreateReadonly(P T::*property,
-                                                          uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible)
+                                                          PropertyFlags propertyFlags = kPropertyFlag_Visible)
                 {
                     assert(property != nullptr);
                     return boost::make_unique<PropertyReadonlyReferenceImpl<P, T>>(property, propertyFlags);
@@ -124,7 +124,7 @@ namespace server
             {                                                                                                          \
                 setterExpr;                                                                                            \
                 if (updateMethod != nullptr)                                                                           \
-                    (static_cast<T*>(self)->*updateMethod)();                                                            \
+                    (static_cast<T*>(self)->*updateMethod)();                                                          \
             }                                                                                                          \
         }                                                                                                              \
     };                                                                                                                 \

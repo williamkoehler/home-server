@@ -56,7 +56,8 @@ namespace server
             }
         }
 
-        Entity::Entity(identifier_t id, const std::string& name) : id(id), name(name)
+        Entity::Entity(identifier_t id, const std::string& name)
+            : id(id), name(name), lazyUpdateInterval(1), lazyUpdateTimer(Worker::GetInstance()->GetContext())
         {
         }
         Entity::~Entity()
@@ -89,26 +90,12 @@ namespace server
                 // Set config
                 entity->JsonSetConfig(config);
 
-                if (scriptSourceId != 0)
-                {
-                    // Create script
-                    Ref<scripting::ScriptManager> scriptManager = scripting::ScriptManager::GetInstance();
-                    assert(scriptManager != nullptr);
+                // Set script
+                entity->SetScript(scriptSourceId);
 
-                    entity->script =
-                        scriptManager->CreateScript(scriptSourceId, EntityTypeToScriptFlags(type), entity->GetView());
-                    if (entity->script == nullptr)
-                    {
-                        LOG_ERROR("Create script '{0}'", scriptSourceId);
-                        return nullptr;
-                    }
-
-                    // Initialize script
-                    entity->script->Initialize();
-
-                    // Set state
-                    entity->script->JsonSetProperties(state, scripting::PropertyFlags::kPropertyFlags_All);
-                }
+                // Set state
+                if (entity->script)
+                    entity->script->JsonSetProperties(state, scripting::kPropertyFlag_All);
             }
 
             return entity;
@@ -163,6 +150,9 @@ namespace server
 
                 // Initialize script
                 script->Initialize();
+
+                // Get attributes
+                lazyUpdateInterval = script->GetLazyUpdateInterval();
             }
             else
             {
@@ -170,7 +160,118 @@ namespace server
             }
         }
 
-        bool Entity::SaveConfig()
+        void Entity::Subscribe(const Ref<ApiSession>& session)
+        {
+            if (subscriptions.insert(session).second)
+            {
+                lazyUpdateTimer.expires_from_now(boost::posix_time::seconds(0));
+                lazyUpdateTimer.async_wait(
+                    boost::bind(&Entity::WaitLazyUpdateTimer, shared_from_this(), boost::placeholders::_1));
+            }
+        }
+
+        void Entity::WaitLazyUpdateTimer(const boost::system::error_code& ec)
+        {
+            if (!ec)
+            {
+                if (script != nullptr)
+                    script->LazyUpdate();
+
+                if (subscriptions.size() > 0)
+                {
+                    lazyUpdateTimer.expires_from_now(boost::posix_time::seconds(std::max(lazyUpdateInterval, 1ul)));
+                    lazyUpdateTimer.async_wait(
+                        boost::bind(&Entity::WaitLazyUpdateTimer, shared_from_this(), boost::placeholders::_1));
+                }
+            }
+        }
+
+        void Entity::Unsubscribe(const Ref<ApiSession>& session)
+        {
+            subscriptions.erase(session);
+        }
+
+        void Entity::Invoke(const std::string& method, const scripting::Value& parameter)
+        {
+            if (script)
+                script->PostInvoke(method, parameter);
+        }
+
+        void Entity::Publish()
+        {
+            Ref<rapidjson::StringBuffer> buffer = boost::make_shared<rapidjson::StringBuffer>();
+            if (buffer != nullptr)
+            {
+                // Build message
+                {
+                    rapidjson::Writer<rapidjson::StringBuffer> writer =
+                        rapidjson::Writer<rapidjson::StringBuffer>(*buffer);
+
+                    ApiRequestMessage message = ApiRequestMessage("set-entity");
+                    JsonGet(message.GetJsonDocument(), message.GetJsonAllocator());
+                    message.Build(0, writer);
+                }
+
+                robin_hood::unordered_set<WeakRef<ApiSession>>::const_iterator it = subscriptions.begin();
+                while (it != subscriptions.end())
+                {
+                    if (Ref<ApiSession> session = (*it).lock())
+                    {
+                        session->Send(buffer);
+
+                        it++; // Next session
+                    }
+                    else
+                    {
+                        // Remove session and move iterator
+                        it = subscriptions.erase(it);
+                    }
+                }
+            }
+            else
+            {
+                LOG_ERROR("Failed to create string buffer.");
+            }
+        }
+
+        void Entity::PublishState()
+        {
+            Ref<rapidjson::StringBuffer> buffer = boost::make_shared<rapidjson::StringBuffer>();
+            if (buffer != nullptr)
+            {
+                // Build message
+                {
+                    rapidjson::Writer<rapidjson::StringBuffer> writer =
+                        rapidjson::Writer<rapidjson::StringBuffer>(*buffer);
+
+                    ApiRequestMessage message = ApiRequestMessage("set-entity-state");
+                    JsonGetState(message.GetJsonDocument(), message.GetJsonAllocator());
+                    message.Build(0, writer);
+                }
+
+                robin_hood::unordered_set<WeakRef<ApiSession>>::const_iterator it = subscriptions.begin();
+                while (it != subscriptions.end())
+                {
+                    if (Ref<ApiSession> session = (*it).lock())
+                    {
+                        session->Send(buffer);
+
+                        it++; // Next session
+                    }
+                    else
+                    {
+                        // Remove session and move iterator
+                        it = subscriptions.erase(it);
+                    }
+                }
+            }
+            else
+            {
+                LOG_ERROR("Failed to create string buffer.");
+            }
+        }
+
+        bool Entity::Save()
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -203,8 +304,7 @@ namespace server
                 // Generate json
                 rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
                 if (script != nullptr)
-                    script->JsonGetProperties(document, document.GetAllocator(),
-                                              scripting::PropertyFlags::kPropertyFlag_Store);
+                    script->JsonGetProperties(document, document.GetAllocator(), scripting::kPropertyFlag_Store);
 
                 // Stringify json
                 rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(state);
@@ -215,7 +315,7 @@ namespace server
             return database->UpdateEntityState(id, std::string_view(state.GetString(), state.GetSize()));
         }
 
-        void Entity::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void Entity::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -265,66 +365,32 @@ namespace server
             return update;
         }
 
-        void Entity::ApiInvoke(const std::string& method, const scripting::Value& parameter)
+        void Entity::JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
-            if (script)
-                script->PostInvoke(method, parameter);
-        }
-
-        void Entity::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                            ApiContext& context)
-        {
-            (void)context;
-
             assert(output.IsObject());
-
-            JsonGet(output, allocator);
-        }
-        bool Entity::ApiSet(const rapidjson::Value& input, ApiContext& context)
-        {
-            (void)context;
-
-            assert(input.IsObject());
-
-            bool update = JsonSet(input);
-
-            if (update)
-                SaveConfig();
-
-            return update;
-        }
-
-        void Entity::ApiGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                 ApiContext& context)
-        {
-            (void)context;
-
-            assert(output.IsObject());
-
-            output.AddMember("id", rapidjson::Value(id), allocator);
-
-            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
 
             if (script != nullptr)
-                script->JsonGetProperties(state, allocator, scripting::PropertyFlags::kPropertyFlag_Visible);
-
-            output.AddMember("state", state, allocator);
+            {
+                // Get state
+                script->JsonGetProperties(output, allocator);
+            }
         }
-        bool Entity::ApiSetState(const rapidjson::Value& input, ApiContext& context)
-        {
-            (void)context;
 
+        bool Entity::JsonSetState(const rapidjson::Value& input)
+        {
             assert(input.IsObject());
 
-            if (script == nullptr)
-                return false;
+            if (script != nullptr)
+            {
+                // Set state
+                scripting::PropertyFlags update = script->JsonSetProperties(input);
+                if (update & scripting::PropertyFlag::kPropertyFlag_Store)
+                    SaveState();
 
-            uint8_t updateFlags = script->JsonSetProperties(input);
+                return update != 0;
+            }
 
-            if (updateFlags & scripting::PropertyFlags::kPropertyFlag_Store)
-                SaveState();
-
-            return updateFlags != 0;
+            return false;
         }
     }
 }

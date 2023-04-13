@@ -7,7 +7,7 @@ namespace server
     namespace scripting
     {
         Script::Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource)
-            : view(view), scriptSource(scriptSource), lastUpdateTime(0), updateInterval(0)
+            : view(view), scriptSource(scriptSource)
         {
             assert(view != nullptr);
             assert(scriptSource != nullptr);
@@ -16,12 +16,28 @@ namespace server
         {
         }
 
+        size_t Script::GetLazyUpdateInterval() const
+        {
+            const robin_hood::unordered_node_map<std::string, rapidjson::Document>::const_iterator it =
+                attributeMap.find("lazy-update-interval");
+            if (it != attributeMap.end() && (*it).second.IsUint64())
+                return it->second.GetUint64();
+
+            return 2; // Default 2 seconds
+        }
+
+        size_t Script::GetUpdateInterval() const
+        {
+            const robin_hood::unordered_node_map<std::string, rapidjson::Document>::const_iterator it =
+                attributeMap.find("update-interval");
+            if (it != attributeMap.end() && (*it).second.IsUint64())
+                return it->second.GetUint64();
+
+            return 10; // Default 10 seconds
+        }
+
         bool Script::Initialize()
         {
-            // Reset update timer
-            lastUpdateTime = time(nullptr);
-            updateInterval = 0;
-
             // Reset references
             attributeMap.clear();
             eventMap.clear();
@@ -59,28 +75,30 @@ namespace server
             worker->GetContext().dispatch(boost::bind(&Script::Invoke, shared_from_this(), name, parameter));
         }
 
-        bool Script::Update(size_t minUpdateInterval)
+        bool Script::LazyUpdate()
         {
-            minUpdateInterval = std::max(updateInterval, minUpdateInterval);
-
-            size_t currentUpdateTime = time(nullptr);
-            size_t elapsedTime = currentUpdateTime - lastUpdateTime;
-
-            if (elapsedTime >= minUpdateInterval)
-            {
-                lastUpdateTime = currentUpdateTime;
-                return Invoke("update", Value((double_t)elapsedTime));
-            }
-            else
-                return true;
+            return Invoke("lazy-update", Value());
         }
 
-        void Script::PostUpdate(size_t minUpdateInterval)
+        void Script::PostLazyUpdate()
         {
             Ref<Worker> worker = Worker::GetInstance();
             assert(worker != nullptr);
 
-            worker->GetContext().dispatch(boost::bind(&Script::Update, shared_from_this(), minUpdateInterval));
+            worker->GetContext().dispatch(boost::bind(&Script::LazyUpdate, shared_from_this()));
+        }
+
+        bool Script::Update()
+        {
+            return Invoke("update", Value());
+        }
+
+        void Script::PostUpdate()
+        {
+            Ref<Worker> worker = Worker::GetInstance();
+            assert(worker != nullptr);
+
+            worker->GetContext().dispatch(boost::bind(&Script::Update, shared_from_this()));
         }
 
         EventConnection Script::Bind(const std::string& event, const Ref<View>& view, const std::string& method)

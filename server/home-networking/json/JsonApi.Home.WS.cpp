@@ -8,272 +8,370 @@ namespace server
     namespace networking
     {
         //! Home
-        void JsonApi::ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                  rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                  ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            (void)context;
+            (void)user;
+            (void)session;
 
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+            {
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
 
-            home->ApiGet(output, allocator, context);
+                home->JsonGet(output, allocator);
+            }
         }
 
         //! Entity
-        void JsonApi::ProcessJsonAddEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonAddEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)session;
 
             if (user->GetAccessLevel() < users::UserAccessLevel::kMaintainerUserAccessLevel)
             {
-                context.Error(ApiError::kError_AccessLevelToLow);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
+
             // Process request
-            rapidjson::Value::MemberIterator typeIt = input.FindMember("type");
-            rapidjson::Value::MemberIterator nameIt = input.FindMember("name");
-            rapidjson::Value::MemberIterator scriptSourceIdIt = input.FindMember("scriptsourceid");
+            rapidjson::Value::ConstMemberIterator typeIt = input.FindMember("type");
+            rapidjson::Value::ConstMemberIterator nameIt = input.FindMember("name");
+            rapidjson::Value::ConstMemberIterator scriptSourceIdIt = input.FindMember("scriptsourceid");
             if (typeIt == input.MemberEnd() || !typeIt->value.IsString() || // type
                 nameIt == input.MemberEnd() || !nameIt->value.IsString() || // name
                 scriptSourceIdIt == input.MemberEnd() ||
                 (!scriptSourceIdIt->value.IsUint() && !scriptSourceIdIt->value.IsNull())) // scriptsourceid
             {
-                context.Error("Missing type, name, and/or scriptsourceid");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Add new entity
-            Ref<main::Entity> entity = home->AddEntity(
-                main::ParseEntityType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength())),
-                std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()),
-                scriptSourceIdIt->value.IsUint() ? scriptSourceIdIt->value.GetUint() : 0, input);
-            if (entity == nullptr)
             {
-                //! Error failed to add entity
-                context.Error(ApiError::kError_InternalError);
-                return;
-            }
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
 
-            entity->JsonGet(output, allocator);
+                // Add new entity
+                Ref<main::Entity> entity = home->AddEntity(
+                    main::ParseEntityType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength())),
+                    std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()),
+                    scriptSourceIdIt->value.IsUint() ? scriptSourceIdIt->value.GetUint() : 0, input);
+                if (entity == nullptr)
+                {
+                    //! Error failed to add entity
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InternalError);
+                    return;
+                }
+
+                entity->JsonGet(output, allocator);
+            }
         }
-        void JsonApi::ProcessJsonRemoveEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonRemoveEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                       ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)session;
 
             if (user->GetAccessLevel() < users::UserAccessLevel::kMaintainerUserAccessLevel)
             {
-                context.Error(ApiError::kError_AccessLevelToLow);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
+
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
             {
-                context.Error("Missing id");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Remove device
-            if (!home->RemoveEntity(entityIdIt->value.GetUint()))
             {
-                //! Error failed to remove device
-                context.Error(ApiError::kError_InternalError);
-                return;
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
+
+                // Remove device
+                if (!home->RemoveEntity(entityIdIt->value.GetUint()))
+                {
+                    //! Error failed to remove device
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InternalError);
+                    return;
+                }
             }
         }
 
-        void JsonApi::ProcessJsonGetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonGetEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)user;
+            (void)session;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
             {
-                context.Error("Missing id");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Get entity
-            Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
-            if (entity == nullptr)
             {
-                context.Error(ApiError::kError_InvalidIdentifier);
-                return;
-            }
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
 
-            entity->ApiGet(output, allocator, context);
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                entity->JsonGet(output, allocator);
+            }
         }
-        void JsonApi::ProcessJsonSetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonSetEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)user;
+            (void)session;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
             {
-                context.Error("Missing id");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Get entity
-            Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
-            if (entity == nullptr)
             {
-                context.Error(ApiError::kError_InvalidIdentifier);
-                return;
-            }
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
 
-            entity->ApiSet(input, context);
-            entity->ApiGet(output, allocator, context);
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                entity->JsonSet(input);
+                entity->JsonGet(output, allocator);
+            }
         }
 
-        void JsonApi::ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                             rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user,
+                                                             const ApiRequestMessage& request,
+                                                             ApiResponseMessage& response,
+                                                             const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)user;
+            (void)session;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
-            rapidjson::Value::MemberIterator methodIt = input.FindMember("method");
-            rapidjson::Value::MemberIterator parameterIt = input.FindMember("parameter");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator methodIt = input.FindMember("method");
+            rapidjson::Value::ConstMemberIterator parameterIt = input.FindMember("parameter");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint() || methodIt == input.MemberEnd() ||
                 !methodIt->value.IsString() || parameterIt == input.MemberEnd())
             {
-                context.Error("Missing id and/or method");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Get entity
-            Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
-            if (entity == nullptr)
             {
-                context.Error(ApiError::kError_InvalidIdentifier);
-                return;
-            }
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
 
-            // Invoke method
-            entity->ApiInvoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
-                              scripting::Value::Create(parameterIt->value));
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                // Invoke method
+                entity->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
+                               scripting::Value::Create(parameterIt->value));
+            }
         }
 
-        void JsonApi::ProcessJsonGetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                         rapidjson::Document& output, ApiContext& context)
+        void JsonApi::ProcessJsonSubscribeToEntityStateMessageWS(const Ref<users::User>& user,
+                                                                 const ApiRequestMessage& request,
+                                                                 ApiResponseMessage& response,
+                                                                 const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)user;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
             {
-                context.Error("Missing id");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Get entity
-            Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
-            if (entity == nullptr)
             {
-                context.Error(ApiError::kError_InvalidIdentifier);
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
+
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                // Add subscription
+                entity->Subscribe(session);
+            }
+        }
+
+        void JsonApi::ProcessJsonUnsubscribeFromEntityStateMessageWS(const Ref<users::User>& user,
+                                                                     const ApiRequestMessage& request,
+                                                                     ApiResponseMessage& response,
+                                                                     const Ref<ApiSession>& session)
+        {
+            (void)user;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
+
+            // Process request
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
+            if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
+            {
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
-            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
-            entity->ApiGetState(state, allocator, context);
-            output.AddMember("state", state, allocator);
+            // Build response
+            {
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
+
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                // Add subscription
+                entity->Unsubscribe(session);
+            }
         }
-        void JsonApi::ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                         rapidjson::Document& output, ApiContext& context)
+
+        void JsonApi::ProcessJsonGetEntityStateMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                         ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            assert(user != nullptr);
-            assert(input.IsObject() && output.IsObject());
+            (void)user;
+            (void)session;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
 
             // Process request
-            rapidjson::Value::MemberIterator entityIdIt = input.FindMember("id");
-            rapidjson::Value::MemberIterator stateIt = input.FindMember("state");
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
+            if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint())
+            {
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                return;
+            }
+
+            // Build response
+            {
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
+
+                // Get entity
+                Ref<main::Entity> entity = home->GetEntity(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
+
+                Ref<scripting::Script> script = entity->GetScript();
+                if (script != nullptr)
+                {
+                    // Get state
+                    script->JsonGetProperties(output, allocator);
+                }
+            }
+        }
+        void JsonApi::ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                         ApiResponseMessage& response, const Ref<ApiSession>& session)
+        {
+            (void)user;
+            (void)session;
+
+            const rapidjson::Document& input = request.GetJsonDocument();
+            rapidjson::Document& output = response.GetJsonDocument();
+            rapidjson::Document::AllocatorType& allocator = response.GetJsonAllocator();
+
+            // Process request
+            rapidjson::Value::ConstMemberIterator entityIdIt = input.FindMember("id");
+            rapidjson::Value::ConstMemberIterator stateIt = input.FindMember("state");
             if (entityIdIt == input.MemberEnd() || !entityIdIt->value.IsUint() || stateIt == input.MemberEnd() ||
                 !stateIt->value.IsObject())
             {
-                context.Error("Missing id and/or state");
-                context.Error(ApiError::kError_InvalidArguments);
+                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
             // Build response
-            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-            Ref<main::Home> home = main::Home::GetInstance();
-            assert(home != nullptr);
-
-            // Get entity
-            Ref<main::Device> entity = home->GetDevice(entityIdIt->value.GetUint());
-            if (entity == nullptr)
             {
-                context.Error(ApiError::kError_InvalidIdentifier);
-                return;
+                Ref<main::Home> home = main::Home::GetInstance();
+                assert(home != nullptr);
+
+                // Get entity
+                Ref<main::Device> entity = home->GetDevice(entityIdIt->value.GetUint());
+                if (entity == nullptr)
+                {
+                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    return;
+                }
             }
-
-            entity->ApiSetState(stateIt->value, context);
-
-            rapidjson::Value state = rapidjson::Value(rapidjson::kObjectType);
-            entity->ApiGetState(state, allocator, context);
-            output.AddMember("state", state, allocator);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace server
             return roomRef != nullptr ? roomRef->GetID() : 0;
         }
 
-        void Device::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void Device::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -107,7 +107,19 @@ namespace server
         void DeviceView::Invoke(const std::string& method, const scripting::Value& parameter)
         {
             if (Ref<Device> r = device.lock())
-                r->ApiInvoke(method, parameter);
+                r->Invoke(method, parameter);
+        }
+
+        void DeviceView::Publish()
+        {
+            if (Ref<Device> r = device.lock())
+                r->Publish();
+        }
+
+        void DeviceView::PublishState()
+        {
+            if (Ref<Device> r = device.lock())
+                r->PublishState();
         }
     }
 }

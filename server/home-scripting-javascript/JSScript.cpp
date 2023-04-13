@@ -421,11 +421,6 @@ namespace server
                 // #endif
             }
 
-            bool JSScript::Update(size_t minUpdateInterval)
-            {
-                return Script::Update(std::max(minUpdateInterval, MIN_UPDATE_TIME));
-            }
-
             Value JSScript::GetProperty(const std::string& name)
             {
                 const robin_hood::unordered_node_map<std::string, Value>::const_iterator it = propertyMap.find(name);
@@ -492,7 +487,7 @@ namespace server
             }
 
             void JSScript::JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                             uint8_t propertyFlags)
+                                             PropertyFlags propertyFlags)
             {
                 (void)propertyFlags;
 
@@ -505,7 +500,7 @@ namespace server
                                      allocator);
                 }
             }
-            uint8_t JSScript::JsonSetProperties(const rapidjson::Value& input, uint8_t propertyFlags)
+            PropertyFlags JSScript::JsonSetProperties(const rapidjson::Value& input, PropertyFlags propertyFlags)
             {
                 (void)propertyFlags;
 

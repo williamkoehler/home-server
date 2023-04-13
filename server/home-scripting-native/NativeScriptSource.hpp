@@ -34,7 +34,7 @@ namespace server
                 /// @brief Get script language
                 ///
                 /// @return Native script
-                virtual ScriptLanguage GetLanguage() override
+                virtual ScriptLanguage GetLanguage() const override
                 {
                     return ScriptLanguage::kNativeScriptLanguage;
                 }
@@ -70,7 +70,7 @@ namespace server
                 virtual Ref<Script> CreateScript(const Ref<View>& view) override;
 
                 virtual void JsonGetConfig(rapidjson::Value& output,
-                                           rapidjson::Document::AllocatorType& allocator) override;
+                                           rapidjson::Document::AllocatorType& allocator) const override;
                 virtual bool JsonSetConfig(const rapidjson::Value& input) override;
             };
         }

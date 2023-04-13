@@ -1,5 +1,5 @@
 #include "HTTPSession.hpp"
-#include "WSSession.hpp"
+#include "ApiSession.hpp"
 #include "json/JsonApi.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 #include <home-users/UserManager.hpp>
@@ -140,7 +140,7 @@ namespace server
                         {
                             socket->expires_never();
 
-                            Ref<WSSession> ws = boost::make_shared<WSSession>(socket, user);
+                            Ref<ApiSessionImpl> ws = boost::make_shared<ApiSessionImpl>(socket, user);
                             ws->Run(request);
 
                             buffer.consume(size);

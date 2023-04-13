@@ -1,12 +1,13 @@
 #pragma once
 #include "common.hpp"
+#include <home-common/ApiMessage.hpp>
 #include <home-users/User.hpp>
 
 namespace server
 {
     namespace networking
     {
-        class WSSession : public boost::enable_shared_from_this<WSSession>
+        class ApiSessionImpl : public ApiSession, public boost::enable_shared_from_this<ApiSessionImpl>
         {
           private:
             boost::asio::strand<websocket_t::executor_type> strand;
@@ -21,9 +22,8 @@ namespace server
             void OnAccept(const boost::system::error_code& ec);
 
             void OnRead(const boost::system::error_code& ec, size_t receivedBytes);
-
-            bool ProcessJsonApi(size_t id, const std::string& msg, rapidjson::Document& input,
-                                rapidjson::Document& output);
+            
+            void Send(size_t id, const ApiMessage& message);
 
             void OnWrite(const boost::system::error_code& ec, size_t sentBytes,
                          const Ref<rapidjson::StringBuffer>& message);
@@ -34,14 +34,13 @@ namespace server
             void OnShutdown(const boost::system::error_code& ec);
 
           public:
-            WSSession(const Ref<tcp_socket_t>& socket, const Ref<users::User>& user);
-            virtual ~WSSession();
+            ApiSessionImpl(const Ref<tcp_socket_t>& socket, const Ref<users::User>& user);
+            virtual ~ApiSessionImpl();
 
             void Run(boost::beast::http::request<boost::beast::http::string_body>& request);
 
-            void Send(const rapidjson::Document& document);
-            void Send(const rapidjson::StringBuffer& buffer);
-            void Send(const Ref<rapidjson::StringBuffer>& buffer);
+            virtual void Send(const ApiMessage& message) override;
+            virtual void Send(const Ref<rapidjson::StringBuffer>& message) override;
         };
     }
 }

@@ -75,7 +75,7 @@ namespace server
             /// @param passwd Old password
             /// @param newPasswd New password
             /// @return Successfulness
-            bool SetUserPassword(identifier_t userID, const std::string_view& passwd, const std::string_view& newPasswd);
+            bool SetUserPassword(identifier_t userID, const std::string& passwd, const std::string& newPasswd);
 
             /// @brief Set user password
             ///
@@ -84,7 +84,7 @@ namespace server
             /// @param newPasswd
             /// @return true
             /// @return false
-            bool SetUserPassword(const Ref<User>& user, const std::string_view& passwd, const std::string_view& newPasswd);
+            bool SetUserPassword(const Ref<User>& user, const std::string& passwd, const std::string& newPasswd);
 
             /// @brief Authenticate user using name and password
             ///

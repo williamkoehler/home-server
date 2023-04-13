@@ -30,18 +30,30 @@ namespace server
 
             Ref<scripting::Script> script;
 
+            // A lazy update timer is executed when there is at least one subscription
+            size_t lazyUpdateInterval;
+            boost::asio::deadline_timer lazyUpdateTimer;
+
+            void WaitLazyUpdateTimer(const boost::system::error_code& ec);
+
+            /// @brief Update subscriptions
+            ///
+            robin_hood::unordered_set<WeakRef<ApiSession>> subscriptions;
+
           public:
             Entity(identifier_t id, const std::string& name);
             virtual ~Entity();
-            static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name, identifier_t scriptSourceID,
-                               const rapidjson::Value& config, const rapidjson::Value& state);
-            static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name, identifier_t scriptSourceID,
-                               const std::string_view& config, const std::string_view& state);
+            static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name,
+                                      identifier_t scriptSourceID, const rapidjson::Value& config,
+                                      const rapidjson::Value& state);
+            static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name,
+                                      identifier_t scriptSourceID, const std::string_view& config,
+                                      const std::string_view& state);
 
             /// @brief Get entity type
             ///
             /// @return EntityType Entity type
-            virtual EntityType GetType() = 0;
+            virtual EntityType GetType() const = 0;
 
             /// @brief Get entity id
             ///
@@ -83,7 +95,7 @@ namespace server
             /// @brief Get script source id
             ///
             /// @return identifier_t Script source id
-            identifier_t GetScriptSourceId()
+            identifier_t GetScriptSourceId() const
             {
                 return script != nullptr ? script->GetSourceID() : 0;
             }
@@ -93,33 +105,48 @@ namespace server
             /// @return Ref<scripting::View> Get view of this object
             virtual Ref<scripting::View> GetView() = 0;
 
-            /// @brief Save/update entity data in database
+            /// @brief Invoke script method
+            ///
+            /// @param event Method name
+            void Invoke(const std::string& method, const scripting::Value& parameter);
+
+            /// @brief Make session subscribe to entity
+            ///
+            /// @param session Api session
+            void Subscribe(const Ref<ApiSession>& session);
+
+            /// @brief Make session unsubscribe from entity
+            ///
+            /// @param session Api session
+            void Unsubscribe(const Ref<ApiSession>& session);
+
+            /// @brief Push changes to client
+            ///
+            void Publish();
+
+            /// @brief Push state changes to client
+            ///
+            void PublishState();
+
+            /// @brief Save/update entity in database
             ///
             /// @return Successfulness
-            bool SaveConfig();
+            bool Save();
 
-            /// @brief Save/update entity configuration in database
+            /// @brief Save/update entity state in database
             ///
             /// @return Successfulness
             bool SaveState();
 
-            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) = 0;
+            virtual void JsonGetConfig(rapidjson::Value& output,
+                                       rapidjson::Document::AllocatorType& allocator) const = 0;
             virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
 
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSet(const rapidjson::Value& input);
 
-            /// @brief Invoke script method
-            ///
-            /// @param event Method name
-            void ApiInvoke(const std::string& method, const scripting::Value& parameter);
-
-            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
-            bool ApiSet(const rapidjson::Value& input, ApiContext& context);
-
-            void ApiGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                             ApiContext& context);
-            bool ApiSetState(const rapidjson::Value& input, ApiContext& context);
+            void JsonGetState(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
+            bool JsonSetState(const rapidjson::Value& input);
         };
     }
 }

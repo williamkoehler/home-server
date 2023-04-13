@@ -92,20 +92,15 @@ namespace server
                 /// @return Successfulness
                 virtual bool Initialize() override;
 
-                /// @brief Update script (lazy update)
-                ///
-                /// @return Successfulness
-                virtual bool Update(size_t minUpdateInterval) override;
-
                 virtual Value GetProperty(const std::string& name) override;
                 virtual void SetProperty(const std::string& name, const Value& value) override;
 
                 virtual bool Invoke(const std::string& name, const Value& parameter) override;
 
                 virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                          uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) override;
-                virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
-                                           uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) override;
+                                               PropertyFlags propertyFlags = kPropertyFlag_Visible) override;
+                virtual PropertyFlags JsonSetProperties(const rapidjson::Value& input,
+                                                        PropertyFlags propertyFlags = kPropertyFlag_All) override;
             };
         }
     }

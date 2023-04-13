@@ -31,7 +31,7 @@ namespace server
             return room;
         }
 
-        void Room::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void Room::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -64,9 +64,7 @@ namespace server
 
         identifier_t RoomView::GetID() const
         {
-            Ref<Room> r = room.lock();
-
-            if (r != nullptr)
+            if (Ref<Room> r = room.lock())
                 return r->GetID();
 
             return 0;
@@ -74,19 +72,33 @@ namespace server
 
         std::string RoomView::GetName() const
         {
-            Ref<Room> r = room.lock();
-
-            if (r != nullptr)
+            if (Ref<Room> r = room.lock())
                 return r->GetName();
 
             return "";
         }
         void RoomView::SetName(const std::string& v)
         {
-            Ref<Room> r = room.lock();
-
-            if (r != nullptr)
+            if (Ref<Room> r = room.lock())
                 r->SetName(v);
+        }
+
+        void RoomView::Invoke(const std::string& method, const scripting::Value& parameter)
+        {
+            if (Ref<Room> r = room.lock())
+                r->Invoke(method, parameter);
+        }
+
+        void RoomView::Publish()
+        {
+            if (Ref<Room> r = room.lock())
+                r->Publish();
+        }
+
+        void RoomView::PublishState()
+        {
+            if (Ref<Room> r = room.lock())
+                r->PublishState();
         }
     }
 }

@@ -34,7 +34,7 @@ namespace server
             return service;
         }
 
-        void Service::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void Service::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             (void)output;
             (void)allocator;
@@ -202,7 +202,19 @@ namespace server
         void ServiceView::Invoke(const std::string& method, const scripting::Value& parameter)
         {
             if (Ref<Service> r = service.lock())
-                r->ApiInvoke(method, parameter);
+                r->Invoke(method, parameter);
+        }
+
+        void ServiceView::Publish()
+        {
+            if (Ref<Service> r = service.lock())
+                r->Publish();
+        }
+
+        void ServiceView::PublishState()
+        {
+            if (Ref<Service> r = service.lock())
+                r->PublishState();
         }
     }
 }

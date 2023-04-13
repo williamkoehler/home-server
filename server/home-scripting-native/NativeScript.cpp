@@ -17,20 +17,30 @@ namespace server
             }
             Ref<Script> NativeScript::Create(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource)
             {
+                assert(view != nullptr);
+                assert(scriptSource != nullptr);
+
+                // Create script implementation
                 Ref<NativeScriptImpl> scriptImpl = scriptSource->GetCreateCallback()();
-
-                if (scriptImpl != nullptr)
+                if (scriptImpl == nullptr)
                 {
-                    Ref<NativeScript> script =
-                        boost::make_shared<NativeScript>(view, scriptSource, std::move(scriptImpl));
-
-                    // Initialize script implementation
-                    script->scriptImpl->script = script;
-
-                    return script->shared_from_this();
-                }
-                else
+                    LOG_ERROR("Failed to create native script implementation.");
                     return nullptr;
+                }
+
+                // Create script
+                Ref<NativeScript> script = boost::make_shared<NativeScript>(view, scriptSource, std::move(scriptImpl));
+                if (script == nullptr)
+                {
+                    LOG_ERROR("Failed to create script.");
+                    return nullptr;
+                }
+
+                // Initialize script implementation
+                script->scriptImpl->script = script;
+                script->scriptImpl->view = view;
+
+                return boost::static_pointer_cast<Script>(script);
             }
 
             bool NativeScript::Initialize()
@@ -149,7 +159,8 @@ namespace server
             }
 
             void NativeScript::JsonGetProperties(rapidjson::Value& output,
-                                                 rapidjson::Document::AllocatorType& allocator, uint8_t propertyFlags)
+                                                 rapidjson::Document::AllocatorType& allocator,
+                                                 PropertyFlags propertyFlags)
             {
                 assert(output.IsObject());
 
@@ -164,11 +175,11 @@ namespace server
                     }
                 }
             }
-            uint8_t NativeScript::JsonSetProperties(const rapidjson::Value& input, uint8_t propertyFlags)
+            PropertyFlags NativeScript::JsonSetProperties(const rapidjson::Value& input, PropertyFlags propertyFlags)
             {
                 assert(input.IsObject());
 
-                uint8_t updateFlags = 0; // We use an uint8_t to allow to check what properties where updated
+                PropertyFlags updateFlags = 0; // We use an uint8_t to allow to check what properties where updated
 
                 for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin();
                      propertyIt != input.MemberEnd(); propertyIt++)
@@ -178,7 +189,7 @@ namespace server
                     if (it != propertyMap.end() && it->second->GetFlags() & propertyFlags)
                     {
                         it->second->Set(scriptImpl.get(), Value::Create(propertyIt->value));
-                        updateFlags |= it->second->GetFlags() & PropertyFlags::kPropertyFlag_InitiateUpdate;
+                        updateFlags |= it->second->GetFlags() & kPropertyFlag_InitiateUpdate;
                     }
                 }
 
@@ -186,7 +197,6 @@ namespace server
             }
 
             //! NativeScriptImpl
-
             bool NativeScriptImpl::AddAttribute(const std::string& name, const char* json)
             {
                 if (Ref<NativeScript> scriptRef = script.lock())

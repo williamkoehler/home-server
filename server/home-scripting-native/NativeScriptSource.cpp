@@ -44,7 +44,7 @@ namespace server
             }
 
             void NativeScriptSource::JsonGetConfig(rapidjson::Value& output,
-                                                   rapidjson::Document::AllocatorType& allocator)
+                                                   rapidjson::Document::AllocatorType& allocator) const
             {
                 (void)allocator;
 

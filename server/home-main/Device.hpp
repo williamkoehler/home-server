@@ -24,7 +24,7 @@ namespace server
             virtual ~Device();
             static Ref<Device> Create(identifier_t id, const std::string& name);
 
-            virtual EntityType GetType() override
+            virtual EntityType GetType() const override
             {
                 return EntityType::kDeviceEntityType;
             }
@@ -60,7 +60,7 @@ namespace server
                 return view;
             }
 
-            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) override;
+            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const override;
             virtual bool JsonSetConfig(const rapidjson::Value& input) override;
         };
 
@@ -79,6 +79,9 @@ namespace server
             virtual void SetName(const std::string& v) override;
 
             virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
+
+            virtual void Publish() override;
+            virtual void PublishState() override;
         };
     }
 }

@@ -58,7 +58,8 @@ namespace server
             /// @param scriptSourceId Script source id
             /// @param config Additional entity config
             /// @return Ref<Entity> Entity
-            Ref<Entity> AddEntity(EntityType type, const std::string& name, identifier_t scriptSourceId, const rapidjson::Value& config);
+            Ref<Entity> AddEntity(EntityType type, const std::string& name, identifier_t scriptSourceId,
+                                  const rapidjson::Value& config);
 
             /// @brief Get entity count
             /// @return size_t Entity count
@@ -97,7 +98,7 @@ namespace server
             /// @param roomID Room id
             bool RemoveEntity(identifier_t entityId);
 
-            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
+            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
         };
 
         class HomeView : public scripting::HomeView

@@ -23,7 +23,7 @@ namespace server
             virtual ~Room();
             static Ref<Room> Create(identifier_t id, const std::string& name);
 
-            virtual EntityType GetType() override
+            virtual EntityType GetType() const override
             {
                 return EntityType::kRoomEntityType;
             }
@@ -63,11 +63,11 @@ namespace server
             }
 
             virtual void JsonGetConfig(rapidjson::Value& output,
-                                       rapidjson::Document::AllocatorType& allocator) override;
+                                       rapidjson::Document::AllocatorType& allocator) const override;
             virtual bool JsonSetConfig(const rapidjson::Value& input) override;
         };
 
-        class RoomView : public scripting::RoomView
+        class RoomView final : public scripting::RoomView
         {
           private:
             WeakRef<Room> room;
@@ -80,6 +80,11 @@ namespace server
 
             virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
+
+            virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
+
+            virtual void Publish() override;
+            virtual void PublishState() override;
         };
     }
 }

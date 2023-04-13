@@ -238,8 +238,8 @@ namespace server
                 return nullptr;
         }
 
-        bool UserManager::SetUserPassword(identifier_t userID, const std::string_view& passwd,
-                                          const std::string_view& newPasswd)
+        bool UserManager::SetUserPassword(identifier_t userID, const std::string& passwd,
+                                          const std::string& newPasswd)
         {
             // boost::shared_lock_guard lock(mutex);
 
@@ -249,24 +249,42 @@ namespace server
 
             return SetUserPassword(it->second, passwd, newPasswd);
         }
-        bool UserManager::SetUserPassword(const Ref<User>& user, const std::string_view& passwd,
-                                          const std::string_view& newPasswd)
+        bool UserManager::SetUserPassword(const Ref<User>& user, const std::string& passwd,
+                                          const std::string& newPasswd)
         {
+            static const boost::regex passwordRegex = boost::regex(R"(^[a-zA-Z0-9!@#$%^&+\-/\*~,;.:-_|<>=]*$)");
+
             // Get salt
             uint8_t salt[SALT_SIZE];
             user->GetSalt(salt);
 
             // Verify password
-            uint8_t digest[SHA256_DIGEST_LENGTH];
-            CalculateHash(passwd, salt, digest);
+            {
+                // Calculate hash
+                uint8_t digest[SHA256_DIGEST_LENGTH];
+                CalculateHash(passwd, salt, digest);
 
-            // Check hash
-            if (!user->CompaireHash(digest))
-                return false;
+                // Check hash
+                if (!user->CompaireHash(digest))
+                    return false;
+            }
 
-            // Generate and set new hash
-            CalculateHash(newPasswd, salt, digest);
-            user->SetHash(digest);
+            // Verify new password
+            {
+                if (newPasswd.length() < 8 || !boost::regex_match(newPasswd, passwordRegex))
+                    return false;
+            }
+
+            // Set new password
+            {
+                // Calculate new hash
+                uint8_t digest[SHA256_DIGEST_LENGTH];
+                CalculateHash(newPasswd, salt, digest);
+
+                // Set hash
+                if (!user->SetHash(digest))
+                    return false;
+            }
 
             return true;
         }

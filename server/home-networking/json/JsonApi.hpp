@@ -21,62 +21,90 @@ namespace server
 
           public: // WS
             // User
-            static void ProcessJsonGetUsersMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                     rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetUsersMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                     ApiResponseMessage& response, const Ref<ApiSession>& session);
 
-            static void ProcessJsonAddUserMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveUserMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                       rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonAddUserMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session);
+            static void ProcessJsonRemoveUserMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                       ApiResponseMessage& response, const Ref<ApiSession>& session);
 
-            static void ProcessJsonGetUserMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetUserMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetUserMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session);
+            static void ProcessJsonSetUserMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session);
 
             // Home
-            static void ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                    rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetHomeMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                    ApiResponseMessage& response, const Ref<ApiSession>& session);
 
             // Entity
-            static void ProcessJsonAddEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                      rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                         rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonAddEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                      ApiResponseMessage& response, const Ref<ApiSession>& session);
+            static void ProcessJsonRemoveEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                         ApiResponseMessage& response, const Ref<ApiSession>& session);
 
-            static void ProcessJsonGetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                      rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetEntityMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                      rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                      ApiResponseMessage& response, const Ref<ApiSession>& session);
+            static void ProcessJsonSetEntityMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
+                                                      ApiResponseMessage& response, const Ref<ApiSession>& session);
 
-            static void ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                               rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonInvokeDeviceMethodMessageWS(const Ref<users::User>& user,
+                                                               const ApiRequestMessage& request,
+                                                               ApiResponseMessage& response,
+                                                               const Ref<ApiSession>& session);
 
-            static void ProcessJsonGetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                           rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                           rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonSubscribeToEntityStateMessageWS(const Ref<users::User>& user,
+                                                                   const ApiRequestMessage& request,
+                                                                   ApiResponseMessage& response,
+                                                                   const Ref<ApiSession>& session);
+
+            static void ProcessJsonUnsubscribeFromEntityStateMessageWS(const Ref<users::User>& user,
+                                                                     const ApiRequestMessage& request,
+                                                                     ApiResponseMessage& response,
+                                                                     const Ref<ApiSession>& session);
+
+            static void ProcessJsonGetEntityStateMessageWS(const Ref<users::User>& user,
+                                                           const ApiRequestMessage& request,
+                                                           ApiResponseMessage& response,
+                                                           const Ref<ApiSession>& session);
+            static void ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user,
+                                                           const ApiRequestMessage& request,
+                                                           ApiResponseMessage& response,
+                                                           const Ref<ApiSession>& session);
 
             // Scripting
-            static void ProcessJsonGetScriptSourcesMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                             rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetScriptSourcesMessageWS(const Ref<users::User>& user,
+                                                             const ApiRequestMessage& request,
+                                                             ApiResponseMessage& response,
+                                                             const Ref<ApiSession>& session);
 
-            static void ProcessJsonAddScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonRemoveScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                               rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonAddScriptSourceMessageWS(const Ref<users::User>& user,
+                                                            const ApiRequestMessage& request,
+                                                            ApiResponseMessage& response,
+                                                            const Ref<ApiSession>& session);
+            static void ProcessJsonRemoveScriptSourceMessageWS(const Ref<users::User>& user,
+                                                               const ApiRequestMessage& request,
+                                                               ApiResponseMessage& response,
+                                                               const Ref<ApiSession>& session);
 
-            static void ProcessJsonGetScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context);
-            static void ProcessJsonSetScriptSourceMessageWS(const Ref<users::User>& user, rapidjson::Document& input,
-                                                            rapidjson::Document& output, ApiContext& context);
+            static void ProcessJsonGetScriptSourceMessageWS(const Ref<users::User>& user,
+                                                            const ApiRequestMessage& request,
+                                                            ApiResponseMessage& response,
+                                                            const Ref<ApiSession>& session);
+            static void ProcessJsonSetScriptSourceMessageWS(const Ref<users::User>& user,
+                                                            const ApiRequestMessage& request,
+                                                            ApiResponseMessage& response,
+                                                            const Ref<ApiSession>& session);
 
             static void ProcessJsonGetScriptSourceContentMessageWS(const Ref<users::User>& user,
-                                                                   rapidjson::Document& input,
-                                                                   rapidjson::Document& output, ApiContext& context);
+                                                                   const ApiRequestMessage& request,
+                                                                   ApiResponseMessage& response,
+                                                                   const Ref<ApiSession>& session);
             static void ProcessJsonSetScriptSourceContentMessageWS(const Ref<users::User>& user,
-                                                                   rapidjson::Document& input,
-                                                                   rapidjson::Document& output, ApiContext& context);
+                                                                   const ApiRequestMessage& request,
+                                                                   ApiResponseMessage& response,
+                                                                   const Ref<ApiSession>& session);
         };
     }
 }

@@ -191,17 +191,11 @@ namespace server
             return scriptSource->CreateScript(view);
         }
 
-        void ScriptManager::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                   ApiContext& context)
+        void ScriptManager::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
-            (void)context;
-
-            assert(output.IsObject());
-
-            // ScriptSources
             rapidjson::Value scriptSourceListJson = rapidjson::Value(rapidjson::kArrayType);
 
-            for (auto& [id, scriptSource] : scriptSourceList)
+            for (const auto& [id, scriptSource] : scriptSourceList)
             {
                 assert(scriptSource != nullptr);
 

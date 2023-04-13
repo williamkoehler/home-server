@@ -39,5 +39,15 @@ namespace server
 
             // Do nothing
         }
+
+        void HomeView::Publish()
+        {
+            // Do nothing
+        }
+
+        void HomeView::PublishState()
+        {
+            // Do nothing
+        }
     }
 }

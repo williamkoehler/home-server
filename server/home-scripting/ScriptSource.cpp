@@ -40,7 +40,7 @@ namespace server
         {
         }
 
-        bool ScriptSource::SaveConfig()
+        bool ScriptSource::Save() const
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -61,7 +61,7 @@ namespace server
             return database->UpdateScriptSource(id, name, std::string_view(config.GetString(), config.GetSize()));
         }
 
-        bool ScriptSource::SaveContent()
+        bool ScriptSource::SaveContent() const
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -70,7 +70,7 @@ namespace server
             return database->UpdateScriptSourceContent(id, std::string_view(content.data(), content.size()));
         }
 
-        void ScriptSource::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void ScriptSource::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -100,7 +100,7 @@ namespace server
             return update;
         }
 
-        void ScriptSource::JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void ScriptSource::JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -124,45 +124,41 @@ namespace server
             return update;
         }
 
-        void ScriptSource::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                  ApiContext& context)
+        void ScriptSource::ApiGet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const
         {
-            (void)context;
+            (void)request;
+            (void)session;
 
-            assert(output.IsObject());
-
-            JsonGet(output, allocator);
+            JsonGet(response.GetJsonDocument(), response.GetJsonAllocator());
         }
-        bool ScriptSource::ApiSet(const rapidjson::Value& input, ApiContext& context)
+        bool ScriptSource::ApiSet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session)
         {
-            (void)context;
+            (void)response;
+            (void)session;
 
-            assert(input.IsObject());
-
-            bool update = JsonSet(input);
+            bool update = JsonSet(request.GetJsonDocument());
 
             if (update)
-                SaveConfig();
+                Save();
 
             return update;
         }
 
-        void ScriptSource::ApiGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                         ApiContext& context)
+        void ScriptSource::ApiGetContent(const ApiRequestMessage& request, ApiResponseMessage& response,
+                                         const Ref<ApiSession>& session) const
         {
-            (void)context;
+            (void)request;
+            (void)session;
 
-            assert(output.IsObject());
-
-            JsonGetContent(output, allocator);
+            JsonGetContent(response.GetJsonDocument(), response.GetJsonAllocator());
         }
-        bool ScriptSource::ApiSetContent(const rapidjson::Value& input, ApiContext& context)
+        bool ScriptSource::ApiSetContent(const ApiRequestMessage& request, ApiResponseMessage& response,
+                                         const Ref<ApiSession>& session)
         {
-            (void)context;
+            (void)response;
+            (void)session;
 
-            assert(input.IsObject());
-
-            bool update = JsonSetContent(input);
+            bool update = JsonSetContent(request.GetJsonDocument());
 
             if (update)
                 SaveContent();

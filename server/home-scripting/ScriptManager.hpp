@@ -84,7 +84,7 @@ namespace server
 
             Ref<Script> CreateScript(identifier_t id, uint8_t flags, const Ref<View>& view);
 
-            void ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context);
+            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
         };
     }
 }

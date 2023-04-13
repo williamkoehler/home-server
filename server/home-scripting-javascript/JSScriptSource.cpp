@@ -54,7 +54,7 @@ namespace server
                                  scriptList.end());
             }
 
-            void JSScriptSource::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+            void JSScriptSource::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
             {
                 (void)allocator;
                 

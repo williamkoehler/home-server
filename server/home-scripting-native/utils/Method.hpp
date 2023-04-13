@@ -13,6 +13,9 @@ namespace server
             template <typename P = void*, class T = NativeScriptImpl>
             using MethodDefinition = bool (T::*)(const P&);
 
+            template <class T = NativeScriptImpl>
+            using MethodDefinition2 = bool (T::*)();
+
             template <typename P, class T>
             class MethodImpl;
 
@@ -32,6 +35,12 @@ namespace server
                     return boost::make_unique<MethodImpl<P, T>>(method);
                 }
 
+                template <class T>
+                static UniqueRef<Method> Create(MethodDefinition2<T> method)
+                {
+                    return boost::make_unique<MethodImpl<Void, T>>(method);
+                }
+
                 virtual bool Invoke(void* self, const Value& value) = 0;
             };
 
@@ -41,10 +50,10 @@ namespace server
     class MethodImpl<type, T> final : public Method                                                                    \
     {                                                                                                                  \
       private:                                                                                                         \
-        MethodDefinition<type, T> method;                                                                                \
+        MethodDefinition<type, T> method;                                                                              \
                                                                                                                        \
       public:                                                                                                          \
-        MethodImpl<type, T>(MethodDefinition<type, T> method) : method(method)                                           \
+        MethodImpl<type, T>(MethodDefinition<type, T> method) : method(method)                                         \
         {                                                                                                              \
         }                                                                                                              \
         virtual bool Invoke(void* self, const Value& value) override                                                   \
@@ -52,7 +61,10 @@ namespace server
             if (condition)                                                                                             \
                 return invokeExpr;                                                                                     \
             else                                                                                                       \
+            {                                                                                                          \
+                LOG_WARNING("Method parameter does not match.");                                                       \
                 return false;                                                                                          \
+            }                                                                                                          \
         }                                                                                                              \
     };
 
@@ -68,6 +80,39 @@ namespace server
             METHOD_IMPLEMENTATION(std::string, value.IsString(), METHOD(value.GetString()))
             METHOD_IMPLEMENTATION(Endpoint, value.IsEndpoint(), METHOD(value.GetEndpoint()))
             METHOD_IMPLEMENTATION(Color, value.IsColor(), METHOD(value.GetColor()))
+
+            template <class T>
+            class MethodImpl<Value, T> final : public Method
+            {
+              private:
+                MethodDefinition<Value, T> method;
+
+              public:
+                MethodImpl<Value, T>(MethodDefinition<Value, T> method) : method(method)
+                {
+                }
+                virtual bool Invoke(void* self, const Value& value) override
+                {
+                    return METHOD(value);
+                }
+            };
+
+            template <class T>
+            class MethodImpl<Void, T> final : public Method
+            {
+              private:
+                MethodDefinition2<T> method;
+
+              public:
+                MethodImpl<Value, T>(MethodDefinition2<T> method) : method(method)
+                {
+                }
+                virtual bool Invoke(void* self, const Value& value) override
+                {
+                    (void)value;
+                    return METHOD();
+                }
+            };
 
 #undef METHOD
 #undef METHOD_IMPLEMENTATION

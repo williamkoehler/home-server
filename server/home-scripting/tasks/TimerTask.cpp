@@ -15,7 +15,7 @@ namespace server
         Ref<TimerTask> TimerTask::Create(const Ref<Script>& script, const std::string& method, size_t interval)
         {
             assert(script != nullptr);
-            
+
             Ref<TimerTask> task = boost::make_shared<TimerTask>(script, method, interval);
 
             if (task != nullptr)
@@ -47,7 +47,8 @@ namespace server
         void TimerTask::Cancel()
         {
             // Cancel timer
-            timer.cancel();
+            boost::system::error_code ec;
+            timer.cancel(ec);
         }
     }
 }

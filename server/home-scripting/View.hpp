@@ -45,6 +45,14 @@ namespace server
             /// @param method Method name
             /// @param parameter Parameter
             virtual void Invoke(const std::string& method, const Value& parameter) = 0;
+
+            /// @brief Push changes to clients
+            ///
+            virtual void Publish() = 0;
+
+            /// @brief Push state changes to clients
+            ///
+            virtual void PublishState() = 0;
         };
     }
 }

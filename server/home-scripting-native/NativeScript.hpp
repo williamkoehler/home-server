@@ -133,9 +133,9 @@ namespace server
                 bool Invoke(const std::string& name, const Value& parameter) override;
 
                 virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
-                                               uint8_t propertyFlags = PropertyFlags::kPropertyFlag_Visible) override;
-                virtual uint8_t JsonSetProperties(const rapidjson::Value& input,
-                                                  uint8_t propertyFlags = PropertyFlags::kPropertyFlags_All) override;
+                                               PropertyFlags propertyFlags = kPropertyFlag_Visible) override;
+                virtual PropertyFlags JsonSetProperties(const rapidjson::Value& input,
+                                                        PropertyFlags propertyFlags = kPropertyFlag_All) override;
             };
 
             class NativeScriptImpl : public boost::enable_shared_from_this<NativeScriptImpl>
@@ -144,6 +144,7 @@ namespace server
                 friend class server::scripting::native::NativeScript;
 
                 WeakRef<NativeScript> script;
+                Ref<View> view;
 
               public:
                 NativeScriptImpl()
@@ -154,6 +155,11 @@ namespace server
                 }
 
                 constexpr virtual ViewType GetViewType() const = 0;
+
+                inline Ref<View> GetView() const
+                {
+                    return view;
+                }
 
                 /// @brief Initialize script
                 ///

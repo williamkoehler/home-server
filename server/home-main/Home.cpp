@@ -110,7 +110,7 @@ namespace server
             if (entity != nullptr)
             {
                 // Save entity config and state
-                entity->SaveConfig();
+                entity->Save();
                 entity->SaveState();
 
                 entityMap[entity->GetID()] = entity;
@@ -181,18 +181,14 @@ namespace server
                 return false;
         }
 
-        void Home::ApiGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator, ApiContext& context)
+        void Home::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
-            (void)context;
-
-            assert(output.IsObject());
-
             output.AddMember("timestamp", rapidjson::Value(timestamp), allocator);
 
             rapidjson::Value entitiesJson = rapidjson::Value(rapidjson::kArrayType);
             entitiesJson.Reserve(entityMap.size(), allocator);
 
-            for (auto& [id, entity] : entityMap)
+            for (const auto& [id, entity] : entityMap)
             {
                 assert(entity != nullptr);
 

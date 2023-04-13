@@ -35,6 +35,8 @@ namespace server
             virtual Ref<DeviceView> GetDevice(identifier_t id) const = 0;
 
             virtual void Invoke(const std::string& method, const Value& parameter) final override;
+            virtual void Publish() final override;
+            virtual void PublishState() final override;
         };
     }
 }

@@ -105,7 +105,7 @@ namespace server
             return false;
         }
 
-        void User::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)
+        void User::JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
@@ -118,7 +118,7 @@ namespace server
                              allocator);
         }
 
-        void User::JsonSet(rapidjson::Value& input)
+        void User::JsonSet(const rapidjson::Value& input)
         {
             assert(input.IsObject());
         }

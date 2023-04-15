@@ -260,6 +260,9 @@ namespace server
 
                 // Add subscription
                 entity->Subscribe(session);
+
+                // Get state
+                entity->JsonGetState(output, allocator);
             }
         }
 
@@ -331,12 +334,10 @@ namespace server
                     return;
                 }
 
-                Ref<scripting::Script> script = entity->GetScript();
-                if (script != nullptr)
-                {
-                    // Get state
-                    script->JsonGetProperties(output, allocator);
-                }
+                // Get state
+                rapidjson::Value stateJson = rapidjson::Value(rapidjson::kObjectType);
+                entity->JsonGetState(stateJson, allocator);
+                output.AddMember("state", stateJson, allocator);
             }
         }
         void JsonApi::ProcessJsonSetEntityStateMessageWS(const Ref<users::User>& user, const ApiRequestMessage& request,
@@ -371,6 +372,9 @@ namespace server
                     response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
                     return;
                 }
+
+                // Set state
+                entity->JsonSetState(stateIt->value);
             }
         }
     }

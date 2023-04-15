@@ -164,9 +164,12 @@ namespace server
         {
             if (subscriptions.insert(session).second)
             {
-                lazyUpdateTimer.expires_from_now(boost::posix_time::seconds(0));
-                lazyUpdateTimer.async_wait(
-                    boost::bind(&Entity::WaitLazyUpdateTimer, shared_from_this(), boost::placeholders::_1));
+                if (lazyUpdateInterval > 0)
+                {
+                    lazyUpdateTimer.expires_from_now(boost::posix_time::seconds(0));
+                    lazyUpdateTimer.async_wait(
+                        boost::bind(&Entity::WaitLazyUpdateTimer, shared_from_this(), boost::placeholders::_1));
+                }
             }
         }
 

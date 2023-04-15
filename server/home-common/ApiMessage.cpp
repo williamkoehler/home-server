@@ -15,8 +15,12 @@ namespace server
         writer.String(type.data(), type.size(), true);
 
         // Content field
-        writer.Key("content", 7);
-        document.Accept(writer);
+        for (rapidjson::Value::ConstMemberIterator memberIt = document.MemberBegin(); memberIt != document.MemberEnd();
+             memberIt++)
+        {
+            writer.Key(memberIt->name.GetString(), memberIt->name.GetStringLength());
+            memberIt->value.Accept(writer);
+        }
 
         writer.EndObject(3);
     }
@@ -38,8 +42,12 @@ namespace server
             writer.String("nack", 4);
 
         // Content field
-        writer.Key("content", 7);
-        document.Accept(writer);
+        for (rapidjson::Value::ConstMemberIterator memberIt = document.MemberBegin(); memberIt != document.MemberEnd();
+             memberIt++)
+        {
+            writer.Key(memberIt->name.GetString(), memberIt->name.GetStringLength());
+            memberIt->value.Accept(writer);
+        }
 
         writer.EndObject(3);
     }

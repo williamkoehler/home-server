@@ -160,27 +160,22 @@ namespace server
                                               value.IsBoolean(), PROPERTY_REFERENCE = value.GetBoolean())
             PROPERTY_REFERENCE_IMPLEMENTATION(double_t, ValueType::kNumberType, Value(PROPERTY_REFERENCE),
                                               value.IsNumber(), PROPERTY_REFERENCE = value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(size_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (size_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(int8_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (int8_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(uint8_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (uint8_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(int16_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (int16_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(uint16_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (uint16_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(int32_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (int32_t)value.GetNumber())
-            PROPERTY_REFERENCE_IMPLEMENTATION(uint32_t, ValueType::kNumberType,
-                                              Value((const double_t&)PROPERTY_REFERENCE), value.IsNumber(),
-                                              PROPERTY_REFERENCE = (uint32_t)value.GetNumber())
+            PROPERTY_REFERENCE_IMPLEMENTATION(ssize_t, ValueType::kIntegerType, Value(PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(size_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (size_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int8_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (int8_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint8_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (uint8_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int16_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (int16_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint16_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (uint16_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(int32_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (int32_t)value.GetInteger())
+            PROPERTY_REFERENCE_IMPLEMENTATION(uint32_t, ValueType::kIntegerType, Value((ssize_t)PROPERTY_REFERENCE),
+                                              value.IsInteger(), PROPERTY_REFERENCE = (uint32_t)value.GetInteger())
             PROPERTY_REFERENCE_IMPLEMENTATION(std::string, ValueType::kStringType, Value(PROPERTY_REFERENCE),
                                               value.IsString(), PROPERTY_REFERENCE = value.GetString())
             PROPERTY_REFERENCE_IMPLEMENTATION(Endpoint, ValueType::kEndpointType, Value(PROPERTY_REFERENCE),

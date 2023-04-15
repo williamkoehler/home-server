@@ -29,16 +29,17 @@ namespace server
         enum ValueType : uint8_t
         {
             kUnknownType = 0,
-            kNullType = 1,
-            kBooleanType = 2,
-            kNumberType = 3,
-            kStringType = 4,
-            kEndpointType = 5,
-            kColorType = 6,
+            kNullType,
+            kBooleanType,
+            kIntegerType,
+            kNumberType,
+            kStringType,
+            kEndpointType,
+            kColorType,
 
-            kRoomIDType = 7,
-            kDeviceIDType = 8,
-            kServiceIDType = 9,
+            kRoomIDType,
+            kDeviceIDType,
+            kServiceIDType,
         };
 
         std::string_view StringifyValueTypeConst(ValueType type);
@@ -76,11 +77,13 @@ namespace server
                     sizeof(arg1) >= sizeof(arg2) ? static_max<arg1, args...>::value : static_max<arg2, args...>::value;
             };
 
-            std::array<uint8_t, static_max<bool, double_t, std::string, Endpoint, Color, identifier_t>::value> value;
+            std::array<uint8_t, static_max<bool, ssize_t, double_t, std::string, Endpoint, Color, identifier_t>::value>
+                value;
 
           public:
             explicit Value();
             explicit Value(bool boolean);
+            explicit Value(ssize_t integer);
             explicit Value(double_t number);
             explicit Value(const std::string& string);
             explicit Value(const std::string_view& string);
@@ -123,9 +126,17 @@ namespace server
             }
             inline bool IsInteger() const
             {
-                return type == ValueType::kNumberType;
+                return type == ValueType::kIntegerType || type == ValueType::kNumberType;
+            }
+            inline bool IsRealInteger() const
+            {
+                return type == ValueType::kIntegerType;
             }
             inline bool IsNumber() const
+            {
+                return type == ValueType::kNumberType || type == ValueType::kIntegerType;
+            }
+            inline bool IsRealNumber() const
             {
                 return type == ValueType::kNumberType;
             }
@@ -167,16 +178,39 @@ namespace server
 
             inline int64_t GetInteger() const
             {
-                assert(type == ValueType::kNumberType);
-                return (int64_t) * (double_t*)value.data();
+                assert(type == ValueType::kIntegerType || type == ValueType::kNumberType);
+                if (type == ValueType::kNumberType)
+                    return (ssize_t)(*(double_t*)value.data());
+                else
+                    return *(ssize_t*)value.data();
             }
 
-            inline double_t& GetNumber()
+            inline ssize_t& GetRealInteger()
+            {
+                assert(type == ValueType::kIntegerType);
+                return *(ssize_t*)value.data();
+            }
+            inline const ssize_t& GetRealInteger() const
+            {
+                assert(type == ValueType::kIntegerType);
+                return *(ssize_t*)value.data();
+            }
+
+            inline double_t GetNumber() const
+            {
+                assert(type == ValueType::kNumberType || type == ValueType::kIntegerType);
+                if (type == ValueType::kIntegerType)
+                    return (double_t)(*(ssize_t*)value.data());
+                else
+                    return *(double_t*)value.data();
+            }
+
+            inline double_t& GetRealNumber()
             {
                 assert(type == ValueType::kNumberType);
                 return *(double_t*)value.data();
             }
-            inline const double_t& GetNumber() const
+            inline const double_t& GetRealNumber() const
             {
                 assert(type == ValueType::kNumberType);
                 return *(double_t*)value.data();
@@ -253,15 +287,21 @@ namespace server
                 assert(type == ValueType::kBooleanType);
                 *(bool*)value.data() = v;
             }
-            inline void SetInteger(int64_t v)
+            inline void SetInteger(ssize_t v)
             {
-                assert(type == ValueType::kNumberType);
-                *(int64_t*)value.data() = v;
+                assert(type == ValueType::kIntegerType || type == ValueType::kNumberType);
+                if (type == kNumberType)
+                    *(double_t*)value.data() = (double_t)v;
+                else
+                    *(ssize_t*)value.data() = v;
             }
             inline void SetNumber(double_t v)
             {
-                assert(type == ValueType::kNumberType);
-                *(double_t*)value.data() = v;
+                assert(type == ValueType::kNumberType || type == ValueType::kIntegerType);
+                if (type == kIntegerType)
+                    *(ssize_t*)value.data() = (ssize_t)v;
+                else
+                    *(double_t*)value.data() = v;
             }
             inline void SetString(const std::string& v)
             {

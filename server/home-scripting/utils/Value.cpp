@@ -1,6 +1,7 @@
 #include "Value.hpp"
 
 #define BOOLEAN_TYPE_NAME "boolean"
+#define INTEGER_TYPE_NAME "integer"
 #define NUMBER_TYPE_NAME "number"
 #define STRING_TYPE_NAME "string"
 #define ENDPOINT_TYPE_NAME "endpoint"
@@ -20,6 +21,8 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return BOOLEAN_TYPE_NAME;
+            case ValueType::kIntegerType:
+                return INTEGER_TYPE_NAME;
             case ValueType::kNumberType:
                 return NUMBER_TYPE_NAME;
             case ValueType::kStringType:
@@ -44,6 +47,8 @@ namespace server
             {
             case CRC32(BOOLEAN_TYPE_NAME):
                 return ValueType::kBooleanType;
+            case CRC32(INTEGER_TYPE_NAME):
+                return ValueType::kIntegerType;
             case CRC32(NUMBER_TYPE_NAME):
                 return ValueType::kNumberType;
             case CRC32(STRING_TYPE_NAME):
@@ -69,6 +74,10 @@ namespace server
         Value::Value(bool boolean) : type(ValueType::kBooleanType)
         {
             new ((void*)value.data()) bool(boolean);
+        }
+        Value::Value(ssize_t integer) : type(ValueType::kIntegerType)
+        {
+            new ((void*)value.data()) ssize_t(integer);
         }
         Value::Value(double_t number) : type(ValueType::kNumberType)
         {
@@ -97,6 +106,9 @@ namespace server
             case ValueType::kBooleanType:
                 new ((void*)value.data()) bool();
                 break;
+            case ValueType::kIntegerType:
+                new ((void*)value.data()) ssize_t();
+                break;
             case ValueType::kNumberType:
                 new ((void*)value.data()) double_t();
                 break;
@@ -124,6 +136,9 @@ namespace server
             {
             case ValueType::kBooleanType:
                 new ((void*)value.data()) bool(*(bool*)other.value.data());
+                break;
+            case ValueType::kIntegerType:
+                new ((void*)value.data()) ssize_t(*(ssize_t*)other.value.data());
                 break;
             case ValueType::kNumberType:
                 new ((void*)value.data()) double_t(*(double_t*)other.value.data());
@@ -177,7 +192,10 @@ namespace server
             case rapidjson::kFalseType:
                 return Value(false);
             case rapidjson::kNumberType:
-                return Value(input.GetDouble());
+                if (input.IsInt64())
+                    return Value(input.GetInt64());
+                else
+                    return Value(input.GetDouble());
             case rapidjson::kStringType:
                 return Value(std::string_view(input.GetString(), input.GetStringLength()));
             case rapidjson::kObjectType:
@@ -254,10 +272,14 @@ namespace server
             // Call deconstructor on old value
             this->~Value();
 
+            type = other.type;
             switch (type)
             {
             case ValueType::kBooleanType:
                 new ((void*)value.data()) bool(*(bool*)other.value.data());
+                break;
+            case ValueType::kIntegerType:
+                new ((void*)value.data()) ssize_t(*(ssize_t*)other.value.data());
                 break;
             case ValueType::kNumberType:
                 new ((void*)value.data()) double_t(*(double_t*)other.value.data());
@@ -296,6 +318,8 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return rapidjson::Value(*(bool*)value.data());
+            case ValueType::kIntegerType:
+                return rapidjson::Value(*(ssize_t*)value.data());
             case ValueType::kNumberType:
                 return rapidjson::Value(*(double_t*)value.data());
             case ValueType::kStringType:
@@ -374,6 +398,10 @@ namespace server
             case ValueType::kBooleanType:
                 if (input.IsBool())
                     *((bool*)value.data()) = input.GetBool();
+                break;
+            case ValueType::kIntegerType:
+                if (input.IsInt64())
+                    *((ssize_t*)value.data()) = input.GetInt64();
                 break;
             case ValueType::kNumberType:
                 if (input.IsNumber())
@@ -520,29 +548,56 @@ namespace server
 
         void Value::Assign(const Value& other)
         {
-            if (type == other.type)
             {
                 switch (type)
                 {
                 case ValueType::kBooleanType:
-                    *((bool*)value.data()) = *(bool*)other.value.data();
+                    if (other.type == ValueType::kBooleanType)
+                        *((bool*)value.data()) = *(bool*)other.value.data();
+                    else
+                        *((bool*)value.data()) = false;
+                    break;
+                case ValueType::kIntegerType:
+                    if (other.type == ValueType::kIntegerType)
+                        *((ssize_t*)value.data()) = *(ssize_t*)other.value.data();
+                    if (other.type == ValueType::kNumberType)
+                        *((ssize_t*)value.data()) = (ssize_t)(*(double_t*)other.value.data());
+                    else
+                        *((ssize_t*)value.data()) = 0.0;
                     break;
                 case ValueType::kNumberType:
-                    *((double_t*)value.data()) = *(double_t*)other.value.data();
+                    if (other.type == ValueType::kNumberType)
+                        *((double_t*)value.data()) = *(double_t*)other.value.data();
+                    if (other.type == ValueType::kIntegerType)
+                        *((double_t*)value.data()) = (double_t)(*(ssize_t*)other.value.data());
+                    else
+                        *((double_t*)value.data()) = 0.0;
                     break;
                 case ValueType::kStringType:
-                    *((std::string*)value.data()) = *(std::string*)other.value.data();
+                    if (other.type == ValueType::kStringType)
+                        *((std::string*)value.data()) = *(std::string*)other.value.data();
+                    else
+                        ((std::string*)value.data())->clear();
                     break;
                 case ValueType::kEndpointType:
-                    *((Endpoint*)value.data()) = *(Endpoint*)other.value.data();
+                    if (other.type == ValueType::kEndpointType)
+                        *((Endpoint*)value.data()) = *(Endpoint*)other.value.data();
+                    else
+                        *((Endpoint*)value.data()) = Endpoint{.host = "", .port = 0};
                     break;
                 case ValueType::kColorType:
-                    *((Color*)value.data()) = *(Color*)other.value.data();
+                    if (other.type == ValueType::kBooleanType)
+                        *((Color*)value.data()) = *(Color*)other.value.data();
+                    else
+                        *((Color*)value.data()) = Color{.red = 0, .green = 0, .blue = 0};
                     break;
                 case ValueType::kRoomIDType:
                 case ValueType::kDeviceIDType:
                 case ValueType::kServiceIDType:
-                    *((identifier_t*)value.data()) = *(identifier_t*)other.value.data();
+                    if (other.type == ValueType::kBooleanType)
+                        *((identifier_t*)value.data()) = *(identifier_t*)other.value.data();
+                    else
+                        *((identifier_t*)value.data()) = 0;
                     break;
                 default:
                     break;
@@ -556,6 +611,8 @@ namespace server
             {
             case ValueType::kBooleanType:
                 return std::to_string(GetBoolean());
+            case ValueType::kIntegerType:
+                return std::to_string(GetInteger());
             case ValueType::kNumberType:
                 return std::to_string(GetNumber());
             case ValueType::kStringType:

@@ -262,7 +262,9 @@ namespace server
                 entity->Subscribe(session);
 
                 // Get state
-                entity->JsonGetState(output, allocator);
+                rapidjson::Value stateJson = rapidjson::Value(rapidjson::kObjectType);
+                entity->JsonGetState(stateJson, allocator);
+                output.AddMember("state", stateJson, allocator);
             }
         }
 

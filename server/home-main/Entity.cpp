@@ -248,7 +248,16 @@ namespace server
                         rapidjson::Writer<rapidjson::StringBuffer>(*buffer);
 
                     ApiRequestMessage message = ApiRequestMessage("set-entity-state");
-                    JsonGetState(message.GetJsonDocument(), message.GetJsonAllocator());
+                    {
+
+                        rapidjson::Document& output = message.GetJsonDocument();
+                        rapidjson::Document::AllocatorType& allocator = message.GetJsonAllocator();
+
+                        rapidjson::Value stateJson = rapidjson::Value(rapidjson::kObjectType);
+                        JsonGetState(stateJson, allocator);
+                        output.AddMember("state", stateJson, allocator);
+                    }
+
                     message.Build(0, writer);
                 }
 

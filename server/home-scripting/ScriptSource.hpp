@@ -1,6 +1,9 @@
 #pragma once
 #include "View.hpp"
 #include "common.hpp"
+#include <home-api/Message.hpp>
+#include <home-api/User.hpp>
+#include <home-api/WebSocketSession.hpp>
 
 namespace server
 {
@@ -122,20 +125,24 @@ namespace server
             /// @return Successfulness
             bool SaveContent() const;
 
-            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const = 0;
-            virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
-
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSet(const rapidjson::Value& input);
 
+            virtual void JsonGetConfig(rapidjson::Value& output,
+                                       rapidjson::Document::AllocatorType& allocator) const = 0;
+            virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
             void JsonGetContent(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSetContent(const rapidjson::Value& input);
 
-            void ApiGet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const;
-            bool ApiSet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session);
+            void ApiGet(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                        const Ref<api::WebSocketSession>& session) const;
+            bool ApiSet(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                        const Ref<api::WebSocketSession>& session);
 
-            void ApiGetContent(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const;
-            bool ApiSetContent(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session);
+            void ApiGetContent(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                               const Ref<api::WebSocketSession>& session) const;
+            bool ApiSetContent(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                               const Ref<api::WebSocketSession>& session);
         };
     }
 }

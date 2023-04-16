@@ -1,12 +1,12 @@
 #include "NetworkManager.hpp"
 #include "BeaconListener.hpp"
-#include "HTTPSession.hpp"
-#include "ApiSession.hpp"
+#include "HttpSession.hpp"
+#include "WebSocketSession.hpp"
 #include "io/DynamicResources.hpp"
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         WeakRef<NetworkManager> instanceNetworkManager;
 
@@ -129,7 +129,7 @@ namespace server
             {
                 if (!ec)
                 {
-                    Ref<HTTPSession> httpSession = boost::make_shared<HTTPSession>(socket);
+                    Ref<HttpSession> httpSession = boost::make_shared<HttpSession>(socket);
                     if (httpSession != nullptr)
                     {
                         // Run http session

@@ -3,7 +3,7 @@
 
 namespace server
 {
-    namespace users
+    namespace api
     {
         std::string StringifyUserAccessLevel(UserAccessLevel accessLevel)
         {

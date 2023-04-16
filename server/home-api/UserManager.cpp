@@ -1,5 +1,6 @@
 #include "UserManager.hpp"
 #include "User.hpp"
+#include "WebSocketSession.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
 #include <home-database/Database.hpp>
 #include <jwt-cpp/traits/boost-json/traits.h>
@@ -15,7 +16,7 @@ const uint64_t debugKey[] = {0x0123456789ABCDEF, 0xF0123456789ABCDE, 0xEF0123456
 
 namespace server
 {
-    namespace users
+    namespace api
     {
         WeakRef<UserManager> instanceUserManager;
 
@@ -92,6 +93,18 @@ namespace server
             }
 
             userManager->UpdateTimestamp();
+
+            // Register websocket basic user api
+            {
+                robin_hood::unordered_node_map<std::string, WebSocketApiCallDefinition>& apiMap =
+                    WebSocketSession::GetApiMap();
+
+                apiMap["get-users"] = &UserManager::WebSocketProcessGetUsersMessage;
+                apiMap["add-user"] = &UserManager::WebSocketProcessAddUserMessage;
+                apiMap["rem-user"] = &UserManager::WebSocketProcessRemoveUserMessage;
+                apiMap["get-user"] = &UserManager::WebSocketProcessGetUserMessage;
+                apiMap["set-user"] = &UserManager::WebSocketProcessSetUserMessage;
+            }
 
             return userManager;
         }
@@ -238,8 +251,7 @@ namespace server
                 return nullptr;
         }
 
-        bool UserManager::SetUserPassword(identifier_t userID, const std::string& passwd,
-                                          const std::string& newPasswd)
+        bool UserManager::SetUserPassword(identifier_t userID, const std::string& passwd, const std::string& newPasswd)
         {
             // boost::shared_lock_guard lock(mutex);
 

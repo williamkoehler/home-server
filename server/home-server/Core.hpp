@@ -1,11 +1,11 @@
 #pragma once
 #include "common.hpp"
+#include <home-api/NetworkManager.hpp>
+#include <home-api/UserManager.hpp>
 #include <home-common/Worker.hpp>
 #include <home-database/Database.hpp>
 #include <home-main/Home.hpp>
-#include <home-networking/NetworkManager.hpp>
 #include <home-scripting/ScriptManager.hpp>
-#include <home-users/UserManager.hpp>
 
 namespace server
 {
@@ -49,8 +49,8 @@ namespace server
         Ref<Database> database;
         Ref<scripting::ScriptManager> scriptManager;
         Ref<main::Home> home;
-        Ref<users::UserManager> userManager;
-        Ref<networking::NetworkManager> networkManager;
+        Ref<api::UserManager> userManager;
+        Ref<api::NetworkManager> networkManager;
 
         /// @brief Load configurations from file
         ///
@@ -62,12 +62,12 @@ namespace server
         virtual ~Core();
 
         /// @brief Create core instance
-        /// 
+        ///
         /// @return Core singleton
         static Ref<Core> Create();
 
         /// @brief Get core instance
-        /// 
+        ///
         /// @return Core singleton
         static Ref<Core> GetInstance();
 

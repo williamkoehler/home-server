@@ -1,13 +1,12 @@
 #pragma once
+#include "Message.hpp"
+#include "User.hpp"
 #include "common.hpp"
 
 namespace server
 {
-    namespace users
+    namespace api
     {
-        enum class UserAccessLevel;
-        class User;
-
         class Verifier;
 
         class UserManager : public boost::enable_shared_from_this<UserManager>
@@ -115,6 +114,23 @@ namespace server
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
             void JsonSet(rapidjson::Value& input);
+
+            //! WebSocket Api
+            static void WebSocketProcessGetUsersMessage(const Ref<api::User>& user, const ApiRequestMessage& request,
+                                                        ApiResponseMessage& response,
+                                                        const Ref<WebSocketSession>& session);
+            static void WebSocketProcessAddUserMessage(const Ref<api::User>& user, const ApiRequestMessage& request,
+                                                       ApiResponseMessage& response,
+                                                       const Ref<WebSocketSession>& session);
+            static void WebSocketProcessRemoveUserMessage(const Ref<api::User>& user, const ApiRequestMessage& request,
+                                                          ApiResponseMessage& response,
+                                                          const Ref<WebSocketSession>& session);
+            static void WebSocketProcessGetUserMessage(const Ref<api::User>& user, const ApiRequestMessage& request,
+                                                       ApiResponseMessage& response,
+                                                       const Ref<WebSocketSession>& session);
+            static void WebSocketProcessSetUserMessage(const Ref<api::User>& user, const ApiRequestMessage& request,
+                                                       ApiResponseMessage& response,
+                                                       const Ref<WebSocketSession>& session);
         };
     }
 }

@@ -2,7 +2,7 @@
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         WeakRef<DynamicResources> instanceDynamicResources;
 

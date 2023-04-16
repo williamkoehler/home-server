@@ -5,7 +5,7 @@
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         class BeaconListener : public boost::enable_shared_from_this<BeaconListener>
         {

@@ -64,6 +64,23 @@ namespace server
                 return nullptr;
             }
 
+            // Register websocket scripting api
+            {
+                robin_hood::unordered_node_map<std::string, api::WebSocketApiCallDefinition>& apiMap =
+                    api::WebSocketSession::GetApiMap();
+
+                apiMap["get-scriptsources"] = ScriptManager::WebSocketProcessGetScriptSourcesMessage;
+
+                apiMap["add-scriptsource"] = ScriptManager::WebSocketProcessAddScriptSourceMessage;
+                apiMap["rem-scriptsource"] = ScriptManager::WebSocketProcessRemoveScriptSourceMessage;
+
+                apiMap["get-scriptsource"] = ScriptManager::WebSocketProcessGetScriptSourceMessage;
+                apiMap["set-scriptsource"] = ScriptManager::WebSocketProcessSetScriptSourceMessage;
+
+                apiMap["get-scriptsource-content"] = ScriptManager::WebSocketProcessGetScriptSourceContentMessage;
+                apiMap["set-scriptsource-content"] = ScriptManager::WebSocketProcessSetScriptSourceContentMessage;
+            }
+
             return scriptManager;
         }
         Ref<ScriptManager> ScriptManager::GetInstance()

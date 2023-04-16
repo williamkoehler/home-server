@@ -1,16 +1,17 @@
-#include "JsonApi.hpp"
-#include <home-scripting/Script.hpp>
-#include <home-scripting/ScriptManager.hpp>
-#include <home-scripting/ScriptSource.hpp>
+#include "ScriptManager.hpp"
+#include <home-api/User.hpp>
+#include <home-api/WebSocketSession.hpp>
 
 namespace server
 {
-    namespace networking
+    namespace scripting
     {
-        void JsonApi::ProcessJsonGetScriptSourcesMessageWS(const Ref<users::User>& user,
-                                                           const ApiRequestMessage& request,
-                                                           ApiResponseMessage& response, const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessGetScriptSourcesMessage(const Ref<api::User>& user,
+                                                                    const api::ApiRequestMessage& request,
+                                                                    api::ApiResponseMessage& response,
+                                                                    const Ref<api::WebSocketSession>& session)
         {
+            (void)user;
             (void)session;
 
             const rapidjson::Document& input = request.GetJsonDocument();
@@ -26,15 +27,16 @@ namespace server
             }
         }
 
-        void JsonApi::ProcessJsonAddScriptSourceMessageWS(const Ref<users::User>& user,
-                                                          const ApiRequestMessage& request,
-                                                          ApiResponseMessage& response, const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessAddScriptSourceMessage(const Ref<api::User>& user,
+                                                                   const api::ApiRequestMessage& request,
+                                                                   api::ApiResponseMessage& response,
+                                                                   const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
-            if (user->GetAccessLevel() < users::UserAccessLevel::kMaintainerUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kMaintainerUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
@@ -48,7 +50,7 @@ namespace server
             if (nameIt == input.MemberEnd() || !nameIt->value.IsString() || langIt == input.MemberEnd() ||
                 !langIt->value.IsString())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -56,7 +58,7 @@ namespace server
                 scripting::ParseScriptLanguage(std::string(langIt->value.GetString(), langIt->value.GetStringLength()));
             if (language == scripting::ScriptLanguage::kUnknownScriptLanguage)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -71,23 +73,23 @@ namespace server
                 if (scriptSource == nullptr)
                 {
                     //! Error failed to add script source
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InternalError);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InternalError);
                     return;
                 }
 
                 scriptSource->JsonGet(output, allocator);
             }
         }
-        void JsonApi::ProcessJsonRemoveScriptSourceMessageWS(const Ref<users::User>& user,
-                                                             const ApiRequestMessage& request,
-                                                             ApiResponseMessage& response,
-                                                             const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessRemoveScriptSourceMessage(const Ref<api::User>& user,
+                                                                      const api::ApiRequestMessage& request,
+                                                                      api::ApiResponseMessage& response,
+                                                                      const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
-            if (user->GetAccessLevel() < users::UserAccessLevel::kMaintainerUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kMaintainerUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
@@ -99,7 +101,7 @@ namespace server
             rapidjson::Value::ConstMemberIterator sourceIdIt = input.FindMember("id");
             if (sourceIdIt == input.MemberEnd() || !sourceIdIt->value.IsUint())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -111,21 +113,22 @@ namespace server
                 if (!scriptManager->RemoveScriptSource(sourceIdIt->value.GetUint()))
                 {
                     //! Error failed to remove script source
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InternalError);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InternalError);
                     return;
                 }
             }
         }
 
-        void JsonApi::ProcessJsonGetScriptSourceMessageWS(const Ref<users::User>& user,
-                                                          const ApiRequestMessage& request,
-                                                          ApiResponseMessage& response, const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessGetScriptSourceMessage(const Ref<api::User>& user,
+                                                                   const api::ApiRequestMessage& request,
+                                                                   api::ApiResponseMessage& response,
+                                                                   const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
-            if (user->GetAccessLevel() < users::UserAccessLevel::kNormalUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kNormalUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
@@ -137,7 +140,7 @@ namespace server
             rapidjson::Value::ConstMemberIterator sourceIdIt = input.FindMember("id");
             if (sourceIdIt == input.MemberEnd() || !sourceIdIt->value.IsUint())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -149,22 +152,23 @@ namespace server
                 Ref<scripting::ScriptSource> scriptSource = scriptManager->GetScriptSource(sourceIdIt->value.GetUint());
                 if (scriptSource == nullptr)
                 {
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
                     return;
                 }
 
                 scriptSource->JsonGet(output, allocator);
             }
         }
-        void JsonApi::ProcessJsonSetScriptSourceMessageWS(const Ref<users::User>& user,
-                                                          const ApiRequestMessage& request,
-                                                          ApiResponseMessage& response, const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessSetScriptSourceMessage(const Ref<api::User>& user,
+                                                                   const api::ApiRequestMessage& request,
+                                                                   api::ApiResponseMessage& response,
+                                                                   const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
-            if (user->GetAccessLevel() < users::UserAccessLevel::kNormalUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kNormalUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
@@ -176,7 +180,7 @@ namespace server
             rapidjson::Value::ConstMemberIterator sourceIdIt = input.FindMember("id");
             if (sourceIdIt == input.MemberEnd() || !sourceIdIt->value.IsUint())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -188,7 +192,7 @@ namespace server
                 Ref<scripting::ScriptSource> scriptSource = scriptManager->GetScriptSource(sourceIdIt->value.GetUint());
                 if (scriptSource == nullptr)
                 {
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
                     return;
                 }
 
@@ -199,14 +203,14 @@ namespace server
             }
         }
 
-        void JsonApi::ProcessJsonGetScriptSourceContentMessageWS(const Ref<users::User>& user,
-                                                                 const ApiRequestMessage& request,
-                                                                 ApiResponseMessage& response,
-                                                                 const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessGetScriptSourceContentMessage(const Ref<api::User>& user,
+                                                                          const api::ApiRequestMessage& request,
+                                                                          api::ApiResponseMessage& response,
+                                                                          const Ref<api::WebSocketSession>& session)
         {
-            if (user->GetAccessLevel() < users::UserAccessLevel::kNormalUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kNormalUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
 
@@ -218,7 +222,7 @@ namespace server
             rapidjson::Value::ConstMemberIterator sourceIdIt = input.FindMember("id");
             if (sourceIdIt == input.MemberEnd() || !sourceIdIt->value.IsUint())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -230,23 +234,23 @@ namespace server
                 Ref<scripting::ScriptSource> scriptSource = scriptManager->GetScriptSource(sourceIdIt->value.GetUint());
                 if (scriptSource == nullptr)
                 {
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
                     return;
                 }
 
                 scriptSource->JsonGetContent(output, allocator);
             }
         }
-        void JsonApi::ProcessJsonSetScriptSourceContentMessageWS(const Ref<users::User>& user,
-                                                                 const ApiRequestMessage& request,
-                                                                 ApiResponseMessage& response,
-                                                                 const Ref<ApiSession>& session)
+        void ScriptManager::WebSocketProcessSetScriptSourceContentMessage(const Ref<api::User>& user,
+                                                                          const api::ApiRequestMessage& request,
+                                                                          api::ApiResponseMessage& response,
+                                                                          const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
-            if (user->GetAccessLevel() < users::UserAccessLevel::kMaintainerUserAccessLevel)
+            if (user->GetAccessLevel() < api::UserAccessLevel::kMaintainerUserAccessLevel)
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_AccessLevelToLow);
                 return;
             }
             const rapidjson::Document& input = request.GetJsonDocument();
@@ -257,7 +261,7 @@ namespace server
             rapidjson::Value::ConstMemberIterator sourceIdIt = input.FindMember("id");
             if (sourceIdIt == input.MemberEnd() || !sourceIdIt->value.IsUint())
             {
-                response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidArguments);
+                response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
             }
 
@@ -269,7 +273,7 @@ namespace server
                 Ref<scripting::ScriptSource> scriptSource = scriptManager->GetScriptSource(sourceIdIt->value.GetUint());
                 if (scriptSource == nullptr)
                 {
-                    response.SetErrorCode(ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
+                    response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidIdentifier);
                     return;
                 }
 

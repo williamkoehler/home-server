@@ -160,9 +160,9 @@ namespace server
             }
         }
 
-        void Entity::Subscribe(const Ref<ApiSession>& session)
+        void Entity::Subscribe(const Ref<api::WebSocketSession>& session)
         {
-            if (subscriptions.insert(session).second)
+            if (sessions.AddSession(session))
             {
                 if (lazyUpdateInterval > 0)
                 {
@@ -180,7 +180,8 @@ namespace server
                 if (script != nullptr)
                     script->LazyUpdate();
 
-                if (subscriptions.size() > 0)
+                // Only reset timer if there are subscriptions left
+                if (sessions.GetSessionCount() > 0)
                 {
                     lazyUpdateTimer.expires_from_now(boost::posix_time::seconds(std::max(lazyUpdateInterval, 1ul)));
                     lazyUpdateTimer.async_wait(
@@ -189,9 +190,9 @@ namespace server
             }
         }
 
-        void Entity::Unsubscribe(const Ref<ApiSession>& session)
+        void Entity::Unsubscribe(const Ref<api::WebSocketSession>& session)
         {
-            subscriptions.erase(session);
+            sessions.RemoveSession(session);
         }
 
         void Entity::Invoke(const std::string& method, const scripting::Value& parameter)
@@ -202,85 +203,26 @@ namespace server
 
         void Entity::Publish()
         {
-            Ref<rapidjson::StringBuffer> buffer = boost::make_shared<rapidjson::StringBuffer>();
-            if (buffer != nullptr)
-            {
-                // Build message
-                {
-                    rapidjson::Writer<rapidjson::StringBuffer> writer =
-                        rapidjson::Writer<rapidjson::StringBuffer>(*buffer);
+            api::ApiBroadcastMessage message = api::ApiBroadcastMessage("set-entity");
+            JsonGet(message.GetJsonDocument(), message.GetJsonAllocator());
 
-                    ApiRequestMessage message = ApiRequestMessage("set-entity");
-                    JsonGet(message.GetJsonDocument(), message.GetJsonAllocator());
-                    message.Build(0, writer);
-                }
-
-                robin_hood::unordered_set<WeakRef<ApiSession>>::const_iterator it = subscriptions.begin();
-                while (it != subscriptions.end())
-                {
-                    if (Ref<ApiSession> session = (*it).lock())
-                    {
-                        session->Send(buffer);
-
-                        it++; // Next session
-                    }
-                    else
-                    {
-                        // Remove session and move iterator
-                        it = subscriptions.erase(it);
-                    }
-                }
-            }
-            else
-            {
-                LOG_ERROR("Failed to create string buffer.");
-            }
+            sessions.Send(message);
         }
 
         void Entity::PublishState()
         {
-            Ref<rapidjson::StringBuffer> buffer = boost::make_shared<rapidjson::StringBuffer>();
-            if (buffer != nullptr)
+            api::ApiBroadcastMessage message = api::ApiBroadcastMessage("set-entity-state");
             {
-                // Build message
-                {
-                    rapidjson::Writer<rapidjson::StringBuffer> writer =
-                        rapidjson::Writer<rapidjson::StringBuffer>(*buffer);
 
-                    ApiRequestMessage message = ApiRequestMessage("set-entity-state");
-                    {
+                rapidjson::Document& output = message.GetJsonDocument();
+                rapidjson::Document::AllocatorType& allocator = message.GetJsonAllocator();
 
-                        rapidjson::Document& output = message.GetJsonDocument();
-                        rapidjson::Document::AllocatorType& allocator = message.GetJsonAllocator();
-
-                        rapidjson::Value stateJson = rapidjson::Value(rapidjson::kObjectType);
-                        JsonGetState(stateJson, allocator);
-                        output.AddMember("state", stateJson, allocator);
-                    }
-
-                    message.Build(0, writer);
-                }
-
-                robin_hood::unordered_set<WeakRef<ApiSession>>::const_iterator it = subscriptions.begin();
-                while (it != subscriptions.end())
-                {
-                    if (Ref<ApiSession> session = (*it).lock())
-                    {
-                        session->Send(buffer);
-
-                        it++; // Next session
-                    }
-                    else
-                    {
-                        // Remove session and move iterator
-                        it = subscriptions.erase(it);
-                    }
-                }
+                rapidjson::Value stateJson = rapidjson::Value(rapidjson::kObjectType);
+                JsonGetState(stateJson, allocator);
+                output.AddMember("state", stateJson, allocator);
             }
-            else
-            {
-                LOG_ERROR("Failed to create string buffer.");
-            }
+
+            sessions.Send(message);
         }
 
         bool Entity::Save()

@@ -77,7 +77,7 @@ add_cxxflags("-fPIC")
 add_cxxflags("-Wall", "-Wextra", "-Wpedantic")
 
 if is_mode("debug") then
-    add_cxxflags("-fstandalone-debug")
+    add_cxxflags("-fstandalone-debug", { force = true })
     set_optimize("none")
     add_defines("DEBUG")
 else

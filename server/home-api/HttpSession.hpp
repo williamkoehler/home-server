@@ -1,12 +1,12 @@
 #pragma once
 #include "common.hpp"
-#include <home-users/User.hpp>
+#include "User.hpp"
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
-        class HTTPSession : public boost::enable_shared_from_this<HTTPSession>
+        class HttpSession : public boost::enable_shared_from_this<HttpSession>
         {
           private:
             boost::asio::strand<tcp_socket_t::executor_type> strand;
@@ -18,7 +18,7 @@ namespace server
 
             void OnRead(const boost::system::error_code& ec, size_t size);
 
-            Ref<users::User> Authenticate();
+            Ref<api::User> Authenticate();
 
             void WriteError(const char* error);
 
@@ -35,8 +35,8 @@ namespace server
             void OnShutdown(const boost::system::error_code& ec);
 
           public:
-            HTTPSession(const Ref<tcp_socket_t>& socket);
-            virtual ~HTTPSession();
+            HttpSession(const Ref<tcp_socket_t>& socket);
+            virtual ~HttpSession();
 
             void Run();
         };

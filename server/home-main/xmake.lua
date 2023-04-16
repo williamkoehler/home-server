@@ -13,5 +13,6 @@ target("server-home-main")
     add_deps(
         "server-home-common",
         "server-home-database",
-        "server-home-scripting"
+        "server-home-scripting",
+        "server-home-api"
     )

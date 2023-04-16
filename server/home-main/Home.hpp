@@ -1,6 +1,7 @@
 #pragma once
 #include "Entity.hpp"
 #include "common.hpp"
+#include <home-api/Message.hpp>
 #include <home-common/Worker.hpp>
 #include <home-scripting/Script.hpp>
 #include <home-scripting/main/HomeView.hpp>
@@ -99,6 +100,48 @@ namespace server
             bool RemoveEntity(identifier_t entityId);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
+
+            //! WebSocket Api
+            static void WebSocketProcessGetHomeMessage(const Ref<api::User>& user,
+                                                       const api::ApiRequestMessage& request,
+                                                       api::ApiResponseMessage& response,
+                                                       const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessAddEntityMessage(const Ref<api::User>& user,
+                                                         const api::ApiRequestMessage& request,
+                                                         api::ApiResponseMessage& response,
+                                                         const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessRemoveEntityMessage(const Ref<api::User>& user,
+                                                            const api::ApiRequestMessage& request,
+                                                            api::ApiResponseMessage& response,
+                                                            const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessGetEntityMessage(const Ref<api::User>& user,
+                                                         const api::ApiRequestMessage& request,
+                                                         api::ApiResponseMessage& response,
+                                                         const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessSetEntityMessage(const Ref<api::User>& user,
+                                                         const api::ApiRequestMessage& request,
+                                                         api::ApiResponseMessage& response,
+                                                         const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessInvokeDeviceMethodMessage(const Ref<api::User>& user,
+                                                                  const api::ApiRequestMessage& request,
+                                                                  api::ApiResponseMessage& response,
+                                                                  const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessSubscribeToEntityStateMessage(const Ref<api::User>& user,
+                                                                      const api::ApiRequestMessage& request,
+                                                                      api::ApiResponseMessage& response,
+                                                                      const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessUnsubscribeFromEntityStateMessage(const Ref<api::User>& user,
+                                                                          const api::ApiRequestMessage& request,
+                                                                          api::ApiResponseMessage& response,
+                                                                          const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessGetEntityStateMessage(const Ref<api::User>& user,
+                                                              const api::ApiRequestMessage& request,
+                                                              api::ApiResponseMessage& response,
+                                                              const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessSetEntityStateMessage(const Ref<api::User>& user,
+                                                              const api::ApiRequestMessage& request,
+                                                              api::ApiResponseMessage& response,
+                                                              const Ref<api::WebSocketSession>& session);
         };
 
         class HomeView : public scripting::HomeView

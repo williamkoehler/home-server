@@ -4,7 +4,7 @@
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         struct MemoryBuffer
         {

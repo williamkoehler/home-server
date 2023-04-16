@@ -4,16 +4,16 @@
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         class BeaconListener;
         class DynamicResources;
-        class ApiSessionImpl;
+        class WebSocketSession;
 
         class NetworkManager : public std::enable_shared_from_this<NetworkManager>
         {
           private:
-            friend class ApiSessionImpl;
+            friend class WebSocketSession;
 
             Ref<DynamicResources> dynamicResources = nullptr;
 
@@ -25,8 +25,6 @@ namespace server
 
             void OnAccept(const boost::system::error_code& ec);
             void OnHandshake(const boost::system::error_code& ec, const Ref<ssl_socket_t>& socket);
-
-            boost::container::vector<WeakRef<ApiSession>> sessionList;
 
           public:
             NetworkManager();

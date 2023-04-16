@@ -3,7 +3,7 @@
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
         WeakRef<BeaconListener> instanceBeacon;
 

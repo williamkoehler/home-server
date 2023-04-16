@@ -105,7 +105,7 @@ namespace server
                 MethodDefinition2<T> method;
 
               public:
-                MethodImpl<Value, T>(MethodDefinition2<T> method) : method(method)
+                MethodImpl<Void, T>(MethodDefinition2<T> method) : method(method)
                 {
                 }
                 virtual bool Invoke(void* self, const Value& value) override

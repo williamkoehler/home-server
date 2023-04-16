@@ -53,47 +53,74 @@ namespace server
             LOG_INFO("This server is called '{0}'", core->name);
 
             // Initialize worker
-            core->worker = Worker::Create();
-            if (core->worker == nullptr)
             {
-                LOG_ERROR("Initialize worker.");
-                return nullptr;
+                core->worker = Worker::Create();
+                if (core->worker == nullptr)
+                {
+                    LOG_ERROR("Initialize worker.");
+                    return nullptr;
+                }
             }
 
             // Initialize database
-            core->database = Database::Create(config.database.type, config.database.location, config.database.username,
-                                              config.database.password);
-            if (core->database == nullptr)
             {
-                LOG_ERROR("Initialize database.");
-                return nullptr;
+                core->database = Database::Create(config.database.type, config.database.location,
+                                                  config.database.username, config.database.password);
+                if (core->database == nullptr)
+                {
+                    LOG_ERROR("Initialize database.");
+                    return nullptr;
+                }
             }
 
-            // Initialize default script provider
-            boost::container::vector<Ref<scripting::ScriptProvider>> scriptProviderList = {
-                // NativeScript
-                scripting::native::NativeScriptProvider::Create(
-                    boost::filesystem::absolute(config.scripting.nativeScript.source, config::GetScriptDirectory())
-                        .string()),
-
-                // JavaScript
-                scripting::javascript::JSScriptProvider::Create(),
-            };
-            for (Ref<scripting::ScriptProvider> scriptProvider : scriptProviderList)
+            // Initialize api
             {
-                if (scriptProvider == nullptr)
+                // Initialize user manager
+                core->userManager = api::UserManager::Create(core->name);
+                if (core->userManager == nullptr)
                 {
-                    LOG_ERROR("Initialize script provider.");
+                    LOG_ERROR("Initialize user manager.");
+                    return nullptr;
+                }
+
+                // Initialize networking
+                core->networkManager = api::NetworkManager::Create(config.networking.address, config.networking.port,
+                                                                   config.networking.externalURL);
+                if (core->networkManager == nullptr)
+                {
+                    LOG_ERROR("Intialize network manager.");
                     return nullptr;
                 }
             }
 
             // Initialize scripting
-            core->scriptManager = scripting::ScriptManager::Create(scriptProviderList);
-            if (core->scriptManager == nullptr)
             {
-                LOG_ERROR("Initialize script manager.");
-                return nullptr;
+                // Initialize default script provider
+                boost::container::vector<Ref<scripting::ScriptProvider>> scriptProviderList = {
+                    // NativeScript
+                    scripting::native::NativeScriptProvider::Create(
+                        boost::filesystem::absolute(config.scripting.nativeScript.source, config::GetScriptDirectory())
+                            .string()),
+
+                    // JavaScript
+                    scripting::javascript::JSScriptProvider::Create(),
+                };
+                for (const Ref<scripting::ScriptProvider> &scriptProvider : scriptProviderList)
+                {
+                    if (scriptProvider == nullptr)
+                    {
+                        LOG_ERROR("Initialize script provider.");
+                        return nullptr;
+                    }
+                }
+
+                // Initialize script manager
+                core->scriptManager = scripting::ScriptManager::Create(scriptProviderList);
+                if (core->scriptManager == nullptr)
+                {
+                    LOG_ERROR("Initialize script manager.");
+                    return nullptr;
+                }
             }
 
             // Initialize home
@@ -101,22 +128,6 @@ namespace server
             if (core->home == nullptr)
             {
                 LOG_ERROR("Initialize home.");
-                return nullptr;
-            }
-
-            core->userManager = users::UserManager::Create(core->name);
-            if (core->userManager == nullptr)
-            {
-                LOG_ERROR("Initialize user manager.");
-                return nullptr;
-            }
-
-            // Initialize networking
-            core->networkManager = networking::NetworkManager::Create(config.networking.address, config.networking.port,
-                                                                      config.networking.externalURL);
-            if (core->networkManager == nullptr)
-            {
-                LOG_ERROR("Intialize network manager.");
                 return nullptr;
             }
         }

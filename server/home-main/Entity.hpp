@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include <home-api/WebSocketSessionSet.hpp>
 #include <home-scripting/Script.hpp>
 #include <home-scripting/View.hpp>
 
@@ -38,7 +39,7 @@ namespace server
 
             /// @brief Update subscriptions
             ///
-            robin_hood::unordered_set<WeakRef<ApiSession>> subscriptions;
+            api::WebSocketSessionSet sessions;
 
           public:
             Entity(identifier_t id, const std::string& name);
@@ -113,12 +114,12 @@ namespace server
             /// @brief Make session subscribe to entity
             ///
             /// @param session Api session
-            void Subscribe(const Ref<ApiSession>& session);
+            void Subscribe(const Ref<api::WebSocketSession>& session);
 
             /// @brief Make session unsubscribe from entity
             ///
             /// @param session Api session
-            void Unsubscribe(const Ref<ApiSession>& session);
+            void Unsubscribe(const Ref<api::WebSocketSession>& session);
 
             /// @brief Push changes to client
             ///

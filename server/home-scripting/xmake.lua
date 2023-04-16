@@ -11,5 +11,6 @@ target("server-home-scripting")
 
     add_deps(
         "server-home-common",
-        "server-home-database"
+        "server-home-database",
+        "server-home-api"
     )

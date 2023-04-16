@@ -124,14 +124,14 @@ namespace server
             return update;
         }
 
-        void ScriptSource::ApiGet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session) const
+        void ScriptSource::ApiGet(const api::ApiRequestMessage& request, api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session) const
         {
             (void)request;
             (void)session;
 
             JsonGet(response.GetJsonDocument(), response.GetJsonAllocator());
         }
-        bool ScriptSource::ApiSet(const ApiRequestMessage& request, ApiResponseMessage& response, const Ref<ApiSession>& session)
+        bool ScriptSource::ApiSet(const api::ApiRequestMessage& request, api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
         {
             (void)response;
             (void)session;
@@ -144,16 +144,16 @@ namespace server
             return update;
         }
 
-        void ScriptSource::ApiGetContent(const ApiRequestMessage& request, ApiResponseMessage& response,
-                                         const Ref<ApiSession>& session) const
+        void ScriptSource::ApiGetContent(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                                         const Ref<api::WebSocketSession>& session) const
         {
             (void)request;
             (void)session;
 
             JsonGetContent(response.GetJsonDocument(), response.GetJsonAllocator());
         }
-        bool ScriptSource::ApiSetContent(const ApiRequestMessage& request, ApiResponseMessage& response,
-                                         const Ref<ApiSession>& session)
+        bool ScriptSource::ApiSetContent(const api::ApiRequestMessage& request, api::ApiResponseMessage& response,
+                                         const Ref<api::WebSocketSession>& session)
         {
             (void)response;
             (void)session;

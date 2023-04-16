@@ -13,7 +13,7 @@ namespace server
         namespace native
         {
             HttpController::HttpController(const Ref<NativeScriptImpl>& script,
-                                           UniqueRef<HttpController::CallbackMethod> callbackMethod)
+                                           UniqueRef<HttpController::HttpCallbackMethod> callbackMethod)
                 : Controller(script), callbackMethod(std::move(callbackMethod))
             {
             }
@@ -193,7 +193,7 @@ namespace server
 
               public:
                 HttpControllerImpl(const Ref<NativeScriptImpl>& script,
-                                   UniqueRef<HttpController::CallbackMethod> methodCallback)
+                                   UniqueRef<HttpController::HttpCallbackMethod> methodCallback)
                     : HttpController(script, std::move(methodCallback)), resolver(Worker::GetInstance()->GetContext()),
                       stream(Worker::GetInstance()->GetContext())
                 {
@@ -232,7 +232,7 @@ namespace server
             bool Http::Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                             HttpMethod method, const std::string& target, const std::string_view& content,
                             const std::string_view& contentType,
-                            UniqueRef<HttpController::CallbackMethod> methodCallback)
+                            UniqueRef<HttpController::HttpCallbackMethod> methodCallback)
             {
                 // Create new controller
                 Ref<HttpControllerImpl> controller =
@@ -471,7 +471,7 @@ namespace server
 
               public:
                 HttpsControllerImpl(const Ref<NativeScriptImpl>& script,
-                                    UniqueRef<HttpController::CallbackMethod> callback)
+                                    UniqueRef<HttpController::HttpCallbackMethod> callback)
                     : HttpController(script, std::move(callback)), resolver(Worker::GetInstance()->GetContext()),
                       stream(Worker::GetInstance()->GetContext(), sslContext)
                 {
@@ -510,7 +510,7 @@ namespace server
             bool Https::Send(const Ref<NativeScriptImpl>& script, const std::string& host, uint16_t port,
                              HttpMethod method, const std::string& target, const std::string_view& content,
                              const std::string_view& contentType,
-                             UniqueRef<HttpController::CallbackMethod> methodCallback)
+                             UniqueRef<HttpController::HttpCallbackMethod> methodCallback)
             {
                 // Create new controller
                 Ref<HttpsControllerImpl> controller =

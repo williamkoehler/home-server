@@ -1,30 +1,29 @@
-#include "HTTPSession.hpp"
-#include "ApiSession.hpp"
-#include "json/JsonApi.hpp"
+#include "HttpSession.hpp"
+#include "UserManager.hpp"
+#include "WebSocketSession.hpp"
 #include <cppcodec/base64_rfc4648.hpp>
-#include <home-users/UserManager.hpp>
 
 namespace server
 {
-    namespace networking
+    namespace api
     {
-        HTTPSession::HTTPSession(const Ref<tcp_socket_t>& socket) : strand(socket->get_executor()), socket(socket)
+        HttpSession::HttpSession(const Ref<tcp_socket_t>& socket) : strand(socket->get_executor()), socket(socket)
         {
         }
-        HTTPSession::~HTTPSession()
+        HttpSession::~HttpSession()
         {
         }
 
-        void HTTPSession::Run()
+        void HttpSession::Run()
         {
             socket->expires_after(std::chrono::seconds(12));
             boost::beast::http::async_read(
                 *socket, buffer, request,
-                boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
+                boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnRead, shared_from_this(),
                                                                boost::placeholders::_1, boost::placeholders::_2)));
         }
 
-        void HTTPSession::OnRead(const boost::system::error_code& ec, size_t size)
+        void HttpSession::OnRead(const boost::system::error_code& ec, size_t size)
         {
             if (ec)
                 return;
@@ -34,75 +33,78 @@ namespace server
 
                 std::string_view target = std::string_view(request.target().data(), request.target().size());
 
-                if (strncmp(target.data(), "/res/", 5) == 0)
+                // if (strncmp(target.data(), "/res/", 5) == 0)
+                // {
+                //     Ref<api::User> user = Authenticate();
+                //     if (user == nullptr)
+                //     {
+                //         WriteError("Invalid authentication token.");
+                //         return;
+                //     }
+
+                //     target.remove_prefix(5); // Remove /api/
+
+                //     // Create response
+                //     boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response =
+                //         boost::make_shared<boost::beast::http::response<boost::beast::http::buffer_body>>();
+                //     response->version(request.version());
+                //     response->set(boost::beast::http::field::server, "HomeAutomation Server");
+
+                //     // Resource
+                //     std::string contentType = "text/plain";
+
+                //     responseBuffer.Clear();
+
+                //     if (JsonApi::ProcessResApiCallHTTP(request.method(), target, user,
+                //     std::string_view(request.body()),
+                //                                        responseBuffer, contentType))
+                //     {
+                //         response->result(boost::beast::http::status::ok);
+                //         response->keep_alive(request.keep_alive());
+                //     }
+                //     else
+                //     {
+                //         response->result(boost::beast::http::status::bad_request);
+                //         response->keep_alive(false);
+                //     }
+
+                //     if (responseBuffer.GetSize() == 0)
+                //     {
+                //         // A response cannot be empty
+                //         response->set(boost::beast::http::field::content_type, "test/plain");
+                //         memcpy(responseBuffer.Push(10), "NO CONTENT", 10);
+                //     }
+                //     else
+                //         response->set(boost::beast::http::field::content_type, contentType);
+
+                //     boost::beast::http::buffer_body::value_type& buf = response->body();
+                //     buf.data = (void*)responseBuffer.GetString();
+                //     buf.size = responseBuffer.GetSize();
+                //     buf.more = false;
+
+                //     response->prepare_payload();
+
+                //     buffer.consume(size);
+
+                //     // Send response
+                //     boost::beast::http::async_write(
+                //         *socket, *response,
+                //         boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteBuffer,
+                //         shared_from_this(),
+                //                                                        boost::placeholders::_1,
+                //                                                        boost::placeholders::_2, response)));
+                // }
+                // else
+                if (strncmp(target.data(), "/auth", 5) == 0)
                 {
-                    Ref<users::User> user = Authenticate();
+                    Ref<api::User> user = Authenticate();
                     if (user == nullptr)
                     {
                         WriteError("Invalid authentication token.");
                         return;
                     }
 
-                    target.remove_prefix(5); // Remove /api/
-
-                    // Create response
-                    boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response =
-                        boost::make_shared<boost::beast::http::response<boost::beast::http::buffer_body>>();
-                    response->version(request.version());
-                    response->set(boost::beast::http::field::server, "HomeAutomation Server");
-
-                    // Resource
-                    std::string contentType = "text/plain";
-
-                    responseBuffer.Clear();
-
-                    if (JsonApi::ProcessResApiCallHTTP(request.method(), target, user, std::string_view(request.body()),
-                                                       responseBuffer, contentType))
-                    {
-                        response->result(boost::beast::http::status::ok);
-                        response->keep_alive(request.keep_alive());
-                    }
-                    else
-                    {
-                        response->result(boost::beast::http::status::bad_request);
-                        response->keep_alive(false);
-                    }
-
-                    if (responseBuffer.GetSize() == 0)
-                    {
-                        // A response cannot be empty
-                        response->set(boost::beast::http::field::content_type, "test/plain");
-                        memcpy(responseBuffer.Push(10), "NO CONTENT", 10);
-                    }
-                    else
-                        response->set(boost::beast::http::field::content_type, contentType);
-
-                    boost::beast::http::buffer_body::value_type& buf = response->body();
-                    buf.data = (void*)responseBuffer.GetString();
-                    buf.size = responseBuffer.GetSize();
-                    buf.more = false;
-
-                    response->prepare_payload();
-
-                    buffer.consume(size);
-
-                    // Send response
-                    boost::beast::http::async_write(
-                        *socket, *response,
-                        boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteBuffer, shared_from_this(),
-                                                                       boost::placeholders::_1, boost::placeholders::_2,
-                                                                       response)));
-                }
-                else if (strncmp(target.data(), "/auth", 5) == 0)
-                {
-                    Ref<users::User> user = Authenticate();
-                    if (user == nullptr)
-                    {
-                        WriteError("Invalid authentication token.");
-                        return;
-                    }
-
-                    Ref<users::UserManager> userManager = users::UserManager::GetInstance();
+                    Ref<api::UserManager> userManager = api::UserManager::GetInstance();
                     assert(userManager != nullptr);
 
                     std::string token = userManager->GenerateJWTToken(user);
@@ -126,7 +128,7 @@ namespace server
                     // Send response
                     boost::beast::http::async_write(
                         *socket, *response,
-                        boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(),
+                        boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnWriteString, shared_from_this(),
                                                                        boost::placeholders::_1, boost::placeholders::_2,
                                                                        response)));
                 }
@@ -135,12 +137,12 @@ namespace server
                     if (boost::beast::websocket::is_upgrade(request))
                     {
                         // Authenticate user before starting websocket connection
-                        Ref<users::User> user = Authenticate();
+                        Ref<api::User> user = Authenticate();
                         if (user != nullptr)
                         {
                             socket->expires_never();
 
-                            Ref<ApiSessionImpl> ws = boost::make_shared<ApiSessionImpl>(socket, user);
+                            Ref<WebSocketSession> ws = boost::make_shared<WebSocketSession>(socket, user);
                             ws->Run(request);
 
                             buffer.consume(size);
@@ -170,7 +172,7 @@ namespace server
                     // Send response
                     boost::beast::http::async_write(
                         *socket, *response,
-                        boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(),
+                        boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnWriteString, shared_from_this(),
                                                                        boost::placeholders::_1, boost::placeholders::_2,
                                                                        response)));
                 }
@@ -197,7 +199,7 @@ namespace server
                     // Send response
                     boost::beast::http::async_write(
                         *socket, *response,
-                        boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnWriteString, shared_from_this(),
+                        boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnWriteString, shared_from_this(),
                                                                        boost::placeholders::_1, boost::placeholders::_2,
                                                                        response)));
                 }
@@ -208,7 +210,7 @@ namespace server
                     WriteError("Invalid method.");
                 }
             }
-            catch (std::exception e)
+            catch (const std::exception& e)
             {
                 LOG_ERROR("Oops... Internal error :\n{0}", e.what());
 
@@ -217,7 +219,7 @@ namespace server
                 WriteError("Internal error.");
             }
         }
-        Ref<users::User> HTTPSession::Authenticate()
+        Ref<api::User> HttpSession::Authenticate()
         {
             boost::beast::http::fields::iterator it = request.find(boost::beast::http::field::authorization);
             if (it == request.end())
@@ -226,7 +228,7 @@ namespace server
                 return nullptr;
             }
 
-            Ref<users::UserManager> userManager = users::UserManager::GetInstance();
+            Ref<api::UserManager> userManager = api::UserManager::GetInstance();
             assert(userManager != nullptr);
 
             boost::beast::string_view authorization = it->value();
@@ -269,7 +271,7 @@ namespace server
             WriteError("Invalid authorization field. Please call /api/help for more details.");
             return nullptr;
         }
-        void HTTPSession::WriteError(const char* error)
+        void HttpSession::WriteError(const char* error)
         {
             boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>> response =
                 boost::make_shared<boost::beast::http::response<boost::beast::http::buffer_body>>();
@@ -279,14 +281,14 @@ namespace server
             response->set(boost::beast::http::field::server, "HomeAutomation Server");
             response->set(boost::beast::http::field::content_type, "application/json");
 
-            rapidjson::Document responseDocument = rapidjson::Document(rapidjson::kObjectType);
-
-            JsonApi::BuildJsonErrorMessageHTTP(error, responseDocument);
+            rapidjson::Document output = rapidjson::Document(rapidjson::kObjectType);
+            rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+            output.AddMember("error", rapidjson::Value(error, allocator), allocator);
 
             responseBuffer.Clear();
             rapidjson::Writer<rapidjson::StringBuffer> writer =
                 rapidjson::Writer<rapidjson::StringBuffer>(responseBuffer);
-            responseDocument.Accept(writer);
+            output.Accept(writer);
 
             boost::beast::http::buffer_body::value_type& buf = response->body();
             buf.data = (void*)responseBuffer.GetString();
@@ -298,11 +300,11 @@ namespace server
             boost::beast::http::async_write(
                 *socket, *response,
                 boost::asio::bind_executor(strand,
-                                           boost::bind(&HTTPSession::OnWriteBuffer, shared_from_this(),
+                                           boost::bind(&HttpSession::OnWriteBuffer, shared_from_this(),
                                                        boost::placeholders::_1, boost::placeholders::_2, response)));
         }
 
-        void HTTPSession::OnWrite(
+        void HttpSession::OnWrite(
             const boost::system::error_code& ec, size_t size,
             const boost::shared_ptr<boost::beast::http::response<boost::beast::http::empty_body>>& response)
         {
@@ -317,7 +319,7 @@ namespace server
                 socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
-                    boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
+                    boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnRead, shared_from_this(),
                                                                    boost::placeholders::_1, boost::placeholders::_2)));
             }
             else
@@ -329,7 +331,7 @@ namespace server
                 socket->close();
             }
         }
-        void HTTPSession::OnWriteString(
+        void HttpSession::OnWriteString(
             const boost::system::error_code& ec, size_t size,
             const boost::shared_ptr<boost::beast::http::response<boost::beast::http::string_body>>& response)
         {
@@ -344,7 +346,7 @@ namespace server
                 socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
-                    boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
+                    boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnRead, shared_from_this(),
                                                                    boost::placeholders::_1, boost::placeholders::_2)));
             }
             else
@@ -356,7 +358,7 @@ namespace server
                 socket->close();
             }
         }
-        void HTTPSession::OnWriteBuffer(
+        void HttpSession::OnWriteBuffer(
             const boost::system::error_code& ec, size_t size,
             const boost::shared_ptr<boost::beast::http::response<boost::beast::http::buffer_body>>& response)
         {
@@ -371,7 +373,7 @@ namespace server
                 socket->expires_after(std::chrono::seconds(12));
                 boost::beast::http::async_read(
                     *socket, buffer, request,
-                    boost::asio::bind_executor(strand, boost::bind(&HTTPSession::OnRead, shared_from_this(),
+                    boost::asio::bind_executor(strand, boost::bind(&HttpSession::OnRead, shared_from_this(),
                                                                    boost::placeholders::_1, boost::placeholders::_2)));
             }
             else
@@ -384,7 +386,7 @@ namespace server
             }
         }
 
-        void HTTPSession::OnShutdown(const boost::system::error_code& ec)
+        void HttpSession::OnShutdown(const boost::system::error_code& ec)
         {
             if (ec)
                 return;

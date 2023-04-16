@@ -1,6 +1,7 @@
 #pragma once
 #include "ScriptSource.hpp"
 #include "common.hpp"
+#include <home-api/Message.hpp>
 
 namespace server
 {
@@ -85,6 +86,39 @@ namespace server
             Ref<Script> CreateScript(identifier_t id, uint8_t flags, const Ref<View>& view);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
+
+            //! WebSocket Api
+            static void WebSocketProcessGetScriptSourcesMessage(const Ref<api::User>& user,
+                                                                const api::ApiRequestMessage& request,
+                                                                api::ApiResponseMessage& response,
+                                                                const Ref<api::WebSocketSession>& session);
+
+            static void WebSocketProcessAddScriptSourceMessage(const Ref<api::User>& user,
+                                                               const api::ApiRequestMessage& request,
+                                                               api::ApiResponseMessage& response,
+                                                               const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessRemoveScriptSourceMessage(const Ref<api::User>& user,
+                                                                  const api::ApiRequestMessage& request,
+                                                                  api::ApiResponseMessage& response,
+                                                                  const Ref<api::WebSocketSession>& session);
+
+            static void WebSocketProcessGetScriptSourceMessage(const Ref<api::User>& user,
+                                                               const api::ApiRequestMessage& request,
+                                                               api::ApiResponseMessage& response,
+                                                               const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessSetScriptSourceMessage(const Ref<api::User>& user,
+                                                               const api::ApiRequestMessage& request,
+                                                               api::ApiResponseMessage& response,
+                                                               const Ref<api::WebSocketSession>& session);
+
+            static void WebSocketProcessGetScriptSourceContentMessage(const Ref<api::User>& user,
+                                                                      const api::ApiRequestMessage& request,
+                                                                      api::ApiResponseMessage& response,
+                                                                      const Ref<api::WebSocketSession>& session);
+            static void WebSocketProcessSetScriptSourceContentMessage(const Ref<api::User>& user,
+                                                                      const api::ApiRequestMessage& request,
+                                                                      api::ApiResponseMessage& response,
+                                                                      const Ref<api::WebSocketSession>& session);
         };
     }
 }

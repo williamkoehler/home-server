@@ -1,9 +1,4 @@
 #pragma once
-#define SPDLOG_HEADER_ONLY
-#define SPDLOG_LEVEL_NAMES                                                                                             \
-    {                                                                                                                  \
-        "TRACE", "DEBUG", "INFO ", "WARN ", "ERROR", "ERROR", "OFF  "                                                  \
-    }
 #include <spdlog/spdlog.h>
 
 class Log

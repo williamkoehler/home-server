@@ -1,13 +1,15 @@
-target("server-home-users")
+target("server-home-api")
     set_kind("shared")
     add_files("./**.cpp")
     add_packages(
         "spdlog", 
+        "openssl", 
         "boost", 
         "rapidjson", 
         "robin-hood-hashing", 
         "xxhash",
-        "cppcodec", 
+        "cppcodec",
+        "stb",
         "jwt-cpp"
     )
 

@@ -59,6 +59,28 @@ namespace server
 
             home->UpdateTimestamp();
 
+            // Register websocket home api
+            {
+                robin_hood::unordered_node_map<std::string, api::WebSocketApiCallDefinition>& apiMap =
+                    api::WebSocketSession::GetApiMap();
+
+                apiMap["get-home"] = Home::WebSocketProcessGetHomeMessage;
+
+                apiMap["add-entity"] = Home::WebSocketProcessAddEntityMessage;
+                apiMap["rem-entity"] = Home::WebSocketProcessRemoveEntityMessage;
+
+                apiMap["get-entity"] = Home::WebSocketProcessGetEntityMessage;
+                apiMap["set-entity"] = Home::WebSocketProcessSetEntityMessage;
+
+                apiMap["get-entity-state"] = Home::WebSocketProcessGetEntityStateMessage;
+                apiMap["set-entity-state"] = Home::WebSocketProcessSetEntityStateMessage;
+
+                apiMap["inv-entiy"] = Home::WebSocketProcessInvokeDeviceMethodMessage;
+
+                apiMap["sub-to-entity-state"] = Home::WebSocketProcessSubscribeToEntityStateMessage;
+                apiMap["unsub-from-entity-state"] = Home::WebSocketProcessUnsubscribeFromEntityStateMessage;
+            }
+
             return home;
         }
         Ref<Home> Home::GetInstance()

@@ -115,9 +115,9 @@ namespace server
                 UniqueRef<CallbackMethod<const Ref<HttpController>&>> callbackMethod;
 
               public:
-                typedef CallbackMethod<const Ref<HttpController>&> CallbackMethod;
+                typedef CallbackMethod<const Ref<HttpController>&> HttpCallbackMethod;
 
-                HttpController(const Ref<NativeScriptImpl>& script, UniqueRef<CallbackMethod> callback);
+                HttpController(const Ref<NativeScriptImpl>& script, UniqueRef<HttpCallbackMethod> callback);
 
                 virtual ControllerType GetType() const override
                 {
@@ -169,7 +169,7 @@ namespace server
                                  HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                                  const std::string_view& content = std::string_view("", 0),
                                  const std::string_view& contentType = "text/plain",
-                                 UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr);
+                                 UniqueRef<HttpController::HttpCallbackMethod> methodCallback = nullptr);
 
                 /// @brief Send http get request
                 ///
@@ -181,7 +181,7 @@ namespace server
                                        const std::string& target = "/",
                                        const std::string_view& content = std::string_view("", 0),
                                        const std::string_view& contentType = std::string_view("text/plain", 10),
-                                       UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
+                                       UniqueRef<HttpController::HttpCallbackMethod> methodCallback = nullptr)
                 {
                     return Send(script, host, port, HttpMethod::kGet, target, content, contentType,
                                 std::move(methodCallback));
@@ -197,7 +197,7 @@ namespace server
                                         const std::string& target = "/",
                                         const std::string_view& content = std::string_view("", 0),
                                         const std::string_view& contentType = std::string_view("text/plain", 10),
-                                        UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
+                                        UniqueRef<HttpController::HttpCallbackMethod> methodCallback = nullptr)
                 {
                     return Send(script, host, port, HttpMethod::kPost, target, content, contentType,
                                 std::move(methodCallback));
@@ -218,7 +218,7 @@ namespace server
                                  HttpMethod method = HttpMethod::kGet, const std::string& target = "/",
                                  const std::string_view& content = std::string_view("", 0),
                                  const std::string_view& contentType = std::string_view("text/plain", 10),
-                                 UniqueRef<HttpController::CallbackMethod> callback = nullptr);
+                                 UniqueRef<HttpController::HttpCallbackMethod> callback = nullptr);
 
                 /// @brief Send https get request
                 ///
@@ -230,7 +230,7 @@ namespace server
                                        const std::string& target = "/",
                                        const std::string_view& content = std::string_view("", 0),
                                        const std::string_view& contentType = std::string_view("text/plain", 10),
-                                       UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
+                                       UniqueRef<HttpController::HttpCallbackMethod> methodCallback = nullptr)
                 {
                     return Send(script, host, port, HttpMethod::kGet, target, content, contentType,
                                 std::move(methodCallback));
@@ -246,7 +246,7 @@ namespace server
                                         const std::string& target = "/",
                                         const std::string_view& content = std::string_view("", 0),
                                         const std::string_view& contentType = std::string_view("text/plain", 10),
-                                        UniqueRef<HttpController::CallbackMethod> methodCallback = nullptr)
+                                        UniqueRef<HttpController::HttpCallbackMethod> methodCallback = nullptr)
                 {
                     return Send(script, host, port, HttpMethod::kPost, target, content, contentType,
                                 std::move(methodCallback));

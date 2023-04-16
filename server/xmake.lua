@@ -1,11 +1,10 @@
 includes("home-common")
 includes("home-database")
+includes("home-api")
 includes("home-scripting")
 includes("home-scripting-javascript")
 includes("home-scripting-native")
 includes("home-main")
-includes("home-users")
-includes("home-networking")
 includes("home-server")
 
 includes("scripts")

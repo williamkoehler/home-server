@@ -24,7 +24,3 @@ typedef uint32_t identifier_t;
 #include "libraries/rapidjson.hpp"
 #include <robin_hood.h>
 #include <xxhash.h>
-
-// Api
-#include "ApiMessage.hpp"
-#include "ApiSession.hpp"

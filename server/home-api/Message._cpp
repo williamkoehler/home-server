@@ -1,4 +1,4 @@
-#include "ApiMessage.hpp"
+#include "Message.hpp"
 
 namespace server
 {

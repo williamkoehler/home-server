@@ -30,95 +30,101 @@ namespace server
                     for (boost::filesystem::recursive_directory_iterator it(path);
                          it != boost::filesystem::recursive_directory_iterator(); it++)
                     {
-                        std::string libraryFileName = it->path().stem().string();
+                        const boost::filesystem::path& libraryFilePath = it->path();
 
-                        Ref<boost::dll::shared_library> library = boost::make_shared<boost::dll::shared_library>();
-
-                        boost::system::error_code ec;
-                        library->load(it->path(), boost::dll::load_mode::default_mode, ec);
-
-                        if (!ec)
+                        // Check extension
+                        if (libraryFilePath.extension() == ".plugin")
                         {
-                            if (library->has(libraryFunction))
+                            std::string libraryName = libraryFilePath.stem().string();
+
+                            Ref<boost::dll::shared_library> library = boost::make_shared<boost::dll::shared_library>();
+
+                            boost::system::error_code ec;
+                            library->load(libraryFilePath, boost::dll::load_mode::default_mode, ec);
+
+                            if (!ec)
                             {
-                                try
+                                if (library->has(libraryFunction))
                                 {
-                                    LOG_INFO("Registering library '{0}'", libraryFileName);
-
-                                    //  Get lib informations
-                                    LibraryInformation lib =
-                                        library->get<GetLibraryInformationsCallback>(libraryFunction)();
-
-                                    // Log library details
+                                    try
                                     {
-                                        std::stringstream ss;
+                                        LOG_INFO("Registering library '{0}'", libraryName);
 
-                                        // Library Name: foo-foo--doo-doo
-                                        // Name: FooFoo DooDoo
-                                        // License: MIT
-                                        // Version: 1.0.0.0
-                                        // Authors: Max Mustermann, ...
-                                        // Dependencies: boost, ...
+                                        //  Get lib informations
+                                        LibraryInformation lib =
+                                            library->get<GetLibraryInformationsCallback>(libraryFunction)();
 
-                                        ss << "Library name: " << lib.libraryName << std::endl;
-                                        ss << "Name:         " << lib.name << std::endl;
-                                        ss << "License:      " << lib.license << std::endl;
-                                        ss << "Version:      " << lib.version.ToString() << std::endl;
-                                        ss << "Authors:      " << boost::join(lib.authors, ", ") << std::endl;
-                                        ss << "Dependencies: " << boost::join(lib.dependencies, ", ") << std::endl;
-
-                                        LOG_INFO("Library {0}\n{1}", libraryFileName, ss.str());
-                                    }
-
-                                    // Add library
-                                    if (!lib.libraryName.empty())
-                                    {
-                                        provider->libraryList.push_back(library);
-
-                                        // Add scripts
-                                        for (ScriptInformation& scriptInformation : lib.scripts)
+                                        // Log library details
                                         {
-                                            // Generate unique name for each script
-                                            std::string name = lib.libraryName + '-' + scriptInformation.scriptName;
+                                            std::stringstream ss;
 
-                                            // Add static script
-                                            provider->scriptList[name] = scriptInformation;
+                                            // Library Name: foo-foo--doo-doo
+                                            // Name: FooFoo DooDoo
+                                            // License: MIT
+                                            // Version: 1.0.0.0
+                                            // Authors: Max Mustermann, ...
+                                            // Dependencies: boost, ...
 
-                                            // Log script details
+                                            ss << "Library name: " << lib.libraryName << std::endl;
+                                            ss << "Name:         " << lib.name << std::endl;
+                                            ss << "License:      " << lib.license << std::endl;
+                                            ss << "Version:      " << lib.version.ToString() << std::endl;
+                                            ss << "Authors:      " << boost::join(lib.authors, ", ") << std::endl;
+                                            ss << "Dependencies: " << boost::join(lib.dependencies, ", ") << std::endl;
+
+                                            LOG_INFO("Library {0}\n{1}", libraryName, ss.str());
+                                        }
+
+                                        // Add library
+                                        if (!lib.libraryName.empty())
+                                        {
+                                            provider->libraryList.push_back(library);
+
+                                            // Add scripts
+                                            for (ScriptInformation& scriptInformation : lib.scripts)
                                             {
-                                                std::stringstream ss;
+                                                // Generate unique name for each script
+                                                std::string name = lib.libraryName + '-' + scriptInformation.scriptName;
 
-                                                // Script Name: foo-foo--boo-boo
-                                                // Name: FooFoo BooBoo
-                                                // Usage: No usage...
+                                                // Add static script
+                                                provider->scriptList[name] = scriptInformation;
 
-                                                ss << "Script name: " << scriptInformation.scriptName << std::endl;
-                                                ss << "Name:        " << scriptInformation.name << std::endl;
+                                                // Log script details
+                                                {
+                                                    std::stringstream ss;
 
-                                                LOG_INFO("Static Script {0}\n{1}", scriptInformation.scriptName,
-                                                         ss.str());
+                                                    // Script Name: foo-foo--boo-boo
+                                                    // Name: FooFoo BooBoo
+                                                    // Usage: No usage...
+
+                                                    ss << "Script name: " << scriptInformation.scriptName << std::endl;
+                                                    ss << "Name:        " << scriptInformation.name << std::endl;
+
+                                                    LOG_INFO("Static Script {0}\n{1}", scriptInformation.scriptName,
+                                                             ss.str());
+                                                }
                                             }
                                         }
+                                        else
+                                        {
+                                            LOG_ERROR("Invalid library name. Library '{0}'", libraryName);
+                                        }
                                     }
-                                    else
+                                    catch (std::exception)
                                     {
-                                        LOG_ERROR("Invalid library name. Library '{0}'", libraryFileName);
+                                        LOG_ERROR("'GetLibraryInformations' not working properly. Library '{0}'",
+                                                  libraryName);
                                     }
                                 }
-                                catch (std::exception)
+                                else
                                 {
-                                    LOG_ERROR("'GetLibraryInformations' not working properly. Library '{0}'",
-                                              libraryFileName);
+                                    LOG_ERROR("'GetLibraryInformations' is missing. Library '{0}'", libraryName);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR("'GetLibraryInformations' is missing. Library '{0}'", libraryFileName);
+                                LOG_ERROR("Load or open Library '{0}'", libraryName);
                             }
-                        }
-                        else
-                        {
-                            LOG_ERROR("Load or open Library '{0}'", libraryFileName);
                         }
                     }
                 }

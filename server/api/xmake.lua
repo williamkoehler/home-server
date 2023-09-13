@@ -1,0 +1,20 @@
+target("server-api")
+    set_kind("shared")
+    set_basename("api")
+    add_files("./**.cpp")
+    add_packages(
+        "spdlog", 
+        "openssl", 
+        "boost", 
+        "rapidjson", 
+        "robin-hood-hashing", 
+        "xxhash",
+        "cppcodec",
+        "stb",
+        "jwt-cpp"
+    )
+
+    add_deps(
+        "server-common",
+        "server-database"
+    )

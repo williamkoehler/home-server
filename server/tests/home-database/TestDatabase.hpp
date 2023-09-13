@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.hpp"
-#include "home-database/Database.hpp"
+#include "database/database.hpp"
 
 struct ScriptSource
 {

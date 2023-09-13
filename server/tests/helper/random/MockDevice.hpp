@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../homeserver/home/Device.hpp"
+#include "../../../homeserver/home/device.hpp"
 #include "../../common.hpp"
 
 class MockDevicePlugin : public home::DevicePlugin

@@ -1,6 +1,6 @@
 #include "../helper/random/String-random.hpp"
-#include "TestDatabase.hpp"
-#include "home-threading/Worker.hpp"
+#include "Testdatabase.hpp"
+#include "home-threading/worker.hpp"
 
 const boost::filesystem::path databaseFilepath = "test.sqlite3";
 Ref<server::Database> database = nullptr;

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../homeserver/database/Database.hpp"
+#include "../../../homeserver/database/database.hpp"
 #include "../../common.hpp"
 
 #define HOME_DB "test_home.sqlite3"

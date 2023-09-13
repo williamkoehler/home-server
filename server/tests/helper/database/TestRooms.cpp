@@ -1,6 +1,6 @@
 #include "TestRooms.hpp"
 #include "../mock/MockString.hpp"
-#include "TestDatabase.hpp"
+#include "Testdatabase.hpp"
 
 BOOST_AUTO_TEST_CASE(check_initial_state)
 {

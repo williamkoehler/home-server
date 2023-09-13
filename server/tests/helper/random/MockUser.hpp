@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../homeserver/user/User.hpp"
+#include "../../../homeserver/user/user.hpp"
 #include "../../common.hpp"
 
 Ref<server::User> MockUser(identifier_t id = 1, const std::string& name = "unknown user", uint8_t* hash = nullptr,

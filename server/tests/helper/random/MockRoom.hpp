@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../homeserver/home/Room.hpp"
+#include "../../../homeserver/home/room.hpp"
 #include "../../common.hpp"
 
 Ref<server::Room> MockRoom(identifier_t id = 1, const std::string& name = "unknown room",

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../homeserver/user/User.hpp"
+#include "../../../homeserver/user/user.hpp"
 #include "../../common.hpp"
 
 static uint8_t sha256_empty[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

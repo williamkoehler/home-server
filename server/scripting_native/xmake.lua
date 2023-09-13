@@ -1,0 +1,19 @@
+target("server-scripting-native")
+    set_kind("shared")
+    set_basename("native-scripting")
+    add_files("./**.cpp")
+    set_pcxxheader("common.hpp")
+    add_packages(
+        "spdlog", 
+        "openssl", 
+        "boost", 
+        "rapidjson", 
+        "robin-hood-hashing", 
+        "xxhash"
+    )
+
+    add_deps(
+        "server-common",
+        "server-database",
+        "server-scripting"
+    )

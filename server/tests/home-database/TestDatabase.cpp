@@ -1,4 +1,4 @@
-#include "TestDatabase.hpp"
+#include "Testdatabase.hpp"
 #include "../helper/random/String-random.hpp"
 
 const boost::filesystem::path databaseFilepath = "test.sqlite3";

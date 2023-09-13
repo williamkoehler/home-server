@@ -1,0 +1,12 @@
+target("server-common")
+    set_kind("shared")
+    set_basename("common")
+    add_files("./**.cpp")
+    set_pcxxheader("common.hpp")
+    add_packages(
+        "spdlog", 
+        "boost", 
+        "rapidjson", 
+        "robin-hood-hashing", 
+        "xxhash"
+    )

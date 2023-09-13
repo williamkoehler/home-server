@@ -1,0 +1,22 @@
+target("server")
+    set_kind("binary")
+    set_basename("home-server")
+    add_files("./**.cpp")
+    add_packages(
+        "spdlog", 
+        "openssl", 
+        "boost", 
+        "rapidjson", 
+        "robin-hood-hashing", 
+        "xxhash"
+    )
+
+    add_deps(
+        "server-common",
+        "server-database",
+        "server-main",
+        "server-scripting",
+        "server-scripting-javascript",
+        "server-scripting-native",
+        "server-api"
+    )

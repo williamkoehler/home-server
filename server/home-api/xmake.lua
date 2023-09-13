@@ -1,5 +1,6 @@
 target("server-home-api")
     set_kind("shared")
+    set_basename("home-api")
     add_files("./**.cpp")
     add_packages(
         "spdlog", 

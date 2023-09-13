@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include <home-api/WebSocketSessionSet.hpp>
 #include <home-scripting/Script.hpp>
-#include <home-scripting/View.hpp>
+#include <home-scripting/view/View.hpp>
 
 namespace server
 {
@@ -45,10 +45,10 @@ namespace server
             Entity(identifier_t id, const std::string& name);
             virtual ~Entity();
             static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name,
-                                      identifier_t scriptSourceID, const rapidjson::Value& config,
-                                      const rapidjson::Value& state);
+                                      identifier_t scriptSourceID, const rapidjson::Value& attributesJson,
+                                      const rapidjson::Value& stateJson);
             static Ref<Entity> Create(identifier_t id, EntityType type, const std::string& name,
-                                      identifier_t scriptSourceID, const std::string_view& config,
+                                      identifier_t scriptSourceID, const std::string_view& attributes,
                                       const std::string_view& state);
 
             /// @brief Get entity type
@@ -139,9 +139,9 @@ namespace server
             /// @return Successfulness
             bool SaveState();
 
-            virtual void JsonGetConfig(rapidjson::Value& output,
-                                       rapidjson::Document::AllocatorType& allocator) const = 0;
-            virtual bool JsonSetConfig(const rapidjson::Value& input) = 0;
+            virtual void JsonGetAttributes(rapidjson::Value& output,
+                                           rapidjson::Document::AllocatorType& allocator) const = 0;
+            virtual bool JsonSetAttributes(const rapidjson::Value& input) = 0;
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
             bool JsonSet(const rapidjson::Value& input);

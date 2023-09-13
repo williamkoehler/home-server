@@ -1,11 +1,10 @@
 #pragma once
 #include "PropertyFlags.hpp"
 #include "ScriptSource.hpp"
-#include "View.hpp"
 #include "common.hpp"
-#include "tasks/Task.hpp"
-#include "utils/Event.hpp"
-#include "utils/Value.hpp"
+#include "interface/Event.hpp"
+#include "Value.hpp"
+#include "view/View.hpp"
 
 namespace server
 {
@@ -15,13 +14,9 @@ namespace server
 
         class Value;
 
-        class Task;
-
         class Script : public boost::enable_shared_from_this<Script>
         {
           protected:
-            friend class Task;
-
             const Ref<View> view;
             const Ref<ScriptSource> scriptSource;
 
@@ -32,10 +27,6 @@ namespace server
             /// @brief Script events
             ///
             robin_hood::unordered_node_map<std::string, Event> eventMap;
-
-            /// @brief Script tasks
-            ///
-            boost::container::vector<WeakRef<Task>> taskMap;
 
           public:
             Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource);
@@ -57,12 +48,12 @@ namespace server
                 return scriptSource->GetID();
             }
 
-            /// @brief Get prefered lazy update interval
+            /// @brief Get preferred lazy update interval
             ///
             /// @return size_t Lazy update interval (in seconds)
             size_t GetLazyUpdateInterval() const;
 
-            /// @brief Get prefered update interval
+            /// @brief Get preferred update interval
             ///
             /// @return size_t Update interval (in seconds)
             size_t GetUpdateInterval() const;
@@ -71,17 +62,6 @@ namespace server
             ///
             /// @return Successfulness
             virtual bool Initialize();
-
-            /// @brief Add timer task
-            ///
-            /// @param method Method name
-            /// @param interval Interval
-            void AddTimerTask(const std::string& method, size_t interval);
-
-            /// @brief Remove finished tasks
-            /// @note This method is automatically called when a task finishes
-            ///
-            void CleanTasks();
 
             /// @brief Get property value
             ///
@@ -138,7 +118,7 @@ namespace server
             /// @return EventConnection Event connection
             EventConnection Bind(const std::string& event, const Ref<View>& view, const std::string& method);
 
-            void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
+            void JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 
             virtual void JsonGetProperties(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator,
                                            PropertyFlags flags = kPropertyFlag_Visible) = 0;

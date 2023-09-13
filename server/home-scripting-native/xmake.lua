@@ -1,6 +1,8 @@
 target("server-home-scripting-native")
     set_kind("shared")
+    set_basename("home-native-scripting")
     add_files("./**.cpp")
+    set_pcxxheader("common.hpp")
     add_packages(
         "spdlog", 
         "openssl", 

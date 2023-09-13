@@ -46,21 +46,29 @@ namespace server
             return roomRef != nullptr ? roomRef->GetID() : 0;
         }
 
-        void Device::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
+        void Device::JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
+            output.AddMember("hidden", rapidjson::Value(hidden), allocator);
             if (Ref<Room> roomRef = room.lock())
                 output.AddMember("roomid", rapidjson::Value(roomRef->GetID()), allocator);
             else
                 output.AddMember("roomid", rapidjson::Value(rapidjson::kNullType), allocator);
         }
 
-        bool Device::JsonSetConfig(const rapidjson::Value& input)
+        bool Device::JsonSetAttributes(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
             bool update = false;
+
+            rapidjson::Value::ConstMemberIterator hiddenIt = input.FindMember("hidden");
+            if (hiddenIt != input.MemberEnd() && hiddenIt->value.IsBool())
+            {
+                hidden = hiddenIt->value.GetBool();
+                update = true;
+            }
 
             rapidjson::Value::ConstMemberIterator roomIdIt = input.FindMember("roomid");
             if (roomIdIt != input.MemberEnd() && roomIdIt->value.IsUint())

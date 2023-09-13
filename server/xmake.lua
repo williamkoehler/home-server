@@ -1,3 +1,4 @@
+includes("dependencies")
 includes("home-common")
 includes("home-database")
 includes("home-api")

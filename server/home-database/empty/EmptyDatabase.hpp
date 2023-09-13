@@ -66,8 +66,8 @@ namespace server
         /// @return Successfulness
         virtual bool LoadEntities(
             const boost::function<bool(identifier_t id, const std::string& entityType, const std::string& name,
-                                       identifier_t scriptSourceID, const std::string_view& data,
-                                       const std::string_view& scriptData)>& callback) override;
+                                       identifier_t scriptSourceID, const std::string_view& attributes,
+                                       const std::string_view& state)>& callback) override;
 
         /// @brief Reserve entity entry in database
         ///
@@ -79,11 +79,11 @@ namespace server
         ///
         /// @param id Entity id
         /// @param name Entity name
-        /// @param data Data
-        /// @param scriptData Script data
+        /// @param scriptSourceId Entity script source id
+        /// @param attributes Entity attributes
         /// @return Successfulness
         virtual bool UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceId,
-                                  const std::string_view& config) override;
+                                  const std::string_view& attributes) override;
 
         /// @brief Update entity state
         ///

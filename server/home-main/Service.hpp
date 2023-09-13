@@ -2,7 +2,7 @@
 #include "Entity.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
-#include <home-scripting/main/ServiceView.hpp>
+#include <home-scripting/view/main/ServiceView.hpp>
 
 namespace server
 {
@@ -41,9 +41,9 @@ namespace server
                 return view;
             }
 
-            virtual void JsonGetConfig(rapidjson::Value& output,
+            virtual void JsonGetAttributes(rapidjson::Value& output,
                                        rapidjson::Document::AllocatorType& allocator) const override;
-            virtual bool JsonSetConfig(const rapidjson::Value& input) override;
+            virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
         class ServiceView : public scripting::ServiceView

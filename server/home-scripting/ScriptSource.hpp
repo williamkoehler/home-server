@@ -1,6 +1,6 @@
 #pragma once
-#include "View.hpp"
 #include "common.hpp"
+#include "view/View.hpp"
 #include <home-api/Message.hpp>
 #include <home-api/User.hpp>
 #include <home-api/WebSocketSession.hpp>

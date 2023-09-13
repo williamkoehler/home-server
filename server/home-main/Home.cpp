@@ -96,11 +96,11 @@ namespace server
         }
 
         bool Home::LoadEntity(identifier_t id, const std::string& type, const std::string& name,
-                              identifier_t scriptSourceId, const std::string_view& config,
+                              identifier_t scriptSourceId, const std::string_view& attributes,
                               const std::string_view& state)
         {
             // Create new entity
-            Ref<Entity> entity = Entity::Create(id, ParseEntityType(type), name, scriptSourceId, config, state);
+            Ref<Entity> entity = Entity::Create(id, ParseEntityType(type), name, scriptSourceId, attributes, state);
 
             // Add entity
             if (entity != nullptr)
@@ -114,7 +114,7 @@ namespace server
         }
 
         Ref<Entity> Home::AddEntity(EntityType type, const std::string& name, identifier_t scriptSourceId,
-                                    const rapidjson::Value& config)
+                                    const rapidjson::Value& attributesJson)
         {
             Ref<Database> database = Database::GetInstance();
             assert(database != nullptr);
@@ -126,7 +126,7 @@ namespace server
 
             // Create new entity
             Ref<Entity> entity =
-                Entity::Create(id, type, name, scriptSourceId, config, rapidjson::Value(rapidjson::kObjectType));
+                Entity::Create(id, type, name, scriptSourceId, attributesJson, rapidjson::Value(rapidjson::kObjectType));
 
             // Add entity
             if (entity != nullptr)

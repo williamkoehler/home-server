@@ -34,12 +34,12 @@ namespace server
             return service;
         }
 
-        void Service::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
+        void Service::JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             (void)output;
             (void)allocator;
         }
-        bool Service::JsonSetConfig(const rapidjson::Value& input)
+        bool Service::JsonSetAttributes(const rapidjson::Value& input)
         {
             (void)input;
 

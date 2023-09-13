@@ -1,7 +1,7 @@
 #pragma once
 #include "Entity.hpp"
 #include "common.hpp"
-#include <home-scripting/main/RoomView.hpp>
+#include <home-scripting/view/main/RoomView.hpp>
 
 namespace server
 {
@@ -14,9 +14,12 @@ namespace server
         class Room : public Entity
         {
           private:
-            std::string roomType;
-
             Ref<RoomView> view;
+
+            // Attributes
+            bool hidden;
+            int8_t floorNumber;
+            std::string roomType;
 
           public:
             Room(identifier_t id, const std::string& name);
@@ -46,6 +49,22 @@ namespace server
                 roomType = v;
             }
 
+            /// @brief Get floor number
+            ///
+            /// @return Floor number
+            inline uint8_t GetFloorNumber() const
+            {
+                return floorNumber;
+            }
+
+            /// @brief Set floor number
+            ///
+            /// @param v Floor number
+            void SetFloorNumber(uint8_t v)
+            {
+                floorNumber = v;
+            }
+
             /// @brief Get view
             ///
             /// @return Ref<scripting::View> Room view
@@ -62,9 +81,9 @@ namespace server
                 return view;
             }
 
-            virtual void JsonGetConfig(rapidjson::Value& output,
-                                       rapidjson::Document::AllocatorType& allocator) const override;
-            virtual bool JsonSetConfig(const rapidjson::Value& input) override;
+            virtual void JsonGetAttributes(rapidjson::Value& output,
+                                           rapidjson::Document::AllocatorType& allocator) const override;
+            virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
         class RoomView final : public scripting::RoomView

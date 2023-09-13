@@ -8,8 +8,8 @@ namespace server
         namespace native
         {
             NativeScript::NativeScript(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource,
-                                       const Ref<NativeScriptImpl>& scriptImpl)
-                : Script(view, scriptSource), scriptImpl(scriptImpl)
+                                       const Ref<NativeScriptImplementation>& scriptImpl)
+                : Script(view, scriptSource), scriptImplementation(scriptImpl)
             {
             }
             NativeScript::~NativeScript()
@@ -21,12 +21,15 @@ namespace server
                 assert(scriptSource != nullptr);
 
                 // Create script implementation
-                Ref<NativeScriptImpl> scriptImpl = scriptSource->GetCreateCallback()();
+                Ref<NativeScriptImplementation> scriptImpl = scriptSource->GetCreateCallback()();
                 if (scriptImpl == nullptr)
                 {
                     LOG_ERROR("Failed to create native script implementation.");
                     return nullptr;
                 }
+
+                // Initialize script implementation
+                scriptImpl->view = view;
 
                 // Create script
                 Ref<NativeScript> script = boost::make_shared<NativeScript>(view, scriptSource, std::move(scriptImpl));
@@ -36,16 +39,12 @@ namespace server
                     return nullptr;
                 }
 
-                // Initialize script implementation
-                script->scriptImpl->script = script;
-                script->scriptImpl->view = view;
-
                 return boost::static_pointer_cast<Script>(script);
             }
 
             bool NativeScript::Initialize()
             {
-                return scriptImpl->Initialize();
+                return scriptImplementation->Initialize(*this);
             }
 
             bool NativeScript::AddAttribute(const std::string& name, const char* json)
@@ -93,7 +92,7 @@ namespace server
                 robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
                     propertyMap.find(name);
                 if (it != propertyMap.end())
-                    return it->second->Get(scriptImpl.get());
+                    return it->second->Get(scriptImplementation.get());
                 else
                     return Value();
             }
@@ -103,7 +102,7 @@ namespace server
                 robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
                     propertyMap.find(name);
                 if (it != propertyMap.end())
-                    it->second->Set(scriptImpl.get(), value);
+                    it->second->Set(scriptImplementation.get(), value);
             }
 
             bool NativeScript::RemoveProperty(const std::string& name)
@@ -131,7 +130,7 @@ namespace server
                 robin_hood::unordered_node_map<std::string, UniqueRef<Method>>::const_iterator it =
                     methodMap.find(name);
                 if (it != methodMap.end())
-                    return it->second->Invoke(scriptImpl.get(), parameter);
+                    return it->second->Invoke(scriptImplementation.get(), parameter);
                 else
                     return false;
             }
@@ -171,7 +170,7 @@ namespace server
                     if (property->GetFlags() & propertyFlags)
                     {
                         output.AddMember(rapidjson::Value(name.data(), name.size(), allocator),
-                                         property->Get(scriptImpl.get()).JsonGet(allocator), allocator);
+                                         property->Get(scriptImplementation.get()).JsonGet(allocator), allocator);
                     }
                 }
             }
@@ -188,99 +187,12 @@ namespace server
                         propertyMap.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
                     if (it != propertyMap.end() && it->second->GetFlags() & propertyFlags)
                     {
-                        it->second->Set(scriptImpl.get(), Value::Create(propertyIt->value));
+                        it->second->Set(scriptImplementation.get(), Value::Create(propertyIt->value));
                         updateFlags |= it->second->GetFlags() & kPropertyFlag_InitiateUpdate;
                     }
                 }
 
                 return updateFlags;
-            }
-
-            //! NativeScriptImpl
-            bool NativeScriptImpl::AddAttribute(const std::string& name, const char* json)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->AddAttribute(name, json);
-                else
-                    return false;
-            }
-            bool NativeScriptImpl::RemoveAttribute(const std::string& name)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->RemoveAttribute(name);
-                else
-                    return false;
-            }
-            void NativeScriptImpl::ClearAttributes()
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    scriptRef->ClearAttributes();
-            }
-
-            bool NativeScriptImpl::AddProperty(const std::string& name, UniqueRef<Property> property)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->AddProperty(name, std::move(property));
-                else
-                    return false;
-            }
-            bool NativeScriptImpl::RemoveProperty(const std::string& name)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->RemoveProperty(name);
-                else
-                    return false;
-            }
-            void NativeScriptImpl::ClearProperties()
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    scriptRef->ClearProperties();
-            }
-
-            bool NativeScriptImpl::AddMethod(const std::string& name, UniqueRef<Method> method)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->AddMethod(name, std::move(method));
-                else
-                    return false;
-            }
-            bool NativeScriptImpl::RemoveMethod(const std::string& name)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->RemoveMethod(name);
-                else
-                    return false;
-            }
-            void NativeScriptImpl::ClearMethods()
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->ClearMethods();
-            }
-
-            Event NativeScriptImpl::AddEvent(const std::string& name)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->AddEvent(name);
-                else
-                    return Event();
-            }
-            bool NativeScriptImpl::RemoveEvent(const std::string& name)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    return scriptRef->RemoveEvent(name);
-                else
-                    return false;
-            }
-            void NativeScriptImpl::ClearEvents()
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    scriptRef->ClearEvents();
-            }
-
-            void NativeScriptImpl::AddTimerTask(const std::string& method, size_t interval)
-            {
-                if (Ref<NativeScript> scriptRef = script.lock())
-                    scriptRef->AddTimerTask(method, interval);
             }
         }
     }

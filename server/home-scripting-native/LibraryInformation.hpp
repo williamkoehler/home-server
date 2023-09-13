@@ -1,7 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include <home-scripting/ScriptSource.hpp>
-#include <home-scripting/View.hpp>
+#include <home-scripting/view/View.hpp>
 
 namespace server
 {
@@ -9,9 +9,9 @@ namespace server
     {
         namespace native
         {
-            class NativeScriptImpl;
+            class NativeScriptImplementation;
 
-            template <typename T = NativeScriptImpl>
+            template <typename T = NativeScriptImplementation>
             using CreateScriptCallback = Ref<T> (*)();
 
             template <class T>

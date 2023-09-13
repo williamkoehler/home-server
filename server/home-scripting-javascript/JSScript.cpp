@@ -1,13 +1,13 @@
 #include "JSScript.hpp"
 #include "JSScriptSource.hpp"
-#include <home-scripting/utils/Event.hpp>
-#include <home-scripting/utils/Value.hpp>
+#include <home-scripting/Value.hpp>
+#include <home-scripting/interface/Event.hpp>
 
 #include "JSUtils.hpp"
-#include "main/JSHome.hpp"
-#include "utils/JSValue.hpp"
+#include "wrapper/JSValue.hpp"
+#include "wrapper/main/JSHome.hpp"
 
-#include "literals.hpp"
+#include "wrapper/literals.hpp"
 
 extern "C"
 {

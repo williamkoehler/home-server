@@ -4,14 +4,14 @@ namespace server
 {
     bool SQLiteDatabase::LoadEntities(
         const boost::function<bool(identifier_t id, const std::string& type, const std::string& name,
-                                   identifier_t scriptSourceID, const std::string_view& config,
+                                   identifier_t scriptSourceID, const std::string_view& attributes,
                                    const std::string_view& state)>& callback)
     {
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, R"(select id, type, name, scriptsourceid, config, state from entities)", -1,
-                               &statement, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(connection, R"(select id, type, name, scriptsourceid, attributes, state from entities)",
+                               -1, &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql load entities statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
@@ -46,12 +46,12 @@ namespace server
             identifier_t scriptSourceId = sqlite3_column_int64(statement, 3);
 
             //! Config field
-            const unsigned char* config = sqlite3_column_text(statement, 4);
-            size_t configSize = sqlite3_column_bytes(statement, 4);
-            if (config == nullptr)
+            const unsigned char* attributes = sqlite3_column_text(statement, 4);
+            size_t attributesSize = sqlite3_column_bytes(statement, 4);
+            if (attributes == nullptr)
             {
-                config = (const uint8_t*)"";
-                configSize = 0;
+                attributes = (const uint8_t*)"";
+                attributesSize = 0;
             }
 
             //! State field
@@ -64,7 +64,7 @@ namespace server
             }
 
             callback(id, std::string((const char*)type, typeSize), std::string((const char*)name, nameSize),
-                     scriptSourceId, std::string_view((const char*)config, configSize),
+                     scriptSourceId, std::string_view((const char*)attributes, attributesSize),
                      std::string_view((const char*)state, stateSize));
         }
 
@@ -108,23 +108,24 @@ namespace server
     }
 
     bool SQLiteDatabase::UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceID,
-                                      const std::string_view& config)
+                                      const std::string_view& attributes)
     {
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, R"(update entities set name = ?, scriptsourceid = ?, config = ? where id = ?)",
-                               -1, &statement, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(connection,
+                               R"(update entities set name = ?, scriptsourceid = ?, attributes = ? where id = ?)", -1,
+                               &statement, nullptr) != SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql update entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
             return false;
         }
 
-        if (sqlite3_bind_text(statement, 1, name.data(), name.size(), nullptr) != SQLITE_OK ||     // name
-            sqlite3_bind_int64(statement, 2, scriptSourceID) != SQLITE_OK ||                       // scriptsourceid
-            sqlite3_bind_text(statement, 3, config.data(), config.size(), nullptr) != SQLITE_OK || // config
-            sqlite3_bind_int64(statement, 4, id) != SQLITE_OK)                                     // id
+        if (sqlite3_bind_text(statement, 1, name.data(), name.size(), nullptr) != SQLITE_OK || // name
+            sqlite3_bind_int64(statement, 2, scriptSourceID) != SQLITE_OK ||                   // scriptsourceid
+            sqlite3_bind_text(statement, 3, attributes.data(), attributes.size(), nullptr) != SQLITE_OK || // attributes
+            sqlite3_bind_int64(statement, 4, id) != SQLITE_OK)                                             // id
         {
             LOG_ERROR("Failed to bind sql parameters.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);
@@ -179,7 +180,8 @@ namespace server
         // Insert into database
         sqlite3_stmt* statement;
 
-        if (sqlite3_prepare_v2(connection, R"(delete from entities where id = ?)", -1, &statement, nullptr) != SQLITE_OK)
+        if (sqlite3_prepare_v2(connection, R"(delete from entities where id = ?)", -1, &statement, nullptr) !=
+            SQLITE_OK)
         {
             LOG_ERROR("Failed to prepare sql remove entity statement.\n{0}", sqlite3_errmsg(connection));
             sqlite3_finalize(statement);

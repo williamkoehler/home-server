@@ -1,5 +1,6 @@
 target("server-home-server")
     set_kind("binary")
+    set_basename("home-server")
     add_files("./**.cpp")
     add_packages(
         "spdlog", 

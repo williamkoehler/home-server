@@ -1,5 +1,6 @@
 target("server-home-common")
     set_kind("shared")
+    set_basename("home-common")
     add_files("./**.cpp")
     set_pcxxheader("common.hpp")
     add_packages(

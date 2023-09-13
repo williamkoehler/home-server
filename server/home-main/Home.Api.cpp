@@ -1,13 +1,14 @@
 #include "Home.hpp"
-#include <home-api/WebSocketSession.hpp>
 #include <home-api/User.hpp>
+#include <home-api/WebSocketSession.hpp>
 
 namespace server
 {
     namespace main
     {
         void Home::WebSocketProcessGetHomeMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                               api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+                                                  api::ApiResponseMessage& response,
+                                                  const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -26,7 +27,8 @@ namespace server
         }
 
         void Home::WebSocketProcessAddEntityMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                 api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+                                                    api::ApiResponseMessage& response,
+                                                    const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
@@ -44,10 +46,12 @@ namespace server
             rapidjson::Value::ConstMemberIterator typeIt = input.FindMember("type");
             rapidjson::Value::ConstMemberIterator nameIt = input.FindMember("name");
             rapidjson::Value::ConstMemberIterator scriptSourceIdIt = input.FindMember("scriptsourceid");
+            rapidjson::Value::ConstMemberIterator attributesIt = input.FindMember("attributes");
             if (typeIt == input.MemberEnd() || !typeIt->value.IsString() || // type
                 nameIt == input.MemberEnd() || !nameIt->value.IsString() || // name
-                scriptSourceIdIt == input.MemberEnd() ||
-                (!scriptSourceIdIt->value.IsUint() && !scriptSourceIdIt->value.IsNull())) // scriptsourceid
+                (scriptSourceIdIt == input.MemberEnd() ||
+                 (!scriptSourceIdIt->value.IsUint() && !scriptSourceIdIt->value.IsNull())) ||
+                attributesIt == input.MemberEnd() || !attributesIt->value.IsObject()) // scriptsourceid
             {
                 response.SetErrorCode(api::ApiErrorCodes::kApiErrorCode_InvalidArguments);
                 return;
@@ -59,10 +63,13 @@ namespace server
                 assert(home != nullptr);
 
                 // Add new entity
-                Ref<main::Entity> entity = home->AddEntity(
-                    main::ParseEntityType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength())),
-                    std::string(nameIt->value.GetString(), nameIt->value.GetStringLength()),
-                    scriptSourceIdIt->value.IsUint() ? scriptSourceIdIt->value.GetUint() : 0, input);
+                EntityType type =
+                    main::ParseEntityType(std::string(typeIt->value.GetString(), typeIt->value.GetStringLength()));
+                std::string name = std::string(nameIt->value.GetString(), nameIt->value.GetStringLength());
+                identifier_t scriptSourceId = scriptSourceIdIt->value.IsUint() ? scriptSourceIdIt->value.GetUint() : 0;
+                const rapidjson::Value& attributesJson = attributesIt->value;
+
+                Ref<main::Entity> entity = home->AddEntity(type, name, scriptSourceId, attributesJson);
                 if (entity == nullptr)
                 {
                     //! Error failed to add entity
@@ -73,8 +80,10 @@ namespace server
                 entity->JsonGet(output, allocator);
             }
         }
-        void Home::WebSocketProcessRemoveEntityMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                    api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+        void Home::WebSocketProcessRemoveEntityMessage(const Ref<api::User>& user,
+                                                       const api::ApiRequestMessage& request,
+                                                       api::ApiResponseMessage& response,
+                                                       const Ref<api::WebSocketSession>& session)
         {
             (void)session;
 
@@ -112,7 +121,8 @@ namespace server
         }
 
         void Home::WebSocketProcessGetEntityMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                 api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+                                                    api::ApiResponseMessage& response,
+                                                    const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -146,7 +156,8 @@ namespace server
             }
         }
         void Home::WebSocketProcessSetEntityMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                 api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+                                                    api::ApiResponseMessage& response,
+                                                    const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -176,13 +187,18 @@ namespace server
                     return;
                 }
 
+                // Set entity
                 entity->JsonSet(input);
-                entity->JsonGet(output, allocator);
+
+                // Notify other sessions
+                entity->Publish();
             }
         }
 
-        void Home::WebSocketProcessGetEntityStateMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                      api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+        void Home::WebSocketProcessGetEntityStateMessage(const Ref<api::User>& user,
+                                                         const api::ApiRequestMessage& request,
+                                                         api::ApiResponseMessage& response,
+                                                         const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -218,8 +234,10 @@ namespace server
                 output.AddMember("state", stateJson, allocator);
             }
         }
-        void Home::WebSocketProcessSetEntityStateMessage(const Ref<api::User>& user, const api::ApiRequestMessage& request,
-                                                      api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+        void Home::WebSocketProcessSetEntityStateMessage(const Ref<api::User>& user,
+                                                         const api::ApiRequestMessage& request,
+                                                         api::ApiResponseMessage& response,
+                                                         const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -251,14 +269,18 @@ namespace server
                     return;
                 }
 
-                // Set state
+                // Set entity state
                 entity->JsonSetState(stateIt->value);
+
+                // Notify other sessions
+                entity->PublishState();
             }
         }
 
         void Home::WebSocketProcessInvokeDeviceMethodMessage(const Ref<api::User>& user,
-                                                          const api::ApiRequestMessage& request,
-                                                          api::ApiResponseMessage& response, const Ref<api::WebSocketSession>& session)
+                                                             const api::ApiRequestMessage& request,
+                                                             api::ApiResponseMessage& response,
+                                                             const Ref<api::WebSocketSession>& session)
         {
             (void)user;
             (void)session;
@@ -298,9 +320,9 @@ namespace server
         }
 
         void Home::WebSocketProcessSubscribeToEntityStateMessage(const Ref<api::User>& user,
-                                                              const api::ApiRequestMessage& request,
-                                                              api::ApiResponseMessage& response,
-                                                              const Ref<api::WebSocketSession>& session)
+                                                                 const api::ApiRequestMessage& request,
+                                                                 api::ApiResponseMessage& response,
+                                                                 const Ref<api::WebSocketSession>& session)
         {
             (void)user;
 
@@ -340,9 +362,9 @@ namespace server
         }
 
         void Home::WebSocketProcessUnsubscribeFromEntityStateMessage(const Ref<api::User>& user,
-                                                                  const api::ApiRequestMessage& request,
-                                                                  api::ApiResponseMessage& response,
-                                                                  const Ref<api::WebSocketSession>& session)
+                                                                     const api::ApiRequestMessage& request,
+                                                                     api::ApiResponseMessage& response,
+                                                                     const Ref<api::WebSocketSession>& session)
         {
             (void)user;
 

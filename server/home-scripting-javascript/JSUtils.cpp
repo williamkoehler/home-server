@@ -47,7 +47,7 @@ namespace server
                     assert(worker != nullptr);
 
                     // Create timer task
-                    script->AddTimerTask(method, interval);
+                    // script->AddTimerTask(method, interval);
 
                     return 0;
                 }
@@ -80,7 +80,7 @@ namespace server
                     assert(worker != nullptr);
 
                     // Create timer task
-                    script->AddTimerTask(method, interval);
+                    // script->AddTimerTask(method, interval);
 
                     return 0;
                 }

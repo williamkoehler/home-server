@@ -4,7 +4,7 @@
 #include <home-api/Message.hpp>
 #include <home-common/Worker.hpp>
 #include <home-scripting/Script.hpp>
-#include <home-scripting/main/HomeView.hpp>
+#include <home-scripting/view/main/HomeView.hpp>
 
 namespace server
 {
@@ -57,10 +57,10 @@ namespace server
             /// @param type Entity type
             /// @param name Entity name
             /// @param scriptSourceId Script source id
-            /// @param config Additional entity config
+            /// @param attributesJson Entity attributes
             /// @return Ref<Entity> Entity
             Ref<Entity> AddEntity(EntityType type, const std::string& name, identifier_t scriptSourceId,
-                                  const rapidjson::Value& config);
+                                  const rapidjson::Value& attributesJson);
 
             /// @brief Get entity count
             /// @return size_t Entity count

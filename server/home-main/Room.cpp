@@ -31,22 +31,38 @@ namespace server
             return room;
         }
 
-        void Room::JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
+        void Room::JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const
         {
             assert(output.IsObject());
 
-            output.AddMember("roomtype", rapidjson::Value(roomType.data(), roomType.size()), allocator);
+            output.AddMember("hidden", rapidjson::Value(hidden), allocator);
+            output.AddMember("roomtype", rapidjson::Value(roomType.data(), roomType.size(), allocator), allocator);
+            output.AddMember("floornumber", rapidjson::Value(floorNumber), allocator);
         }
-        bool Room::JsonSetConfig(const rapidjson::Value& input)
+        bool Room::JsonSetAttributes(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
             bool update = false;
 
+            rapidjson::Value::ConstMemberIterator hiddenIt = input.FindMember("hidden");
+            if (hiddenIt != input.MemberEnd() && hiddenIt->value.IsBool())
+            {
+                hidden = hiddenIt->value.GetBool();
+                update = true;
+            }
+
             rapidjson::Value::ConstMemberIterator roomTypeIt = input.FindMember("roomtype");
             if (roomTypeIt != input.MemberEnd() && roomTypeIt->value.IsString())
             {
                 roomType.assign(roomTypeIt->value.GetString(), roomTypeIt->value.GetStringLength());
+                update = true;
+            }
+
+            rapidjson::Value::ConstMemberIterator floorNumberIt = input.FindMember("floornumber");
+            if (floorNumberIt != input.MemberEnd() && floorNumberIt->value.IsInt())
+            {
+                floorNumber = floorNumberIt->value.GetInt();
                 update = true;
             }
 

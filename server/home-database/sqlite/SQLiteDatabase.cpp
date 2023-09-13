@@ -53,7 +53,7 @@ namespace server
                 // Entity table
                 if (sqlite3_exec(database->connection,
                                  R"(create table if not exists entities)"
-                                 R"((id integer not null primary key, type text not null, name text not null, scriptsourceid integer, config text, state text))",
+                                 R"((id integer not null primary key, type text not null, name text not null, scriptsourceid integer, attributes text, state text))",
                                  nullptr, nullptr, &err) != SQLITE_OK)
                 {
                     LOG_ERROR("Failing to create 'entities' table.\n{0}", err);

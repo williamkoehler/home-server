@@ -2,7 +2,7 @@
 #include "Entity.hpp"
 #include "common.hpp"
 #include <home-scripting/Script.hpp>
-#include <home-scripting/main/DeviceView.hpp>
+#include <home-scripting/view/main/DeviceView.hpp>
 
 namespace server
 {
@@ -15,9 +15,11 @@ namespace server
         class Device final : public Entity
         {
           protected:
-            WeakRef<Room> room;
-
             Ref<DeviceView> view;
+
+            // Attributes
+            bool hidden;
+            WeakRef<Room> room;
 
           public:
             Device(identifier_t id, const std::string& name);
@@ -60,8 +62,8 @@ namespace server
                 return view;
             }
 
-            virtual void JsonGetConfig(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const override;
-            virtual bool JsonSetConfig(const rapidjson::Value& input) override;
+            virtual void JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const override;
+            virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
         class DeviceView : public scripting::DeviceView

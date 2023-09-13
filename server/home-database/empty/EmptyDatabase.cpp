@@ -55,8 +55,8 @@ namespace server
 
     bool EmptyDatabase::LoadEntities(
         const boost::function<bool(identifier_t id, const std::string& entityType, const std::string& name,
-                                   identifier_t scriptSourceID, const std::string_view& data,
-                                   const std::string_view& scriptData)>& callback)
+                                   identifier_t scriptSourceID, const std::string_view& attributes,
+                                   const std::string_view& state)>& callback)
     {
         (void)callback;
         return true;
@@ -69,12 +69,12 @@ namespace server
     }
 
     bool EmptyDatabase::UpdateEntity(identifier_t id, const std::string& name, identifier_t scriptSourceId,
-                                     const std::string_view& config)
+                                     const std::string_view& attributes)
     {
         (void)id;
         (void)name;
         (void)scriptSourceId;
-        (void)config;
+        (void)attributes;
         return true;
     }
 

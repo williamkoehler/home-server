@@ -236,7 +236,7 @@ namespace server
             { // Authenticate using bearer token
                 authorization.remove_prefix(7);
 
-                identifier_t userID = userManager->VerifyJWTToken(authorization.to_string());
+                identifier_t userID = userManager->VerifyJWTToken(std::string(authorization.data(), authorization.size()));
                 return userManager->GetUser(userID);
             }
             else if (strncmp(authorization.data(), "Basic ", 6) == 0)

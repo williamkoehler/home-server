@@ -64,8 +64,8 @@ namespace server
         {
         }
         Ref<Entity> Entity::Create(identifier_t id, EntityType type, const std::string& name,
-                                   identifier_t scriptSourceId, const rapidjson::Value& config,
-                                   const rapidjson::Value& state)
+                                   identifier_t scriptSourceId, const rapidjson::Value& attributesJson,
+                                   const rapidjson::Value& stateJson)
         {
             Ref<Entity> entity;
 
@@ -88,36 +88,36 @@ namespace server
             if (entity != nullptr)
             {
                 // Set config
-                entity->JsonSetConfig(config);
+                entity->JsonSetAttributes(attributesJson);
 
                 // Set script
                 entity->SetScript(scriptSourceId);
 
                 // Set state
                 if (entity->script)
-                    entity->script->JsonSetProperties(state, scripting::kPropertyFlag_All);
+                    entity->script->JsonSetProperties(stateJson, scripting::kPropertyFlag_All);
             }
 
             return entity;
         }
         Ref<Entity> Entity::Create(identifier_t id, EntityType type, const std::string& name,
-                                   identifier_t scriptSourceID, const std::string_view& config,
+                                   identifier_t scriptSourceID, const std::string_view& attributes,
                                    const std::string_view& state)
         {
             rapidjson::Document configJson, stateJson;
 
-            // Parse data
+            // Parse attributes
             {
-                rapidjson::StringStream stream = rapidjson::StringStream(config.data());
+                rapidjson::StringStream stream = rapidjson::StringStream(attributes.data());
                 configJson.ParseStream(stream);
                 if (configJson.HasParseError() || !configJson.IsObject())
                 {
-                    LOG_WARNING("Failed to parse config of entity '{0}'.", id);
+                    LOG_WARNING("Failed to parse attributes of entity '{0}'.", id);
                     configJson = rapidjson::Document(rapidjson::kObjectType);
                 }
             }
 
-            // Parse script data
+            // Parse script state
             {
                 rapidjson::StringStream stream = rapidjson::StringStream(state.data());
                 stateJson.ParseStream(stream);
@@ -231,20 +231,21 @@ namespace server
             assert(database != nullptr);
 
             // Generate json additional config
-            rapidjson::StringBuffer config = rapidjson::StringBuffer();
+            rapidjson::StringBuffer attributes = rapidjson::StringBuffer();
             {
                 // Generate json
-                rapidjson::Document document = rapidjson::Document(rapidjson::kObjectType);
-                JsonGetConfig(document, document.GetAllocator());
+                rapidjson::Document attributesJson = rapidjson::Document(rapidjson::kObjectType);
+                JsonGetAttributes(attributesJson, attributesJson.GetAllocator());
 
                 // Stringify json
-                rapidjson::Writer<rapidjson::StringBuffer> writer = rapidjson::Writer<rapidjson::StringBuffer>(config);
-                document.Accept(writer);
+                rapidjson::Writer<rapidjson::StringBuffer> writer =
+                    rapidjson::Writer<rapidjson::StringBuffer>(attributes);
+                attributesJson.Accept(writer);
             }
 
             // Update database
             return database->UpdateEntity(id, name, GetScriptSourceId(),
-                                          std::string_view(config.GetString(), config.GetSize()));
+                                          std::string_view(attributes.GetString(), attributes.GetSize()));
         }
 
         bool Entity::SaveState()
@@ -280,27 +281,24 @@ namespace server
 
             output.AddMember("name", rapidjson::Value(name.data(), name.size(), allocator), allocator);
 
+            output.AddMember("scriptsourceid",
+                             script != nullptr ? rapidjson::Value(script->GetSourceID())
+                                               : rapidjson::Value(rapidjson::kNullType),
+                             allocator);
+
+            rapidjson::Value attributesJson = rapidjson::Value(rapidjson::kObjectType);
+
             if (script != nullptr)
-            {
-                output.AddMember("scriptsourceid", rapidjson::Value(script->GetSourceID()), allocator);
+                script->JsonGetAttributes(attributesJson, allocator);
+            JsonGetAttributes(attributesJson, allocator);
 
-                rapidjson::Value scriptJson = rapidjson::Value(rapidjson::kObjectType);
-                script->JsonGet(scriptJson, allocator);
-                output.AddMember("script", scriptJson, allocator);
-            }
-            else
-            {
-                output.AddMember("scriptsourceid", rapidjson::Value(rapidjson::kNullType), allocator);
-                output.AddMember("script", rapidjson::Value(rapidjson::kNullType), allocator);
-            }
-
-            JsonGetConfig(output, allocator);
+            output.AddMember("attributes", attributesJson, allocator);
         }
         bool Entity::JsonSet(const rapidjson::Value& input)
         {
             assert(input.IsObject());
 
-            bool update = JsonSetConfig(input);
+            bool update = false;
 
             rapidjson::Value::ConstMemberIterator nameIt = input.FindMember("name");
             if (nameIt != input.MemberEnd() && nameIt->value.IsString())
@@ -313,6 +311,13 @@ namespace server
             if (scriptSourceIDIt != input.MemberEnd() && scriptSourceIDIt->value.IsUint())
             {
                 SetScript(scriptSourceIDIt->value.GetUint());
+                update = true;
+            }
+
+            rapidjson::Value::ConstMemberIterator attributesIt = input.FindMember("attributes");
+            if (attributesIt != input.MemberEnd() && attributesIt->value.IsObject())
+            {
+                JsonSetAttributes(attributesIt->value);
                 update = true;
             }
 

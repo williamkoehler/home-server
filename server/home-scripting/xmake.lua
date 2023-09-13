@@ -1,6 +1,8 @@
 target("server-home-scripting")
     set_kind("shared")
+    set_basename("home-scripting")
     add_files("./**.cpp")
+    set_pcxxheader("common.hpp")
     add_packages(
         "spdlog", 
         "boost", 

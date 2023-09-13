@@ -8,6 +8,7 @@
 
 // IO
 #include <boost/asio.hpp>
+#include <boost/asio/spawn.hpp>
 #include <boost/filesystem.hpp>
 
 // Container

@@ -2,7 +2,7 @@
 #include "entity.hpp"
 #include "common.hpp"
 #include <scripting/script.hpp>
-#include <scripting/view/main/service_view.hpp>
+#include <scripting_sdk/view/main/service_view.hpp>
 
 namespace server
 {
@@ -27,10 +27,10 @@ namespace server
 
             /// @brief Get view
             ///
-            /// @return Ref<scripting::View> Service view
-            virtual Ref<scripting::View> GetView() override
+            /// @return Ref<scripting::sdk::View> Service view
+            virtual Ref<scripting::sdk::View> GetView() override
             {
-                return boost::static_pointer_cast<scripting::View>(view);
+                return boost::static_pointer_cast<scripting::sdk::View>(view);
             }
 
             /// @brief Get service view
@@ -46,7 +46,7 @@ namespace server
             virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
-        class ServiceView : public scripting::ServiceView
+        class ServiceView : public scripting::sdk::ServiceView
         {
           private:
             WeakRef<Service> service;
@@ -60,7 +60,7 @@ namespace server
             virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
 
-            virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
+            virtual void Invoke(const std::string& method, const scripting::sdk::Value& parameter) override;
 
             virtual void Publish() override;
             virtual void PublishState() override;

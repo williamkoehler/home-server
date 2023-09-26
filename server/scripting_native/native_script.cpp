@@ -7,21 +7,21 @@ namespace server
     {
         namespace native
         {
-            NativeScript::NativeScript(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource,
-                                       const Ref<NativeScriptImplementation>& scriptImpl)
+            NativeScript::NativeScript(const Ref<sdk::View>& view, const Ref<NativeScriptSource>& scriptSource,
+                                       const Ref<sdk::Script>& scriptImpl)
                 : Script(view, scriptSource), scriptImplementation(scriptImpl)
             {
             }
             NativeScript::~NativeScript()
             {
             }
-            Ref<Script> NativeScript::Create(const Ref<View>& view, const Ref<NativeScriptSource>& scriptSource)
+            Ref<Script> NativeScript::Create(const Ref<sdk::View>& view, const Ref<NativeScriptSource>& scriptSource)
             {
                 assert(view != nullptr);
                 assert(scriptSource != nullptr);
 
                 // Create script implementation
-                Ref<NativeScriptImplementation> scriptImpl = scriptSource->GetCreateCallback()();
+                Ref<sdk::Script> scriptImpl = scriptSource->GetCreateCallback()();
                 if (scriptImpl == nullptr)
                 {
                     LOG_ERROR("Failed to create native script implementation.");
@@ -76,7 +76,7 @@ namespace server
                 attributeMap.clear();
             }
 
-            bool NativeScript::AddProperty(const std::string& name, UniqueRef<Property> property)
+            bool NativeScript::AddProperty(const std::string& name, UniqueRef<sdk::Property> property)
             {
                 if (!propertyMap.contains(name))
                 {
@@ -87,9 +87,9 @@ namespace server
                     return false;
             }
 
-            Value NativeScript::GetProperty(const std::string& name)
+            sdk::Value NativeScript::GetProperty(const std::string& name)
             {
-                robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
+                robin_hood::unordered_node_map<std::string, UniqueRef<sdk::Property>>::const_iterator it =
                     propertyMap.find(name);
                 if (it != propertyMap.end())
                     return it->second->Get(scriptImplementation.get());
@@ -99,7 +99,7 @@ namespace server
 
             void NativeScript::SetProperty(const std::string& name, const Value& value)
             {
-                robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
+                robin_hood::unordered_node_map<std::string, UniqueRef<sdk::Property>>::const_iterator it =
                     propertyMap.find(name);
                 if (it != propertyMap.end())
                     it->second->Set(scriptImplementation.get(), value);
@@ -114,7 +114,7 @@ namespace server
                 propertyMap.clear();
             }
 
-            bool NativeScript::AddMethod(const std::string& name, UniqueRef<Method> method)
+            bool NativeScript::AddMethod(const std::string& name, UniqueRef<sdk::Method> method)
             {
                 if (!methodMap.contains(name))
                 {
@@ -127,7 +127,7 @@ namespace server
 
             bool NativeScript::Invoke(const std::string& name, const Value& parameter)
             {
-                robin_hood::unordered_node_map<std::string, UniqueRef<Method>>::const_iterator it =
+                robin_hood::unordered_node_map<std::string, UniqueRef<sdk::Method>>::const_iterator it =
                     methodMap.find(name);
                 if (it != methodMap.end())
                     return it->second->Invoke(scriptImplementation.get(), parameter);
@@ -183,7 +183,7 @@ namespace server
                 for (rapidjson::Value::ConstMemberIterator propertyIt = input.MemberBegin();
                      propertyIt != input.MemberEnd(); propertyIt++)
                 {
-                    robin_hood::unordered_node_map<std::string, UniqueRef<Property>>::const_iterator it =
+                    robin_hood::unordered_node_map<std::string, UniqueRef<sdk::Property>>::const_iterator it =
                         propertyMap.find(std::string(propertyIt->name.GetString(), propertyIt->name.GetStringLength()));
                     if (it != propertyMap.end() && it->second->GetFlags() & propertyFlags)
                     {

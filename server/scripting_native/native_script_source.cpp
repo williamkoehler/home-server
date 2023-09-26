@@ -8,7 +8,7 @@ namespace server
         namespace native
         {
             NativeScriptSource::NativeScriptSource(identifier_t id, const std::string& name, uint8_t flags,
-                                                   CreateScriptCallback<> callback)
+                                                   sdk::CreateScriptCallback<> callback)
                 : ScriptSource(id, name, std::string_view("", 0)), flags(flags), callback(callback)
             {
             }
@@ -16,12 +16,12 @@ namespace server
             {
             }
             Ref<NativeScriptSource> NativeScriptSource::Create(identifier_t id, const std::string& name, uint8_t flags,
-                                                               CreateScriptCallback<> callback)
+                                                               sdk::CreateScriptCallback<> callback)
             {
                 return boost::make_shared<NativeScriptSource>(id, name, flags, callback);
             }
 
-            Ref<Script> NativeScriptSource::CreateScript(const Ref<View>& view)
+            Ref<Script> NativeScriptSource::CreateScript(const Ref<sdk::View>& view)
             {
                 assert(view != nullptr);
 

@@ -1,14 +1,14 @@
 #pragma once
-#include "script_source.hpp"
 #include "common.hpp"
+#include "script_source.hpp"
 #include <api/message.hpp>
+#include <scripting_sdk/view/main/home_view.hpp>
 
 namespace server
 {
     namespace scripting
     {
         class ScriptManager;
-        class HomeView;
 
         struct StaticScriptSource
         {
@@ -51,7 +51,7 @@ namespace server
         class ScriptManager
         {
           private:
-            const Ref<HomeView> homeView;
+            const Ref<sdk::HomeView> homeView;
 
             boost::container::vector<Ref<ScriptProvider>> providerList;
             robin_hood::unordered_node_map<identifier_t, Ref<ScriptSource>> scriptSourceList;
@@ -67,8 +67,8 @@ namespace server
             static Ref<ScriptManager> GetInstance();
 
             // Get singleton views
-            static void SetHomeView(const Ref<HomeView>& homeView);
-            static Ref<HomeView> GetHomeView();
+            static void SetHomeView(const Ref<sdk::HomeView>& homeView);
+            static Ref<sdk::HomeView> GetHomeView();
 
             //! Script Source
 
@@ -83,7 +83,7 @@ namespace server
 
             bool RemoveScriptSource(identifier_t id);
 
-            Ref<Script> CreateScript(identifier_t id, uint8_t flags, const Ref<View>& view);
+            Ref<Script> CreateScript(identifier_t id, uint8_t flags, const Ref<sdk::View>& view);
 
             void JsonGet(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const;
 

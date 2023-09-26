@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include <api/websocket_session_set.hpp>
 #include <scripting/script.hpp>
-#include <scripting/view/view.hpp>
+#include <scripting_sdk/view/view.hpp>
 
 namespace server
 {
@@ -103,13 +103,13 @@ namespace server
 
             /// @brief Get view
             ///
-            /// @return Ref<scripting::View> Get view of this object
-            virtual Ref<scripting::View> GetView() = 0;
+            /// @return Ref<scripting::sdk::View> Get view of this object
+            virtual Ref<scripting::sdk::View> GetView() = 0;
 
             /// @brief Invoke script method
             ///
             /// @param event Method name
-            void Invoke(const std::string& method, const scripting::Value& parameter);
+            void Invoke(const std::string& method, const scripting::sdk::Value& parameter);
 
             /// @brief Make session subscribe to entity
             ///

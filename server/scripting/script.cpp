@@ -1,10 +1,11 @@
 #include "script.hpp"
+#include <common/worker.hpp>
 
 namespace server
 {
     namespace scripting
     {
-        Script::Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource)
+        Script::Script(const Ref<sdk::View>& view, const Ref<ScriptSource>& scriptSource)
             : view(view), scriptSource(scriptSource)
         {
             assert(view != nullptr);
@@ -77,13 +78,13 @@ namespace server
             worker->GetContext().dispatch(boost::bind(&Script::Update, shared_from_this()));
         }
 
-        EventConnection Script::Bind(const std::string& event, const Ref<View>& view, const std::string& method)
+        sdk::EventConnection Script::Bind(const std::string& event, const Ref<sdk::View>& view, const std::string& method)
         {
-            const robin_hood::unordered_node_map<std::string, Event>::iterator it = eventMap.find(event);
+            const robin_hood::unordered_node_map<std::string, sdk::Event>::iterator it = eventMap.find(event);
             if (it != eventMap.end())
                 return it->second.Bind(view, method);
 
-            return EventConnection();
+            return sdk::EventConnection();
         }
 
         void Script::JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator)

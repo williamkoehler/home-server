@@ -1,7 +1,8 @@
 #include "js_script.hpp"
 #include "js_script_source.hpp"
 #include <scripting/value.hpp>
-#include <scripting/interface/event.hpp>
+#include <scripting_sdk/interface/event.hpp>
+#include <common/worker.hpp>
 
 #include "js_utils.hpp"
 #include "wrapper/js_value.hpp"

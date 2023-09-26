@@ -93,7 +93,7 @@ namespace server
         //     return view;
         // }
 
-        // void Service::Invoke(const std::string& id, const scripting::Value& parameter)
+        // void Service::Invoke(const std::string& id, const scripting::sdk::Value& parameter)
         // {
         //     if (script != nullptr)
         //         script->PostInvoke(id, parameter);
@@ -199,7 +199,7 @@ namespace server
                 r->SetName(v);
         }
 
-        void ServiceView::Invoke(const std::string& method, const scripting::Value& parameter)
+        void ServiceView::Invoke(const std::string& method, const scripting::sdk::Value& parameter)
         {
             if (Ref<Service> r = service.lock())
                 r->Invoke(method, parameter);

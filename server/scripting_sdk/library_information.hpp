@@ -1,17 +1,16 @@
 #pragma once
 #include "common.hpp"
-#include <scripting/script_source.hpp>
-#include <scripting/view/view.hpp>
+#include <sstream>
 
 namespace server
 {
     namespace scripting
     {
-        namespace native
+        namespace sdk
         {
-            class NativeScriptImplementation;
+            class Script;
 
-            template <typename T = NativeScriptImplementation>
+            template <typename T = Script>
             using CreateScriptCallback = Ref<T> (*)();
 
             template <class T>
@@ -19,6 +18,14 @@ namespace server
             {
                 CreateScriptCallback<T> f1;
                 CreateScriptCallback<> f2;
+            };
+
+            enum ScriptFlags
+            {
+                kScriptFlag_None = 0x00,
+                kScriptFlag_RoomSupport = 0x01,
+                kScriptFlag_DeviceSupport = 0x02,
+                kScriptFlag_ServiceSupport = 0x04,
             };
 
             /// @brief Script information necessary to dynamically create script instance
@@ -30,7 +37,7 @@ namespace server
                 std::string name;
 
                 /// @brief Script flags
-                /// @see server::scripting::ScriptFlags
+                /// @see server::scripting::sdk::ScriptFlags
                 ///
                 uint8_t flags;
 
@@ -78,9 +85,13 @@ namespace server
                 /// @return Library version
                 inline std::string ToString() const
                 {
-                    // Build strinng
+                    // Build string
                     std::stringstream ss;
-                    ss << major << '.' << minor << '.' << patch << '-' << revision;
+
+                    if (revision == 0)
+                        ss << major << '.' << minor << '.' << patch;
+                    else
+                        ss << major << '.' << minor << '.' << patch << '-pre' << revision;
 
                     return ss.str();
                 }

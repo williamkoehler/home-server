@@ -1,7 +1,27 @@
 #pragma once
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
-std::string PrettyBytes(size_t bytes);
+std::string PrettyBytes(size_t bytes)
+{
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2);
+
+    if (bytes >= 1000000000000ull)
+        ss << bytes / 1000000000000.0 << "TB";
+    else if (bytes >= 1000000000ull)
+        ss << bytes / 1000000000.0 << "GB";
+    else if (bytes >= 1000000ull)
+        ss << bytes / 1000000.0 << "MB";
+    else if (bytes >= 1000ull)
+        ss << bytes / 1000.0 << "KB";
+    else
+        ss << bytes << "B";
+
+    return ss.str();
+}
 
 static constexpr const uint32_t crc32table[256] = {
     0x00000000U, 0x77073096U, 0xEE0E612CU, 0x990951BAU, 0x076DC419U, 0x706AF48FU, 0xE963A535U, 0x9E6495A3U, 0x0EDB8832U,

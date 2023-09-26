@@ -1,11 +1,9 @@
 #pragma once
-#include "library_information.hpp"
 #include "common.hpp"
+#include "interface/event.hpp"
 #include "interface/method.hpp"
 #include "interface/property.hpp"
-#include <scripting/script.hpp>
-#include <scripting/value.hpp>
-#include <scripting/interface/event.hpp>
+#include "library_information.hpp"
 
 namespace server
 {
@@ -14,6 +12,11 @@ namespace server
         namespace native
         {
             class NativeScript;
+        }
+
+        namespace sdk
+        {
+            class Script;
 
             class Context
             {
@@ -89,18 +92,18 @@ namespace server
                 virtual void ClearEvents() = 0;
             };
 
-            class NativeScriptImplementation : public boost::enable_shared_from_this<NativeScriptImplementation>
+            class Script : public boost::enable_shared_from_this<Script>
             {
               private:
-                friend class NativeScript;
+                friend class native::NativeScript;
 
                 Ref<View> view;
 
               public:
-                NativeScriptImplementation()
+                Script()
                 {
                 }
-                virtual ~NativeScriptImplementation()
+                virtual ~Script()
                 {
                 }
 

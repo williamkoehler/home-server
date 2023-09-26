@@ -7,6 +7,7 @@
 #include <scripting/script.hpp>
 #include <scripting/script_manager.hpp>
 #include <scripting/script_source.hpp>
+#include <scripting_sdk/library_information.hpp>
 
 namespace server
 {
@@ -46,13 +47,13 @@ namespace server
             switch (entityType)
             {
             case EntityType::kRoomEntityType:
-                return scripting::ScriptFlags::kScriptFlag_RoomSupport;
+                return scripting::sdk::ScriptFlags::kScriptFlag_RoomSupport;
             case EntityType::kDeviceEntityType:
-                return scripting::ScriptFlags::kScriptFlag_DeviceSupport;
+                return scripting::sdk::ScriptFlags::kScriptFlag_DeviceSupport;
             case EntityType::kServiceEntityType:
-                return scripting::ScriptFlags::kScriptFlag_ServiceSupport;
+                return scripting::sdk::ScriptFlags::kScriptFlag_ServiceSupport;
             default:
-                return scripting::ScriptFlags::kScriptFlag_None;
+                return scripting::sdk::ScriptFlags::kScriptFlag_None;
             }
         }
 
@@ -195,7 +196,7 @@ namespace server
             sessions.RemoveSession(session);
         }
 
-        void Entity::Invoke(const std::string& method, const scripting::Value& parameter)
+        void Entity::Invoke(const std::string& method, const scripting::sdk::Value& parameter)
         {
             if (script)
                 script->PostInvoke(method, parameter);

@@ -6,7 +6,7 @@ namespace server
     namespace scripting
     {
         WeakRef<ScriptManager> instanceScriptManager;
-        WeakRef<HomeView> instanceHomeView;
+        WeakRef<sdk::HomeView> instanceHomeView;
 
         ScriptManager::ScriptManager(const boost::container::vector<Ref<ScriptProvider>>& providerList)
             : providerList(providerList)
@@ -88,14 +88,14 @@ namespace server
             return Ref<ScriptManager>(instanceScriptManager);
         }
 
-        void ScriptManager::SetHomeView(const Ref<HomeView>& homeView)
+        void ScriptManager::SetHomeView(const Ref<sdk::HomeView>& homeView)
         {
             assert(homeView != nullptr);
             instanceHomeView = homeView;
         }
-        Ref<HomeView> ScriptManager::GetHomeView()
+        Ref<sdk::HomeView> ScriptManager::GetHomeView()
         {
-            return Ref<HomeView>(instanceHomeView);
+            return Ref<sdk::HomeView>(instanceHomeView);
         }
 
         bool ScriptManager::LoadScriptSource(identifier_t id, const std::string& language, const std::string& name,

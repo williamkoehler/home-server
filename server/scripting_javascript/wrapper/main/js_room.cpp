@@ -1,6 +1,6 @@
 #include "js_home.hpp"
-#include <scripting/view/main/home_view.hpp>
-#include <scripting/view/main/room_view.hpp>
+#include <scripting_sdk/view/main/home_view.hpp>
+#include <scripting_sdk/view/main/room_view.hpp>
 
 #include "../literals.hpp"
 

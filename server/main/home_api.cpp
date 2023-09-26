@@ -314,8 +314,9 @@ namespace server
                 }
 
                 // Invoke method
-                entity->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
-                               scripting::Value::Create(parameterIt->value));
+                //! TODO
+                // entity->Invoke(std::string(methodIt->value.GetString(), methodIt->value.GetStringLength()),
+                            //    scripting::sdk::Value::Create(parameterIt->value));
             }
         }
 

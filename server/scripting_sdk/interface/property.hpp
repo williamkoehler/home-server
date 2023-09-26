@@ -7,11 +7,11 @@ namespace server
 {
     namespace scripting
     {
-        namespace native
+        namespace sdk
         {
-            class NativeScriptImplementation;
+            class Script;
 
-            template <class T = NativeScriptImplementation>
+            template <class T = Script>
             using PropertyUpdateDefinition = void (T::*)();
 
             template <typename P, class T>
@@ -93,7 +93,7 @@ namespace server
                 virtual void Set(void* self, const Value& value) = 0;
             };
 
-#define PROPERTY_REFERENCE (static_cast<T*>(self)->*reference)
+/*#define PROPERTY_REFERENCE (static_cast<T*>(self)->*reference)
 
 #define PROPERTY_REFERENCE_IMPLEMENTATION(type, valueType, getterExpr, setterCondition, setterExpr)                    \
     template <class T>                                                                                                 \
@@ -184,7 +184,7 @@ namespace server
                                               PROPERTY_REFERENCE = value.GetColor())
 
 #undef PROPERTY_REFERENCE
-#undef PROPERTY_REFERENCE_IMPLEMENTATION
+#undef PROPERTY_REFERENCE_IMPLEMENTATION*/
         }
     }
 }

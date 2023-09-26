@@ -1,8 +1,8 @@
 #pragma once
-#include "library_information.hpp"
 #include "common.hpp"
 #include <boost/dll/shared_library.hpp>
 #include <scripting/script_manager.hpp>
+#include <scripting_sdk/library_information.hpp>
 
 namespace server
 {
@@ -20,7 +20,7 @@ namespace server
                 std::string path;
 
                 boost::container::vector<Ref<boost::dll::shared_library>> libraryList;
-                robin_hood::unordered_node_map<std::string, ScriptInformation> scriptList;
+                robin_hood::unordered_node_map<std::string, sdk::ScriptInformation> scriptList;
 
               public:
                 NativeScriptProvider(const std::string& path);

@@ -1,7 +1,7 @@
 #pragma once
 #include "entity.hpp"
 #include "common.hpp"
-#include <scripting/view/main/room_view.hpp>
+#include <scripting_sdk/view/main/room_view.hpp>
 
 namespace server
 {
@@ -67,10 +67,10 @@ namespace server
 
             /// @brief Get view
             ///
-            /// @return Ref<scripting::View> Room view
-            virtual Ref<scripting::View> GetView() override
+            /// @return Ref<scripting::sdk::View> Room view
+            virtual Ref<scripting::sdk::View> GetView() override
             {
-                return boost::static_pointer_cast<scripting::View>(view);
+                return boost::static_pointer_cast<scripting::sdk::View>(view);
             }
 
             /// @brief Get room view
@@ -86,7 +86,7 @@ namespace server
             virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
-        class RoomView final : public scripting::RoomView
+        class RoomView final : public scripting::sdk::RoomView
         {
           private:
             WeakRef<Room> room;
@@ -100,7 +100,7 @@ namespace server
             virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
 
-            virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
+            virtual void Invoke(const std::string& method, const scripting::sdk::Value& parameter) override;
 
             virtual void Publish() override;
             virtual void PublishState() override;

@@ -99,7 +99,7 @@ namespace server
                 r->SetName(v);
         }
 
-        void RoomView::Invoke(const std::string& method, const scripting::Value& parameter)
+        void RoomView::Invoke(const std::string& method, const scripting::sdk::Value& parameter)
         {
             if (Ref<Room> r = room.lock())
                 r->Invoke(method, parameter);

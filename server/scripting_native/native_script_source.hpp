@@ -1,6 +1,6 @@
 #pragma once
-#include "native_script.hpp"
 #include "common.hpp"
+#include "native_script.hpp"
 #include <scripting/script_source.hpp>
 
 namespace server
@@ -14,14 +14,14 @@ namespace server
               private:
                 uint8_t flags;
 
-                CreateScriptCallback<> callback;
+                sdk::CreateScriptCallback<> callback;
 
               public:
                 NativeScriptSource(identifier_t id, const std::string& name, uint8_t flags,
-                                   CreateScriptCallback<> callback);
+                                   sdk::CreateScriptCallback<> callback);
                 virtual ~NativeScriptSource();
                 static Ref<NativeScriptSource> Create(identifier_t id, const std::string& name, uint8_t flags,
-                                                      CreateScriptCallback<> callback);
+                                                      sdk::CreateScriptCallback<> callback);
 
                 /// @brief Get script flags
                 ///
@@ -58,7 +58,7 @@ namespace server
                 /// @brief Get create callback
                 ///
                 /// @return Callback
-                inline CreateScriptCallback<> GetCreateCallback() const
+                inline sdk::CreateScriptCallback<> GetCreateCallback() const
                 {
                     return callback;
                 }
@@ -67,7 +67,7 @@ namespace server
                 ///
                 /// @param view Sender view
                 /// @return Script or null in case of an error
-                virtual Ref<Script> CreateScript(const Ref<View>& view) override;
+                virtual Ref<Script> CreateScript(const Ref<sdk::View>& view) override;
 
                 virtual void JsonGetConfig(rapidjson::Value& output,
                                            rapidjson::Document::AllocatorType& allocator) const override;

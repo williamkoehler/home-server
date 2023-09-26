@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "view/view.hpp"
+#include <scripting_sdk/view/view.hpp>
 #include <api/message.hpp>
 #include <api/user.hpp>
 #include <api/websocket_session.hpp>
@@ -10,14 +10,6 @@ namespace server
     namespace scripting
     {
         class Script;
-
-        enum ScriptFlags
-        {
-            kScriptFlag_None = 0x00,
-            kScriptFlag_RoomSupport = 0x01,
-            kScriptFlag_DeviceSupport = 0x02,
-            kScriptFlag_ServiceSupport = 0x04,
-        };
 
         enum class ScriptLanguage
         {
@@ -113,7 +105,7 @@ namespace server
             ///
             /// @param view Sender view
             /// @return Script
-            virtual Ref<Script> CreateScript(const Ref<View>& view) = 0;
+            virtual Ref<Script> CreateScript(const Ref<sdk::View>& view) = 0;
 
             /// @brief Save/update entity data in database
             ///

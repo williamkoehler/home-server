@@ -1,8 +1,8 @@
 #include "native_script_provider.hpp"
-#include "library_information.hpp"
 #include "native_script.hpp"
 #include "native_script_source.hpp"
 #include <scripting/script_manager.hpp>
+#include <scripting_sdk/library_information.hpp>
 
 namespace server
 {
@@ -51,8 +51,8 @@ namespace server
                                         LOG_INFO("Registering library '{0}'", libraryName);
 
                                         //  Get lib informations
-                                        LibraryInformation lib =
-                                            library->get<GetLibraryInformationsCallback>(libraryFunction)();
+                                        sdk::LibraryInformation lib =
+                                            library->get<sdk::GetLibraryInformationsCallback>(libraryFunction)();
 
                                         // Log library details
                                         {
@@ -81,7 +81,7 @@ namespace server
                                             provider->libraryList.push_back(library);
 
                                             // Add scripts
-                                            for (ScriptInformation& scriptInformation : lib.scripts)
+                                            for (sdk::ScriptInformation& scriptInformation : lib.scripts)
                                             {
                                                 // Generate unique name for each script
                                                 std::string name = lib.libraryName + '-' + scriptInformation.scriptName;
@@ -155,12 +155,12 @@ namespace server
             {
                 (void)content;
 
-                robin_hood::unordered_node_map<std::string, ScriptInformation>::const_iterator it =
+                robin_hood::unordered_node_map<std::string, sdk::ScriptInformation>::const_iterator it =
                     scriptList.find(name);
 
                 if (it != scriptList.end())
                 {
-                    ScriptInformation scriptInformation = it->second;
+                    sdk::ScriptInformation scriptInformation = it->second;
 
                     // Remove created scripts
                     scriptList.erase(it);

@@ -6,14 +6,14 @@ namespace server
 {
     namespace scripting
     {
-        namespace native
+        namespace sdk
         {
-            class NativeScriptImplementation;
+            class Script;
 
-            template <typename P = void*, class T = NativeScriptImplementation>
+            template <typename P = void*, class T = Script>
             using MethodDefinition = bool (T::*)(const P&);
 
-            template <class T = NativeScriptImplementation>
+            template <class T = Script>
             using MethodDefinition2 = bool (T::*)();
 
             template <typename P, class T>
@@ -44,7 +44,7 @@ namespace server
                 virtual bool Invoke(void* self, const Value& value) = 0;
             };
 
-#define METHOD ((static_cast<T*>(self))->*method)
+/*#define METHOD ((static_cast<T*>(self))->*method)
 #define METHOD_IMPLEMENTATION(type, condition, invokeExpr)                                                             \
     template <class T>                                                                                                 \
     class MethodImpl<type, T> final : public Method                                                                    \
@@ -116,7 +116,7 @@ namespace server
             };
 
 #undef METHOD
-#undef METHOD_IMPLEMENTATION
+#undef METHOD_IMPLEMENTATION*/
         }
     }
 }

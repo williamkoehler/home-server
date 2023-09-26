@@ -1,7 +1,7 @@
 #pragma once
 #include "../../js_script.hpp"
 #include "../../common.hpp"
-#include <scripting/view/main/home_view.hpp>
+#include <scripting_sdk/view/main/home_view.hpp>
 
 namespace server
 {

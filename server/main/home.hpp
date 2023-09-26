@@ -1,10 +1,10 @@
 #pragma once
-#include "entity.hpp"
 #include "common.hpp"
+#include "entity.hpp"
 #include <api/message.hpp>
 #include <common/worker.hpp>
 #include <scripting/script.hpp>
-#include <scripting/view/main/home_view.hpp>
+#include <scripting_sdk/view/main/home_view.hpp>
 
 namespace server
 {
@@ -16,7 +16,6 @@ namespace server
         class Service;
 
         class HomeView;
-
         class RoomView;
         class DeviceView;
         class ServiceView;
@@ -144,7 +143,7 @@ namespace server
                                                               const Ref<api::WebSocketSession>& session);
         };
 
-        class HomeView : public scripting::HomeView
+        class HomeView : public scripting::sdk::HomeView
         {
           private:
             WeakRef<Home> home;
@@ -157,13 +156,13 @@ namespace server
             ///
             /// @param id Room id
             /// @return Ref<RoomView> Room view
-            virtual Ref<scripting::RoomView> GetRoom(identifier_t id) const override;
+            virtual Ref<scripting::sdk::RoomView> GetRoom(identifier_t id) const override;
 
             /// @brief Get device view
             ///
             /// @param id Device id
             /// @return Ref<DeviceView> Device view
-            virtual Ref<scripting::DeviceView> GetDevice(identifier_t id) const override;
+            virtual Ref<scripting::sdk::DeviceView> GetDevice(identifier_t id) const override;
         };
     }
 }

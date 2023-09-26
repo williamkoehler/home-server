@@ -1,8 +1,8 @@
 #pragma once
-#include "entity.hpp"
 #include "common.hpp"
+#include "entity.hpp"
 #include <scripting/script.hpp>
-#include <scripting/view/main/device_view.hpp>
+#include <scripting_sdk/view/main/device_view.hpp>
 
 namespace server
 {
@@ -48,10 +48,10 @@ namespace server
 
             /// @brief Get view
             ///
-            /// @return Ref<scripting::View> Device view
-            virtual Ref<scripting::View> GetView() override
+            /// @return Ref<scripting::sdk::View> Device view
+            virtual Ref<scripting::sdk::View> GetView() override
             {
-                return boost::static_pointer_cast<scripting::View>(view);
+                return boost::static_pointer_cast<scripting::sdk::View>(view);
             }
 
             /// @brief Get device view
@@ -62,11 +62,12 @@ namespace server
                 return view;
             }
 
-            virtual void JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator) const override;
+            virtual void JsonGetAttributes(rapidjson::Value& output,
+                                           rapidjson::Document::AllocatorType& allocator) const override;
             virtual bool JsonSetAttributes(const rapidjson::Value& input) override;
         };
 
-        class DeviceView : public scripting::DeviceView
+        class DeviceView : public scripting::sdk::DeviceView
         {
           private:
             WeakRef<Device> device;
@@ -80,7 +81,7 @@ namespace server
             virtual std::string GetName() const override;
             virtual void SetName(const std::string& v) override;
 
-            virtual void Invoke(const std::string& method, const scripting::Value& parameter) override;
+            virtual void Invoke(const std::string& method, const scripting::sdk::Value& parameter) override;
 
             virtual void Publish() override;
             virtual void PublishState() override;

@@ -34,8 +34,8 @@ namespace server
 
             /// @brief Get view
             ///
-            /// @return Ref<scripting::View> Get view of this object
-            virtual Ref<scripting::View> GetView() = 0;
+            /// @return Ref<scripting::sdk::View> Get view of this object
+            virtual Ref<scripting::sdk::View> GetView() = 0;
 
             /// @brief Invoke script method
             ///

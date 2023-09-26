@@ -230,7 +230,7 @@ namespace server
         {
         }
 
-        Ref<scripting::RoomView> HomeView::GetRoom(identifier_t id) const
+        Ref<scripting::sdk::RoomView> HomeView::GetRoom(identifier_t id) const
         {
             Ref<Home> r = home.lock();
             assert(r != nullptr);
@@ -243,7 +243,7 @@ namespace server
                 return nullptr;
         }
 
-        Ref<scripting::DeviceView> HomeView::GetDevice(identifier_t id) const
+        Ref<scripting::sdk::DeviceView> HomeView::GetDevice(identifier_t id) const
         {
             Ref<Home> r = home.lock();
             assert(r != nullptr);

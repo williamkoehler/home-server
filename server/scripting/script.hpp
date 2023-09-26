@@ -1,10 +1,11 @@
 #pragma once
+#include "common.hpp"
 #include "property_flags.hpp"
 #include "script_source.hpp"
-#include "common.hpp"
-#include "interface/event.hpp"
 #include "value.hpp"
-#include "view/view.hpp"
+#include <scripting_sdk/interface/event.hpp>
+#include <scripting_sdk/view/view.hpp>
+#include <scripting_sdk/interface/
 
 namespace server
 {
@@ -12,12 +13,10 @@ namespace server
     {
         class ScriptSource;
 
-        class Value;
-
         class Script : public boost::enable_shared_from_this<Script>
         {
           protected:
-            const Ref<View> view;
+            const Ref<sdk::View> view;
             const Ref<ScriptSource> scriptSource;
 
             /// @brief Script attributes
@@ -26,16 +25,16 @@ namespace server
 
             /// @brief Script events
             ///
-            robin_hood::unordered_node_map<std::string, Event> eventMap;
+            robin_hood::unordered_node_map<std::string, sdk::Event> eventMap;
 
           public:
-            Script(const Ref<View>& view, const Ref<ScriptSource>& scriptSource);
+            Script(const Ref<sdk::View>& view, const Ref<ScriptSource>& scriptSource);
             virtual ~Script();
 
             /// @brief Get view to parent object
             ///
             /// @return Ref<View> View
-            inline Ref<View> GetView() const
+            inline Ref<sdk::View> GetView() const
             {
                 return view;
             }
@@ -116,7 +115,7 @@ namespace server
             /// @param view Invokable view
             /// @param method Method name
             /// @return EventConnection Event connection
-            EventConnection Bind(const std::string& event, const Ref<View>& view, const std::string& method);
+            sdk::EventConnection Bind(const std::string& event, const Ref<sdk::View>& view, const std::string& method);
 
             void JsonGetAttributes(rapidjson::Value& output, rapidjson::Document::AllocatorType& allocator);
 

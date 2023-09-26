@@ -1,5 +1,6 @@
 #include "js_utils.hpp"
 #include "js_script.hpp"
+#include <common/worker.hpp>
 
 namespace server
 {
